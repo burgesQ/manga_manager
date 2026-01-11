@@ -9,32 +9,36 @@ Pour le moment on fait ca en python c'est plus speedy avec les LLM. Et vive le v
 Un script qui me permet de créer des repertoirs correspondant au volume d'une serie.
 
 The script prend en parametre :
-    - le repertoir racine de la serie
-      Path vers le reprtoir racine de la serie.
-    - le target volume a build
-      Numeros du volume de la serie a generer
-    - la range numerique des chapitres correspondant au volumes
-      Range de chapitre correspondant au volume
-    - un chapter cbz naming convention
-      Naming convetion pour les chapitre au format cbz
+ - `src-root`
+   Path vers le reprtoir racine de la serie.
+ - `volume` 
+   Numeros du volume de la serie a generer
+ - `range`
+   Range numerique des chapitrez correspondant au volume
+ - `convention`
+   Naming convetion des chapitres au format cbz
 
-En cas de probelme a acceder le reeprtoire racine, une erreur explicit est yield avant d'exit.
+En cas de tout probelme fatal, une erreur explicit est yield avant d'exit.
 Le repertoir racine correspond a la serie passé en parametre d'input.
-Le reprtoir racine contiens defaut les chapitre sourcé de maniere externe.
-Les chapitre sont au format `.cbz` (comicbook zip).
-Les chapitres au seine d'une meme serie respecte la meme naming convention.
+il contient les chapitre au fomat cbz sourcé de maniere externe.
+Le format `.cbz` (comicbook zip) et un zip avec des images au foamt jpg ainsi qu'un comicbook.xml (metadata file) .
+Les chapitres au sein d'une meme serie respecte la convention de nomage.
 Exemple de conventions pour un chapitre as `cbz`:
-    - `Chapter 374.cbz` (Bersek)
+    - `Chapter 001.cbz`...`Chapter 374.cbz` (Bersek)
     - `Chapter 100 The Forbidden Door.cbz` (Full metal alchemist)
-    - `Ch.001.cbz` (Mashle)
-Au seine du reprtoir racine, un nouveaux reprtoir correspondant au volume est crée au format `[nom serie]` v[numeros serie]`.
-Un extra `0` est ajouter avant les decimal des volume 1 à 9, afin de permettre un trie part default quand `ls` est run dans le root directory.
+    - `Ch.1.cbz` (Mashle)
+
+certaine serie peuvent contenur des chapitres "extra" (example ...).
+
+Au seine du repertoir racine, un nouveaux reprtoir correspondant au volume est crée au format `[nom serie] v[numeros serie]`.
+Un leadibg `0` est ajouter avant les decimal des volume 1 à 9 / 2 leading `0` pour les chapitres, afin de permettre un trie part default quand `ls` est run dans le root directory / volumr directory.
 Pour chaque chapitre correspondant au volume, le script `mv` le `cbz` au seine du reportoir volume avant de l'extraire dans un sous-repertoir nomé apres le chapitre.
 
 Afin de speed our life, le script peut aussi prendre en option les parametres suivant:
 
-    - nb worker, nomber max de worker parallel (threads)
-      un thread a pour responsabilité un chapiter (mv du cbz + creation du chapter dir + extraction du cbz dans le chapter dir)
+ - `nb_worker`
+   Nomber max de worker parallel (threads).
+   Un worker a pour responsibility un chapiter (mv du cbz + creation du chapter dir + extraction du cbz dans le chapter dir)
 
 
 
