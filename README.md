@@ -28,13 +28,22 @@ Design decisions and constraints (first release):
 - Useful CLI flags: `--dry-run`, `--verbose`, `--force` (to overwrite existing directories).
 - CLI: implemented with `argparse`.
 
+- Extracted chapter directories are created inside the volume directory (i.e. `./[series] vNN/Chapter 001/`).
+- Output chapter folder format: zero-padded 3 digits (e.g. `Chapter 001`).
+- Missing chapter behavior: if a requested chapter is not present, the script errors and exits.
+- Duplicate matches: if multiple archives match the same chapter number, the script errors and exits.
+
 Expected behavior
 
 - For each chapter selected by the range, the script will:
-- verify that the `.cbz` contains `ComicInfo.xml` (or exit with an error),
-- create the volume directory `[series] vNN` if needed,
-- move the `.cbz` archive into the volume directory,
-- extract the archive into a uniformly named chapter subdirectory (e.g. `Chapter 001`).
+	- verify that the `.cbz` contains `ComicInfo.xml` (or exit with an error),
+	- create the volume directory `[series] vNN` if needed (if the volume directory already exists the script will warn and continue),
+	- move the `.cbz` archive into the volume directory,
+	- extract the archive into a uniformly named chapter subdirectory inside the volume directory (e.g. `Berserk v01/Chapter 001`).
+
+Behavior for existing destinations:
+	- If the volume directory exists: the script yields a warning and processes chapters inside it.
+	- If a chapter directory already exists: the script yields a warning and skips that chapter unless `--force` is provided, in which case the chapter directory is replaced.
 
 TODOs and current limitations
 
@@ -60,24 +69,24 @@ $ python -m packer.main \
 $ tree Serie_A
 Serie_A
 └── Berserk v01
-├── Chapter 1.cbz
-├── Chapter 1
-│   ├── 001.jpg
-│   ├── 002.jpg
-│   ├── 003.jpg
-│   └── ComicInfo.xml
-├── Chapter 2.cbz
-├── Chapter 2
-│   ├── 001.jpg
-│   ├── 002.jpg
-│   ├── 003.jpg
-│   └── ComicInfo.xml
-├── Chapter 3.cbz
-└── Chapter 3
-├── 001.jpg
-├── 002.jpg
-├── 003.jpg
-└── ComicInfo.xml
+    ├── Chapter 1.cbz
+    ├── Chapter 1
+    │   ├── 001.jpg
+    │   ├── 002.jpg
+    │   ├── 003.jpg
+    │   └── ComicInfo.xml
+    ├── Chapter 2.cbz
+    ├── Chapter 2
+    │   ├── 001.jpg
+    │   ├── 002.jpg
+    │   ├── 003.jpg
+    │   └── ComicInfo.xml
+    ├── Chapter 3.cbz
+    └── Chapter 3
+        ├── 001.jpg
+        ├── 002.jpg
+        ├── 003.jpg
+        └── ComicInfo.xml
 
 $ python -m packer.main \
 --path ./Serie_A \
@@ -102,7 +111,7 @@ Main options
 
 Tests & examples
 
-The initial version will include unit tests and runnable examples.
+The initial version will include unit tests and runnable examples. Unit tests will be placed under `/packer/tests`.
 
 Immediate roadmap
 - Implement `packer/main.py` (CLI + move/validation logic for `.cbz`).
