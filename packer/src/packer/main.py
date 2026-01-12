@@ -56,33 +56,61 @@ CHAPTER_PATTERNS = [
 from typing import Optional
 
 
-def extract_chapter_number(filename: str) -> List[Tuple[int, Optional[str]]]:
+def extract_chapter_number(
+    filename: str,
+    chapter_pat: Optional[re.Pattern] = None,
+    extra_pat: Optional[re.Pattern] = None,
+) -> List[Tuple[int, Optional[str]]]:
     """Return list of (base_chapter, extra_suffix) pairs found in `filename`.
 
-    Examples:
-      'Chapter 13.cbz' -> [(13, None)]
-      'Ch.013.5.cbz' -> [(13, '5')]
-
-    Uses patterns that optionally capture an extra suffix (e.g. '.5'). Duplicates
-    are removed.
+    If `extra_pat` is provided it is tried first to detect extras (captures base and
+    extra groups). If not found, `chapter_pat` is used to detect main chapters
+    (captures base group). Returns unique results sorted by base and extra.
     """
     base = os.path.basename(filename)
     results: Set[Tuple[int, Optional[str]]] = set()
-    # Accept patterns that capture optional extra part
-    extra_patterns = [
-        re.compile(r'(?i)chapter[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
-        re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
-    ]
-    for pat in extra_patterns:
-        m = pat.search(base)
+
+    # Try extras pattern first when provided; if it matches we assume this is an extra
+    if extra_pat is not None:
+        m = extra_pat.search(base)
         if m:
             try:
                 base_num = int(m.group(1))
                 extra = m.group(2)
                 results.add((base_num, extra))
+                # Don't also register a main chapter for the same filename
+                return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ''))
             except Exception:
-                continue
-    return sorted(results)
+                pass
+
+    # Then try chapter/main pattern
+    if chapter_pat is not None:
+        m = chapter_pat.search(base)
+        if m:
+            try:
+                base_num = int(m.group(1))
+                results.add((base_num, None))
+            except Exception:
+                pass
+
+    # Fall back to legacy patterns if none specified
+    if not results:
+        legacy_patterns = [
+            re.compile(r'(?i)chapter[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
+            re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
+        ]
+        for pat in legacy_patterns:
+            m = pat.search(base)
+            if m:
+                try:
+                    base_num = int(m.group(1))
+                    extra = m.group(2)
+                    results.add((base_num, extra))
+                except Exception:
+                    continue
+
+    # Sort by base then by extra (treat None as empty string for sorting)
+    return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ''))
 
 
 def find_cbz_files(root: str) -> List[str]:
@@ -242,6 +270,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument('--verbose', action='store_true', help='verbose logging')
     p.add_argument('--force', action='store_true', help='overwrite chapter dirs if exist')
 
+    # Pattern selection and overrides
+    p.add_argument('--pattern', choices=['default', 'mashle'], default='default',
+                   help='named filename pattern to use (example: "mashle" expects names like "Ch.013" and "Ch.013.5")')
+    p.add_argument('--chapter-regex', type=str, default=None,
+                   help='custom regex for matching main chapters (must capture base number as group 1)')
+    p.add_argument('--extra-regex', type=str, default=None,
+                   help='custom regex for matching extra chapters (must capture base number group1 and extra suffix group2)')
+
     args = p.parse_args(argv)
     dest = args.dest if args.dest else args.path
     try:
@@ -268,7 +304,35 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"[info] found {len(cbz_files)} .cbz files")
         for f in cbz_files:
             print(f"[info]   {f}")
+
+    # Build regex patterns based on CLI args
+    chapter_pat: Optional[re.Pattern] = None
+    extra_pat: Optional[re.Pattern] = None
+    try:
+        if args.chapter_regex:
+            chapter_pat = re.compile(args.chapter_regex)
+        if args.extra_regex:
+            extra_pat = re.compile(args.extra_regex)
+        if args.pattern == 'mashle' and not (chapter_pat or extra_pat):
+            # Mashle style: 'Ch.013' and 'Ch.013.5'
+            chapter_pat = re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)')
+            extra_pat = re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)')
+    except re.error as e:
+        print(f"Invalid regex: {e}", file=sys.stderr)
+        return 2
+
     mapping = map_chapters_to_files(cbz_files)
+    # Re-map using patterns (legacy mapping uses extract without args)
+    mapping = {}
+    for pth in cbz_files:
+        matches = extract_chapter_number(pth, chapter_pat=chapter_pat, extra_pat=extra_pat)
+        for base, extra in matches:
+            entry = mapping.setdefault(base, {'mains': [], 'extras': []})
+            if extra is None:
+                entry['mains'].append((None, pth))
+            else:
+                entry['extras'].append((extra, pth))
+
     if cfg.verbose:
         print(f"[info] chapter mapping summary:")
         for k in sorted(mapping.keys()):

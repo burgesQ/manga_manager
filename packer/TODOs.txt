@@ -12,8 +12,8 @@ Short-term (highest priority):
 - regex
   - regex for extra chapter (should allow to fix FMA case)
   - map `.cbz` parsing to static regex
-  - allow user to specify the extraction regex via cli
-  - document & testd (pyyest + doctest )
+  - allow user to specify the extraction regex via cli (implemented: `--pattern`, `--chapter-regex`, `--extra-regex`)
+  - document & test (pytest + doctest )
 
 
 Medium-term:

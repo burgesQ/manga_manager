@@ -130,6 +130,14 @@ $ uv run packer \
     --dry-run
 ```
 
+### Tests 
+
+Tests are managed via pytest, run as following: 
+
+```console 
+$ uv run pytest . 
+```
+
 
 ### TODO
 
@@ -137,3 +145,5 @@ $ uv run packer \
 - [ ] pass an array `[volume:chapter range]
 - [ ] handle chapters 0 / chapter A..Z
 - [ ] better logs
+- [ ] split into sub-files
+- [ ] what to do if .cbz contain sub-dir ?
