@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import logging
 import re
+import os
 from typing import List, Optional
 
 from .core import (
@@ -173,6 +174,67 @@ def parse_batch_spec(batch: str):
     return parsed
 
 
+def parse_batch_file(file_path: str):
+    """Parse a simple batch file where each non-empty line is a CSV: "vol, chapters".
+
+    Lines beginning with `#` or blank lines are ignored. Volume may be written
+    as `v01` or `1`.
+
+    Example file contents:
+        v01,1..8
+        2,9..17
+
+    Returns:
+        List[Tuple[int, List[int]]]
+    """
+    specs = []
+    with open(file_path, 'r', encoding='utf-8') as fh:
+        for ln in fh:
+            ln = ln.strip()
+            if not ln or ln.startswith('#'):
+                continue
+            parts = [p.strip() for p in ln.split(',') if p.strip()]
+            if len(parts) < 2:
+                raise ValueError(f"invalid batch file line: {ln}")
+            vol_spec, range_spec = parts[0], parts[1]
+            m = re.match(r'(?i)v?\s*0*([0-9]+)', vol_spec)
+            if not m:
+                raise ValueError(f"invalid volume spec in batch file: {vol_spec}")
+            vol_num = int(m.group(1))
+            ranges = parse_range(range_spec)
+            specs.append((vol_num, ranges))
+    return specs
+
+
+def load_config_from_path(path: str):
+    """Load an optional JSON config file (`packer.json`) from `path`.
+
+    Supported keys (optional): `pattern`, `chapter_regex`, `extra_regex`,
+    `nb_worker`, `batch_file`.
+
+    Raises:
+        ValueError: if a `packer.json` file is present but cannot be parsed as
+                    a valid JSON object (dict). The caller should treat this as
+                    a configuration error and abort.
+
+    Returns an empty dict when no config file is present.
+    """
+    import json
+    cfg_path = os.path.join(path, 'packer.json')
+    if not os.path.exists(cfg_path):
+        return {}
+    try:
+        with open(cfg_path, 'r', encoding='utf-8') as fh:
+            data = json.load(fh)
+            if not isinstance(data, dict):
+                raise ValueError(f"Invalid packer.json ({cfg_path}): top-level JSON must be an object")
+            return data
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid packer.json ({cfg_path}): {e.msg}")
+    except Exception as e:
+        raise ValueError(f"Invalid packer.json ({cfg_path}): {e}")
+
+
 def main(argv=None) -> int:
     """Command-line entry point for the `packer` tool.
 
@@ -196,7 +258,7 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="Pack .cbz chapters into volume directories")
     p.add_argument('--path', required=True, help='path to root directory containing .cbz files')
     p.add_argument('--dest', default=None, help='destination root (defaults to --path)')
-    p.add_argument('--serie', required=True, help='series name used to name the volume directory')
+    p.add_argument('--serie', required=False, default=None, help='series name used to name the volume directory (can be provided via packer.json)')
     p.add_argument('--volume', type=int, help='volume number to create')
     p.add_argument('--chapter-range', help='chapter range, e.g. "1..12" or "1,3,5..8"')
     p.add_argument('--nb-worker', type=int, default=1, help='number of workers (default 1)')
@@ -213,6 +275,8 @@ def main(argv=None) -> int:
 
     p.add_argument('--batch', type=str, default=None,
                    help='batch volumes spec: "v01:1..3-v02:4..6" (multiple specs separated by "-")')
+    p.add_argument('--batch-file', type=str, default=None,
+                   help='path to a batch file (CSV lines: "vol, chapters" e.g. "v01,1..8")')
     p.add_argument('--loglevel', type=str, default=None,
                    choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'WARN'],
                    help='explicit log level (overrides --verbose)')
@@ -223,12 +287,46 @@ def main(argv=None) -> int:
 
     dest = args.dest if args.dest else args.path
 
+    # Load per-path config if present (packer.json)* and apply as defaults
+    try:
+        path_config = load_config_from_path(args.path)
+    except ValueError as e:
+        logger.error(str(e))
+        return 2
+
+    # apply config defaults only when CLI didn't provide a non-default value
+    if path_config:
+        if args.pattern == 'default' and 'pattern' in path_config:
+            args.pattern = path_config['pattern']
+        if args.chapter_regex is None and 'chapter_regex' in path_config:
+            args.chapter_regex = path_config['chapter_regex']
+        if args.extra_regex is None and 'extra_regex' in path_config:
+            args.extra_regex = path_config['extra_regex']
+        if args.nb_worker == 1 and 'nb_worker' in path_config:
+            args.nb_worker = int(path_config['nb_worker'])
+        if args.batch_file is None and 'batch_file' in path_config:
+            # allow relative path from the data dir
+            args.batch_file = os.path.join(args.path, path_config['batch_file']) if not os.path.isabs(path_config['batch_file']) else path_config['batch_file']
+        # allow serie to be provided from packer.json when not passed on the CLI
+        if args.serie is None and 'serie' in path_config:
+            args.serie = path_config['serie']
+
     # Validate args
     if args.batch and (args.volume or args.chapter_range):
         logger.error('--batch cannot be combined with --volume/--chapter-range')
         return 2
-    if not args.batch and (args.volume is None or args.chapter_range is None):
-        logger.error('either --batch or both --volume and --chapter-range must be provided')
+    if not (args.batch or args.batch_file) and (args.volume is None or args.chapter_range is None):
+        # try to auto-discover a `.batch` file in the source directory
+        discovered_batch = os.path.join(args.path, '.batch')
+        if os.path.exists(discovered_batch):
+            args.batch_file = discovered_batch
+        else:
+            logger.error('either --batch or both --volume and --chapter-range must be provided')
+            return 2
+
+    # Validate that a serie name is available either via CLI or config
+    if args.serie is None:
+        logger.error('either --serie or a `serie` key in packer.json must be provided')
         return 2
 
     # compile patterns
@@ -266,7 +364,7 @@ def main(argv=None) -> int:
         extra_pat=extra_pat,
     )
 
-    # Parse batch specs
+    # Parse batch specs (priority: --batch > --batch-file > discovered .batch > single volume)
     batch_specs = []
     if args.batch:
         try:
@@ -274,7 +372,14 @@ def main(argv=None) -> int:
         except Exception as e:
             logger.error(e)
             return 2
+    elif args.batch_file:
+        try:
+            batch_specs = parse_batch_file(args.batch_file)
+        except Exception as e:
+            logger.error(e)
+            return 2
     else:
+        # single volume mode (cfg.chapter_range already set)
         batch_specs = [(cfg.volume, cfg.chapter_range)]
 
     available_files = cbz_files.copy()

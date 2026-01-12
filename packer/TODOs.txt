@@ -7,15 +7,8 @@ Short-term (highest priority):
 - Rework concurrency model: main thread parses chapters and dispatches per-chapter tasks to workers; ensure per-chapter atomic operations to avoid I/O races.
 - Add `--skip-missing` / `--continue-on-error` flags to control behavior on missing/duplicate chapters.
 - Add unit tests for filename parsing, `--chapter-range` parsing, and `ComicInfo.xml` detection.
-- Add unit tests for concurrency and dry-run behavior. (done)
-- batch build volumes via `--batch` (implemented: syntax `v01:1..3-v02:4..6`)
-  - regex for extra chapter (implemented: FMA supported)
-  - map `.cbz` parsing to static regex
-  - allow user to specify the extraction regex via cli (implemented: `--pattern`, `--chapter-regex`, `--extra-regex`)
-  - document & test (pytest + doctest ) (done)
-- Add tests & docs for logging (`--loglevel`, color/emoji formatting) (done)
-- Add unit tests for regex helpers and doctests (done)
-- Add edge-case tests: extras-without-main, multi-number filenames, WARN alias for `--loglevel` (pending)
+- Add edge-case tests: extras-without-main, multi-number filenames, WARN alias for `--loglevel` (done)
+- Add tests & docs for batch-file (`--batch-file`) and per-path `packer.json` config discovery (done)
 
 
 Medium-term:

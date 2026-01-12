@@ -52,7 +52,7 @@ Behavior for existing destinations:
 Main options
 - `--path`: path to the root directory containing source `.cbz` files.
 - `--dest`: destination root (defaults to `--path`) where the volume directory will be created.
-- `--serie`: series name (used to name the volume directory).
+- `--serie`: series name (used to name the volume directory). It is optional on the CLI — a `serie` key may instead be provided in `packer.json` in the source directory.
 - `--volume`: volume number to create.
 - `--chapter-range`: chapter range (e.g. `1..12`, `1,3,5..8`).
 - `--nb-worker`: number of workers (default `1`).
@@ -60,6 +60,8 @@ Main options
 - `--verbose`: verbose logging.
 - `--force`: overwrite destination directories if necessary.
 - Named patterns: use `--pattern` to select a named filename pattern (e.g., `mashle`, `fma`) which affects how main chapters and extras are detected.
+- Batch files: supply `--batch-file <path>` or place a `.batch` file in the source directory (one CSV per line: `vol, chapters` e.g. `v01,1..8`).
+- Per-path config: place a `packer.json` file in the `--path` directory to provide defaults (supported keys: `pattern`, `chapter_regex`, `extra_regex`, `nb_worker`, `batch_file`). **If present, `packer.json` must be valid JSON; parsing failures will cause the CLI to error and exit.** CLI args always override config values.
 
 
 TODO: add tests doc (aka `uv run pytest packer`)
@@ -214,3 +216,4 @@ If you're contributing, please add unit tests under `packer/tests` and run the f
 - [x] split into sub-files
 - [ ] what to do if .cbz contain sub-dir ?
 - [ ] handle chapters 0 / chapter A..Z
+- [ ] rework readme

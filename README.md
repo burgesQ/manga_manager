@@ -13,13 +13,19 @@ All package are managed with `uv` (TODO: add link & few example)
 
 ## TODO
 
-- [ ] finish packer
+- [x] finish packer v1.0
 - [ ] comic info edit
-- [ ] epub builder (kindle comic convertor <3)
+- [ ] epub builder (kindle comic convertor <3 aka https://github.com/ciromattia/kcc#usage)
 - [ ] calibre sync !?
+- [ ] update root readme for process (dl from Tachiyomi, move to host, run manga_creator script suites)
 
 
 ## TLDR
+
+### Mashle 
+### Berserk
+### FMA 
+### Blue Vortex
 
 ```console
 $ uv run packer --dry-run --loglevel INFO \
