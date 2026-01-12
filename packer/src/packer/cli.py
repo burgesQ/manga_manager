@@ -49,13 +49,75 @@ class Config:
         return has_comicinfo(path)
 
 
-def setup_logging(verbose: bool = False):
+def setup_logging(verbose: bool = False, loglevel: Optional[str] = None, force_color: Optional[bool] = None):
+    """Configure root logger with a compact, colored formatter and emoji prefixes.
+
+    - verbose -> DEBUG level, otherwise INFO
+    - loglevel: explicit string level to override verbose (e.g. DEBUG|INFO|WARNING|ERROR)
+    - force_color: True/False to override automatic TTY detection
+    """
     root = logging.getLogger()
     root.handlers.clear()
-    level = logging.DEBUG if verbose else logging.INFO
+
+    # Determine numeric level (loglevel overrides verbose)
+    if loglevel:
+        lvl = loglevel.upper()
+        if lvl == 'WARN':
+            lvl = 'WARNING'
+        level = getattr(logging, lvl, logging.INFO)
+    else:
+        level = logging.DEBUG if verbose else logging.INFO
+
     handler = logging.StreamHandler()
-    fmt = "%(levelname)s: %(message)s"
-    handler.setFormatter(logging.Formatter(fmt))
+
+    # Decide whether to use color based on the handler stream TTY or caller override
+    stream = handler.stream
+    if force_color is True:
+        use_color = True
+    elif force_color is False:
+        use_color = False
+    else:
+        use_color = hasattr(stream, "isatty") and stream.isatty()
+
+    class ColorFormatter(logging.Formatter):
+        COLORS = {
+            'DEBUG': '\x1b[34m',    # blue
+            'INFO': '\x1b[32m',     # green
+            'WARNING': '\x1b[33m',  # yellow
+            'ERROR': '\x1b[31m',    # red
+            'CRITICAL': '\x1b[31;1m',
+        }
+        EMOJI = {
+            'DEBUG': '🔧',
+            'INFO': '✅',
+            'WARNING': '⚠️',
+            'ERROR': '❌',
+            'CRITICAL': '💥',
+        }
+        RESET = '\x1b[0m'
+
+        def __init__(self, use_color: bool = True):
+            super().__init__()
+            self.use_color = use_color
+
+        def format(self, record: logging.LogRecord) -> str:
+            level = record.levelname
+            emoji = self.EMOJI.get(level, '')
+            if self.use_color:
+                color = self.COLORS.get(level, '')
+                prefix = f"{color}{emoji} {level}:{self.RESET}"
+            else:
+                prefix = f"{emoji} {level}:"
+            # Base message
+            msg = record.getMessage()
+            # Simple formatting: prefix + message
+            formatted = f"{prefix} {msg}"
+            # Handle exception formatting if present
+            if record.exc_info:
+                formatted = f"{formatted}\n{self.formatException(record.exc_info)}"
+            return formatted
+
+    handler.setFormatter(ColorFormatter(use_color))
     root.setLevel(level)
     root.addHandler(handler)
 
@@ -94,10 +156,13 @@ def main(argv=None) -> int:
 
     p.add_argument('--batch', type=str, default=None,
                    help='batch volumes spec: "v01:1..3-v02:4..6" (multiple specs separated by "-")')
+    p.add_argument('--loglevel', type=str, default=None,
+                   choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'WARN'],
+                   help='explicit log level (overrides --verbose)')
 
     args = p.parse_args(argv)
 
-    setup_logging(args.verbose)
+    setup_logging(args.verbose, loglevel=args.loglevel)
 
     dest = args.dest if args.dest else args.path
 

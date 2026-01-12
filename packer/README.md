@@ -156,6 +156,6 @@ $ uv run pytest .
 - [x] handle extra chapters / volume extra
 - [ ] pass an array `[volume:chapter range]
 - [ ] handle chapters 0 / chapter A..Z
-- [ ] better logs
+- [x] better logs
 - [ ] split into sub-files
 - [ ] what to do if .cbz contain sub-dir ?

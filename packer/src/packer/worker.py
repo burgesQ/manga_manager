@@ -19,35 +19,29 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
     chapter_id is a string: e.g. '13' for main, '13.5' for an extra. The chapter
     directory will be named `Chapter {base:03d}` for main or `Chapter {base:03d}.{extra}` for extras.
     """
-    if cfg.verbose:
-        logger.info(f"[worker] start chapter={chapter_id} file={src_file}")
+    logger.debug(f"[worker] start chapter={chapter_id} file={src_file}")
 
     # Validate comicinfo
-    if cfg.verbose:
-        logger.info(f"[worker] verifying ComicInfo.xml in {src_file}")
+    logger.debug(f"[worker] verifying ComicInfo.xml in {src_file}")
     if not cfg.has_comicinfo(src_file):
         raise RuntimeError(f"Missing ComicInfo.xml in {src_file}")
 
     volume_dir = format_volume_dir(cfg.dest, cfg.serie, cfg.volume)
     if not os.path.exists(volume_dir):
-        if cfg.verbose:
-            logger.info(f"[worker] creating volume dir: {volume_dir}")
+        logger.debug(f"[worker] creating volume dir: {volume_dir}")
         if not cfg.dry_run:
             os.makedirs(volume_dir, exist_ok=True)
-        elif cfg.verbose:
-            logger.info(f"[dry-run] mkdir {volume_dir}")
+        else:
+            logger.debug(f"[dry-run] mkdir {volume_dir}")
     else:
-        if cfg.verbose:
-            logger.info(f"[worker] volume dir exists: {volume_dir}")
+        logger.debug(f"[worker] volume dir exists: {volume_dir}")
 
     # Move archive
     dest_archive = os.path.join(volume_dir, os.path.basename(src_file))
     if cfg.dry_run:
-        if cfg.verbose:
-            logger.info(f"[dry-run] mv {src_file} -> {dest_archive}")
+        logger.debug(f"[dry-run] mv {src_file} -> {dest_archive}")
     else:
-        if cfg.verbose:
-            logger.info(f"[worker] moving archive to {dest_archive}")
+        logger.debug(f"[worker] moving archive to {dest_archive}")
         shutil.move(src_file, dest_archive)
 
     # Determine chapter dir name
@@ -60,24 +54,22 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
 
     if os.path.exists(chapter_dir):
         if cfg.force:
-            if cfg.verbose:
-                logger.info(f"[worker] force-remove existing chapter dir: {chapter_dir}")
+            logger.debug(f"[worker] force-remove existing chapter dir: {chapter_dir}")
             shutil.rmtree(chapter_dir)
             if not cfg.dry_run:
                 os.makedirs(chapter_dir, exist_ok=True)
-            elif cfg.verbose:
-                logger.info(f"[dry-run] mkdir {chapter_dir}")
+            else:
+                logger.debug(f"[dry-run] mkdir {chapter_dir}")
         else:
             # According to rules: warn and skip
             logger.warning(f"chapter dir exists, skipping: {chapter_dir}")
             return chapter_id, dest_archive
     else:
-        if cfg.verbose:
-            logger.info(f"[worker] creating chapter dir: {chapter_dir}")
+        logger.debug(f"[worker] creating chapter dir: {chapter_dir}")
         if not cfg.dry_run:
             os.makedirs(chapter_dir, exist_ok=True)
-        elif cfg.verbose:
-            logger.info(f"[dry-run] mkdir {chapter_dir}")
+        else:
+            logger.debug(f"[dry-run] mkdir {chapter_dir}")
 
     # Safe extraction (prevent path traversal). In dry-run, inspect the original src file but do not extract
     # or depend on the moved `dest_archive` which doesn't exist in dry-run mode.
@@ -90,12 +82,10 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
                 if '..' in parts or member.startswith('/') or member.startswith('\\'):
                     raise RuntimeError(f"Unsafe path in archive: {member}")
             if cfg.dry_run:
-                if cfg.verbose:
-                    logger.info(f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}")
+                logger.debug(f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}")
             else:
                 z.extractall(chapter_dir)
-                if cfg.verbose:
-                    logger.info(f"[worker] extracted {dest_archive} -> {chapter_dir}")
+                logger.debug(f"[worker] extracted {dest_archive} -> {chapter_dir}")
     except zipfile.BadZipFile:
         raise RuntimeError(f"Bad zip file: {archive_for_inspection}")
 
@@ -143,50 +133,44 @@ def process_volume(volume: int, chapter_range: List[int], available_files: List[
         for extra_suffix, extra_file in extras:
             tasks.append((f"{c}.{extra_suffix}", extra_file))
 
-    if cfg.verbose:
-        logger.info(f"[info] planned tasks for volume {volume}:")
-        for cid, f in tasks:
-            logger.info(f"[info]  chapter {cid} -> {f}")
+    # Planned tasks are important summary info for the user
+    logger.info(f"[info] planned tasks for volume {volume}:")
+    for cid, f in tasks:
+        logger.info(f"[info]  chapter {cid} -> {f}")
 
     # Ensure volume dir exists (main thread creates it to avoid races)
     volume_dir = format_volume_dir(cfg.dest, cfg.serie, volume)
     if not os.path.exists(volume_dir):
-        if cfg.verbose:
-            logger.info(f"[info] creating volume dir: {volume_dir}")
+        logger.debug(f"[info] creating volume dir: {volume_dir}")
         if not cfg.dry_run:
             os.makedirs(volume_dir, exist_ok=True)
-        elif cfg.verbose:
-            logger.info(f"[dry-run] mkdir {volume_dir}")
+        else:
+            logger.debug(f"[dry-run] mkdir {volume_dir}")
     else:
-        if cfg.verbose:
-            logger.info(f"[info] volume dir exists: {volume_dir}")
+        logger.debug(f"[info] volume dir exists: {volume_dir}")
 
     moved_files: List[str] = []
 
     # Execute tasks (threaded as before)
     if cfg.nb_worker > 1:
-        if cfg.verbose:
-            logger.info(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
+        logger.debug(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
         with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
             futures = [ex.submit(process_one, c, f, cfg) for c, f in tasks]
             for fut in concurrent.futures.as_completed(futures):
                 try:
                     cid, dest = fut.result()
                     moved_files.append(dest if not cfg.dry_run else f"DRY:{cid}")
-                    if cfg.verbose:
-                        logger.info(f"Processed: {(cid, dest)}")
+                    logger.debug(f"Processed: {(cid, dest)}")
                 except Exception as e:
                     logger.error(f"{e}")
                     return 6, available_files
     else:
         for cid, f in tasks:
-            if cfg.verbose:
-                logger.info(f"[info] processing chapter {cid}")
+            logger.debug(f"[info] processing chapter {cid}")
             try:
                 cid, dest = process_one(cid, f, cfg)
                 moved_files.append(dest if not cfg.dry_run else f"DRY:{cid}")
-                if cfg.verbose:
-                    logger.info(f"Processed: {(cid, dest)}")
+                logger.debug(f"Processed: {(cid, dest)}")
             except Exception as e:
                 logger.error(f"{e}")
                 return 6, available_files
