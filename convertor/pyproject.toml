@@ -1,0 +1,26 @@
+[project]
+name = "convertor"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "kindlecomicconverter",
+]
+
+[project.scripts]
+convertor = "convertor.main:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.uv.sources]
+kindlecomicconverter = { git = "ssh://git@github.com/ciromattia/kcc", tag = "v9.3.8" }
+
+[pytest]
+pythonpath = "src"
+console_output_style = "progress"
