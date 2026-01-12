@@ -138,7 +138,9 @@ def process_volume(volume: int, chapter_range: List[int], available_files: List[
         if entry.get('mains'):
             _, main_file = entry['mains'][0]
             tasks.append((str(c), main_file))
-        for extra_suffix, extra_file in entry.get('extras', []):
+        # Sort extras by numeric suffix (e.g., 16.1 before 16.2)
+        extras = sorted(entry.get('extras', []), key=lambda pair: int(pair[0]))
+        for extra_suffix, extra_file in extras:
             tasks.append((f"{c}.{extra_suffix}", extra_file))
 
     if cfg.verbose:
