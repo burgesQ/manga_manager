@@ -263,8 +263,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument('--path', required=True, help='path to root directory containing .cbz files')
     p.add_argument('--dest', default=None, help='destination root (defaults to --path)')
     p.add_argument('--serie', required=True, help='series name used to name the volume directory')
-    p.add_argument('--volume', required=True, type=int, help='volume number to create')
-    p.add_argument('--chapter-range', required=True, help='chapter range, e.g. "1..12" or "1,3,5..8"')
+    p.add_argument('--volume', type=int, help='volume number to create')
+    p.add_argument('--chapter-range', help='chapter range, e.g. "1..12" or "1,3,5..8"')
     p.add_argument('--nb-worker', type=int, default=1, help='number of workers (default 1)')
     p.add_argument('--dry-run', action='store_true', help='simulate actions')
     p.add_argument('--verbose', action='store_true', help='verbose logging')
@@ -278,19 +278,33 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument('--extra-regex', type=str, default=None,
                    help='custom regex for matching extra chapters (must capture base number group1 and extra suffix group2)')
 
+    p.add_argument('--batch', type=str, default=None,
+                   help='batch volumes spec: "v01:1..3-v02:4..6" (multiple specs separated by "-")')
+
     args = p.parse_args(argv)
     dest = args.dest if args.dest else args.path
-    try:
-        chapters = parse_range(args.chapter_range)
-    except Exception as e:
-        print(f"Invalid chapter range: {e}", file=sys.stderr)
-        return 2
+
+    # Validate arguments: either --batch OR both --volume and --chapter-range are required
+    if args.batch:
+        if args.volume or args.chapter_range:
+            print('[error] --batch cannot be combined with --volume/--chapter-range', file=sys.stderr)
+            return 2
+        chapters: List[int] = []
+    else:
+        if args.volume is None or args.chapter_range is None:
+            print('[error] either --batch or both --volume and --chapter-range must be provided', file=sys.stderr)
+            return 2
+        try:
+            chapters = parse_range(args.chapter_range)
+        except Exception as e:
+            print(f"Invalid chapter range: {e}", file=sys.stderr)
+            return 2
 
     cfg = Config(
         path=args.path,
         dest=dest,
         serie=args.serie,
-        volume=args.volume,
+        volume=args.volume if args.volume else 0,
         chapter_range=chapters,
         nb_worker=args.nb_worker,
         dry_run=args.dry_run,
@@ -321,99 +335,147 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Invalid regex: {e}", file=sys.stderr)
         return 2
 
-    mapping = map_chapters_to_files(cbz_files)
-    # Re-map using patterns (legacy mapping uses extract without args)
-    mapping = {}
-    for pth in cbz_files:
-        matches = extract_chapter_number(pth, chapter_pat=chapter_pat, extra_pat=extra_pat)
-        for base, extra in matches:
-            entry = mapping.setdefault(base, {'mains': [], 'extras': []})
-            if extra is None:
-                entry['mains'].append((None, pth))
-            else:
-                entry['extras'].append((extra, pth))
+    def process_volume(volume: int, chapter_range: List[int], available_files: List[str]) -> Tuple[int, List[str]]:
+        """Process a single volume. Returns (exit_code, remaining_files).
 
-    if cfg.verbose:
-        print(f"[info] chapter mapping summary:")
-        for k in sorted(mapping.keys()):
-            print(f"[info]   chapter {k}: {mapping[k]}")
+        This function reuses the mapping and execution logic so batch processing
+        can be sequential: after each volume, moved files are removed from
+        `available_files` to avoid double-processing.
+        """
+        # Build mapping using the provided patterns
+        mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}
+        for pth in list(available_files):
+            matches = extract_chapter_number(pth, chapter_pat=chapter_pat, extra_pat=extra_pat)
+            for base, extra in matches:
+                entry = mapping.setdefault(base, {'mains': [], 'extras': []})
+                if extra is None:
+                    entry['mains'].append((None, pth))
+                else:
+                    entry['extras'].append((extra, pth))
 
-    # Validate presence & uniqueness of main chapters (extras are optional)
-    if cfg.verbose:
-        print(f"[info] validating requested chapters: {cfg.chapter_range}")
-    for c in cfg.chapter_range:
-        entry = mapping.get(c)
-        if not entry or (not entry.get('mains') and not entry.get('extras')):
-            print(f"[error] missing chapter {c}", file=sys.stderr)
-            return 3
-        if len(entry.get('mains', [])) > 1:
-            mains = [p for (_, p) in entry['mains']]
-            print(f"[error] multiple archives match chapter {c}: {mains}", file=sys.stderr)
-            return 4
+        # Validate presence & uniqueness for this volume's chapters
+        for c in chapter_range:
+            entry = mapping.get(c)
+            if not entry or (not entry.get('mains') and not entry.get('extras')):
+                print(f"[error] missing chapter {c}", file=sys.stderr)
+                return 3, available_files
+            if len(entry.get('mains', [])) > 1:
+                mains = [p for (_, p) in entry['mains']]
+                print(f"[error] multiple archives match chapter {c}: {mains}", file=sys.stderr)
+                return 4, available_files
 
-    # Prepare tasks: include main archive for each requested chapter and any extras found
-    tasks: List[Tuple[str, str]] = []  # (chapter_id, file)
-    for c in cfg.chapter_range:
-        entry = mapping.get(c, {'mains': [], 'extras': []})
-        # Prefer the single main archive if present
-        if entry.get('mains'):
-            _, main_file = entry['mains'][0]
-            tasks.append((str(c), main_file))
+        # Prepare tasks: include main archive for each requested chapter and any extras found
+        tasks: List[Tuple[str, str]] = []  # (chapter_id, file)
+        for c in chapter_range:
+            entry = mapping.get(c, {'mains': [], 'extras': []})
+            if entry.get('mains'):
+                _, main_file = entry['mains'][0]
+                tasks.append((str(c), main_file))
+            for extra_suffix, extra_file in entry.get('extras', []):
+                tasks.append((f"{c}.{extra_suffix}", extra_file))
+
+        if cfg.verbose:
+            print("[info] planned tasks for volume {volume}:")
+            for cid, f in tasks:
+                print(f"[info]  chapter {cid} -> {f}")
+
+        # Ensure volume dir exists (main thread creates it to avoid races)
+        volume_dir = format_volume_dir(cfg.dest, cfg.serie, volume)
+        if not os.path.exists(volume_dir):
+            if cfg.verbose:
+                print(f"[info] creating volume dir: {volume_dir}")
+            if not cfg.dry_run:
+                os.makedirs(volume_dir, exist_ok=True)
+            elif cfg.verbose:
+                print(f"[dry-run] mkdir {volume_dir}")
         else:
-            # No main but extras exist: still process extras
-            pass
-        for extra_suffix, extra_file in entry.get('extras', []):
-            tasks.append((f"{c}.{extra_suffix}", extra_file))
+            if cfg.verbose:
+                print(f"[info] volume dir exists: {volume_dir}")
 
-    if cfg.verbose:
-        print("[info] planned tasks:")
-        for cid, f in tasks:
-            print(f"[info]  chapter {cid} -> {f}")
+        moved_files: List[str] = []
 
-    # Ensure volume directory exists (main thread creates it to avoid races)
-    volume_dir = format_volume_dir(cfg.dest, cfg.serie, cfg.volume)
-    if not os.path.exists(volume_dir):
-        if cfg.verbose:
-            print(f"[info] creating volume dir: {volume_dir}")
-        if not cfg.dry_run:
-            os.makedirs(volume_dir, exist_ok=True)
-        elif cfg.verbose:
-            print(f"[dry-run] mkdir {volume_dir}")
-    else:
-        if cfg.verbose:
-            print(f"[info] volume dir exists: {volume_dir}")
-
-    # Process tasks using threads (I/O-bound): each worker handles one chapter (mv -> mkdir chapter -> unpack)
-    if cfg.nb_worker > 1:
-        if cfg.verbose:
-            print(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
-        with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
-            futures = [ex.submit(process_one, c, f, cfg) for c, f in tasks]
-            for fut in concurrent.futures.as_completed(futures):
+        # Execute tasks (threaded as before)
+        if cfg.nb_worker > 1:
+            if cfg.verbose:
+                print(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
+            with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
+                futures = [ex.submit(process_one, c, f, cfg) for c, f in tasks]
+                for fut in concurrent.futures.as_completed(futures):
+                    try:
+                        cid, dest = fut.result()
+                        moved_files.append(dest if not cfg.dry_run else f"DRY:{cid}")
+                        if cfg.verbose:
+                            print(f"Processed: {(cid, dest)}")
+                    except ExtractionNotImplementedError as e:
+                        print(f"[TODO] {e}")
+                        return 5, available_files
+                    except Exception as e:
+                        print(f"[error] {e}", file=sys.stderr)
+                        return 6, available_files
+        else:
+            for cid, f in tasks:
+                if cfg.verbose:
+                    print(f"[info] processing chapter {cid}")
                 try:
-                    res = fut.result()
+                    cid, dest = process_one(cid, f, cfg)
+                    moved_files.append(dest if not cfg.dry_run else f"DRY:{cid}")
                     if cfg.verbose:
-                        print(f"Processed: {res}")
+                        print(f"Processed: {(cid, dest)}")
                 except ExtractionNotImplementedError as e:
                     print(f"[TODO] {e}")
-                    return 5
+                    return 5, available_files
                 except Exception as e:
                     print(f"[error] {e}", file=sys.stderr)
-                    return 6
-    else:
-        for c, f in tasks:
-            if cfg.verbose:
-                print(f"[info] processing chapter {c}")
+                    return 6, available_files
+
+        # Remove moved files from available_files (non-dry-run)
+        if not cfg.dry_run:
+            for dest in moved_files:
+                if dest and os.path.exists(dest):
+                    # dest is path to moved archive inside volume, find its original name in available_files
+                    basename = os.path.basename(dest)
+                    for orig in list(available_files):
+                        if os.path.basename(orig) == basename:
+                            available_files.remove(orig)
+                            break
+        return 0, available_files
+
+    # Batch handling: either single volume from --volume OR multiple specs via --batch
+    batch_specs: List[Tuple[int, List[int]]] = []
+    if args.batch:
+        if args.volume or args.chapter_range:
+            print('[error] --batch cannot be combined with --volume/--chapter-range', file=sys.stderr)
+            return 2
+        # parse batch like: v01:1..3-v02:4..6
+        specs = [s for s in args.batch.split('-') if s.strip()]
+        for s in specs:
+            m = re.match(r'(?i)v\s*0*([0-9]+):(.+)', s.strip())
+            if not m:
+                print(f"[error] invalid batch spec: {s}", file=sys.stderr)
+                return 2
+            vol_num = int(m.group(1))
             try:
-                res = process_one(c, f, cfg)
-                if cfg.verbose:
-                    print(f"Processed: {res}")
-            except ExtractionNotImplementedError as e:
-                print(f"[TODO] {e}")
-                return 5
+                ranges = parse_range(m.group(2))
             except Exception as e:
-                print(f"[error] {e}", file=sys.stderr)
-                return 6
+                print(f"Invalid chapter range in batch spec {s}: {e}", file=sys.stderr)
+                return 2
+            batch_specs.append((vol_num, ranges))
+    else:
+        # single volume mode
+        batch_specs = [(cfg.volume, cfg.chapter_range)]
+
+    # Sequentially process each batch spec
+    available_files = cbz_files.copy()
+    for vol_num, ranges in batch_specs:
+        cfg.volume = vol_num
+        cfg.chapter_range = ranges
+        exit_code, available_files = process_volume(vol_num, ranges, available_files)
+        if exit_code != 0:
+            return exit_code
+
+    if cfg.verbose:
+        print('Done')
+    return 0
 
     if cfg.verbose:
         print("Done")

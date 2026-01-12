@@ -8,8 +8,7 @@ Short-term (highest priority):
 - Add `--skip-missing` / `--continue-on-error` flags to control behavior on missing/duplicate chapters.
 - Add unit tests for filename parsing, `--chapter-range` parsing, and `ComicInfo.xml` detection.
 - Add unit tests for concurrency and dry-run behavior. (done)
-- batch build volume by specifying multiple info via cli (`--batch v01:0..3-v02:4..9`)
-- regex
+- batch build volumes via `--batch` (implemented: syntax `v01:1..3-v02:4..6`)- regex
   - regex for extra chapter (should allow to fix FMA case)
   - map `.cbz` parsing to static regex
   - allow user to specify the extraction regex via cli (implemented: `--pattern`, `--chapter-regex`, `--extra-regex`)

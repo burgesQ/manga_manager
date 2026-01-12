@@ -130,6 +130,17 @@ $ uv run packer \
     --dry-run
 ```
 
+Batch volumes example
+
+```console
+# Build volume 1 (chapters 1..3) and volume 2 (chapters 4..6) in sequence
+$ uv run packer \
+    --path ./Serie_A \
+    --serie "BatchSerie" \
+    --batch "v01:1..3-v02:4..6" \
+    --nb-worker 4
+```
+
 ### Tests 
 
 Tests are managed via pytest, run as following: 
