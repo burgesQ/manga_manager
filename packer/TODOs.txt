@@ -1,0 +1,26 @@
+# Packer - Actionable TODOs
+
+Short-term (highest priority):
+- Define extraction policy (flatten vs keep structure) and add CLI flags (`--flatten` / `--keep-structure`).
+- Implement and test detection of `ComicInfo.xml` with cases: missing, multiple, case-insensitive, and malformed.
+- Implement secure extraction (prevent path traversal attacks).
+- Rework concurrency model: main thread parses chapters and dispatches per-chapter tasks to workers; ensure per-chapter atomic operations to avoid I/O races.
+- Add `--skip-missing` / `--continue-on-error` flags to control behavior on missing/duplicate chapters.
+- Add unit tests for filename parsing, `--chapter-range` parsing, and `ComicInfo.xml` detection.
+- Add unit tests for concurrency and dry-run behavior. (done)
+- batch build volume by specifying multiple info via cli (`--batch v01:0..3-v02:4..9`)
+- regex 
+  - map `.cbz` parsing to static regex
+  - allow user to specify the extraction regex via cli
+  - document & testd (pyyest + doctest )
+
+
+Medium-term:
+- Add integration tests (dry-run and real extraction) including concurrency tests.
+- Standardize exit codes and improve error messages.
+
+Long-term / Nice to have:
+- Merge volume-level `ComicInfo.xml` or create a consolidated one.
+- Better logging / progress reporting UI.
+- Support for additional archive formats and chapter identifiers (A..Z, 0, etc.).
+

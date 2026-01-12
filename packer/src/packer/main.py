@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+    #!/usr/bin/env python3
 """CLI for the packer utility.
 
 Implements:
@@ -53,21 +53,36 @@ CHAPTER_PATTERNS = [
 ]
 
 
-def extract_chapter_number(filename: str) -> List[int]:
-    """Return list of chapter numbers found in `filename` (may be empty).
+from typing import Optional
 
-    Uses a set of regex patterns to be flexible with naming conventions.
+
+def extract_chapter_number(filename: str) -> List[Tuple[int, Optional[str]]]:
+    """Return list of (base_chapter, extra_suffix) pairs found in `filename`.
+
+    Examples:
+      'Chapter 13.cbz' -> [(13, None)]
+      'Ch.013.5.cbz' -> [(13, '5')]
+
+    Uses patterns that optionally capture an extra suffix (e.g. '.5'). Duplicates
+    are removed.
     """
     base = os.path.basename(filename)
-    nums: List[int] = []
-    for pat in CHAPTER_PATTERNS:
+    results: Set[Tuple[int, Optional[str]]] = set()
+    # Accept patterns that capture optional extra part
+    extra_patterns = [
+        re.compile(r'(?i)chapter[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
+        re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
+    ]
+    for pat in extra_patterns:
         m = pat.search(base)
         if m:
             try:
-                nums.append(int(m.group(1)))
+                base_num = int(m.group(1))
+                extra = m.group(2)
+                results.add((base_num, extra))
             except Exception:
                 continue
-    return nums
+    return sorted(results)
 
 
 def find_cbz_files(root: str) -> List[str]:
@@ -78,13 +93,23 @@ def find_cbz_files(root: str) -> List[str]:
     return files
 
 
-def map_chapters_to_files(cbz_files: Sequence[str]) -> Dict[int, List[str]]:
-    """Map detected chapter numbers to list of files that match them."""
-    mapping: Dict[int, List[str]] = {}
+def map_chapters_to_files(cbz_files: Sequence[str]) -> Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]:
+    """Map detected base chapters to dict with 'mains' and 'extras'.
+
+    Result format:
+      { 13: { 'mains': [file], 'extras': [('5', file2), ...] }, ... }
+
+    A 'main' is an archive without an extra suffix (e.g. Chapter 13). Extras have
+    a suffix (e.g. 13.5 -> suffix '5')."""
+    mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}
     for p in cbz_files:
-        nums = extract_chapter_number(p)
-        for n in nums:
-            mapping.setdefault(n, []).append(p)
+        matches = extract_chapter_number(p)
+        for base_num, extra in matches:
+            entry = mapping.setdefault(base_num, {'mains': [], 'extras': []})
+            if extra is None:
+                entry['mains'].append((None, p))
+            else:
+                entry['extras'].append((extra, p))
     return mapping
 
 
@@ -116,15 +141,14 @@ def format_volume_dir(dest: str, serie: str, volume: int) -> str:
     return os.path.join(dest, f"{serie} v{volume:02d}")
 
 
-def process_one(chapter: int, src_file: str, cfg: Config) -> Tuple[int, str]:
-    """Process one chapter: validate comicinfo, move file, create chapter dir.
+def process_one(chapter_id: str, src_file: str, cfg: Config) -> Tuple[str, str]:
+    """Process one chapter (main or extra): validate comicinfo, move file, create chapter dir.
 
-    This function is suitable for running in a ProcessPoolExecutor.
-    It will raise `ExtractionNotImplementedError` after creating the chapter dir
-    to signal that extraction is intentionally not implemented yet.
+    chapter_id is a string: e.g. '13' for main, '13.5' for an extra. The chapter
+    directory will be named `Chapter {base:03d}` for main or `Chapter {base:03d}.{extra}` for extras.
     """
     if cfg.verbose:
-        print(f"[worker] start chapter={chapter} file={src_file}")
+        print(f"[worker] start chapter={chapter_id} file={src_file}")
 
     # Validate comicinfo
     if cfg.verbose:
@@ -154,8 +178,14 @@ def process_one(chapter: int, src_file: str, cfg: Config) -> Tuple[int, str]:
             print(f"[worker] moving archive to {dest_archive}")
         shutil.move(src_file, dest_archive)
 
-    # Create chapter dir
-    chapter_dir = os.path.join(volume_dir, f"Chapter {chapter:03d}")
+    # Determine chapter dir name
+    if '.' in chapter_id:
+        base_part, extra_part = chapter_id.split('.', 1)
+        chapter_dir_name = f"Chapter {int(base_part):03d}.{extra_part}"
+    else:
+        chapter_dir_name = f"Chapter {int(chapter_id):03d}"
+    chapter_dir = os.path.join(volume_dir, chapter_dir_name)
+
     if os.path.exists(chapter_dir):
         if cfg.force:
             if cfg.verbose:
@@ -168,7 +198,7 @@ def process_one(chapter: int, src_file: str, cfg: Config) -> Tuple[int, str]:
         else:
             # According to rules: warn and skip
             print(f"[warn] chapter dir exists, skipping: {chapter_dir}")
-            return chapter, dest_archive
+            return chapter_id, dest_archive
     else:
         if cfg.verbose:
             print(f"[worker] creating chapter dir: {chapter_dir}")
@@ -177,9 +207,11 @@ def process_one(chapter: int, src_file: str, cfg: Config) -> Tuple[int, str]:
         elif cfg.verbose:
             print(f"[dry-run] mkdir {chapter_dir}")
 
-    # Safe extraction (prevent path traversal)
+    # Safe extraction (prevent path traversal). In dry-run, inspect the original src file but do not extract
+    # or depend on the moved `dest_archive` which doesn't exist in dry-run mode.
     try:
-        with zipfile.ZipFile(dest_archive, 'r') as z:
+        archive_for_inspection = src_file if cfg.dry_run else dest_archive
+        with zipfile.ZipFile(archive_for_inspection, 'r') as z:
             names = z.namelist()
             for member in names:
                 parts = PurePosixPath(member).parts
@@ -187,15 +219,15 @@ def process_one(chapter: int, src_file: str, cfg: Config) -> Tuple[int, str]:
                     raise RuntimeError(f"Unsafe path in archive: {member}")
             if cfg.dry_run:
                 if cfg.verbose:
-                    print(f"[dry-run] extract {dest_archive} -> {chapter_dir}")
+                    print(f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}")
             else:
                 z.extractall(chapter_dir)
                 if cfg.verbose:
                     print(f"[worker] extracted {dest_archive} -> {chapter_dir}")
     except zipfile.BadZipFile:
-        raise RuntimeError(f"Bad zip file: {dest_archive}")
+        raise RuntimeError(f"Bad zip file: {archive_for_inspection}")
 
-    return chapter, dest_archive
+    return chapter_id, dest_archive
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -211,7 +243,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     p.add_argument('--force', action='store_true', help='overwrite chapter dirs if exist')
 
     args = p.parse_args(argv)
-
     dest = args.dest if args.dest else args.path
     try:
         chapters = parse_range(args.chapter_range)
@@ -243,30 +274,56 @@ def main(argv: Sequence[str] | None = None) -> int:
         for k in sorted(mapping.keys()):
             print(f"[info]   chapter {k}: {mapping[k]}")
 
-    # Validate presence & uniqueness
+    # Validate presence & uniqueness of main chapters (extras are optional)
     if cfg.verbose:
         print(f"[info] validating requested chapters: {cfg.chapter_range}")
     for c in cfg.chapter_range:
-        files = mapping.get(c, [])
-        if not files:
+        entry = mapping.get(c)
+        if not entry or (not entry.get('mains') and not entry.get('extras')):
             print(f"[error] missing chapter {c}", file=sys.stderr)
             return 3
-        if len(files) > 1:
-            print(f"[error] multiple archives match chapter {c}: {files}", file=sys.stderr)
+        if len(entry.get('mains', [])) > 1:
+            mains = [p for (_, p) in entry['mains']]
+            print(f"[error] multiple archives match chapter {c}: {mains}", file=sys.stderr)
             return 4
 
-    # Prepare tasks
-    tasks: List[Tuple[int, str]] = [(c, mapping[c][0]) for c in cfg.chapter_range]
+    # Prepare tasks: include main archive for each requested chapter and any extras found
+    tasks: List[Tuple[str, str]] = []  # (chapter_id, file)
+    for c in cfg.chapter_range:
+        entry = mapping.get(c, {'mains': [], 'extras': []})
+        # Prefer the single main archive if present
+        if entry.get('mains'):
+            _, main_file = entry['mains'][0]
+            tasks.append((str(c), main_file))
+        else:
+            # No main but extras exist: still process extras
+            pass
+        for extra_suffix, extra_file in entry.get('extras', []):
+            tasks.append((f"{c}.{extra_suffix}", extra_file))
+
     if cfg.verbose:
         print("[info] planned tasks:")
-        for c, f in tasks:
-            print(f"[info]  chapter {c} -> {f}")
+        for cid, f in tasks:
+            print(f"[info]  chapter {cid} -> {f}")
 
-    # Process (use ProcessPoolExecutor as requested)
+    # Ensure volume directory exists (main thread creates it to avoid races)
+    volume_dir = format_volume_dir(cfg.dest, cfg.serie, cfg.volume)
+    if not os.path.exists(volume_dir):
+        if cfg.verbose:
+            print(f"[info] creating volume dir: {volume_dir}")
+        if not cfg.dry_run:
+            os.makedirs(volume_dir, exist_ok=True)
+        elif cfg.verbose:
+            print(f"[dry-run] mkdir {volume_dir}")
+    else:
+        if cfg.verbose:
+            print(f"[info] volume dir exists: {volume_dir}")
+
+    # Process tasks using threads (I/O-bound): each worker handles one chapter (mv -> mkdir chapter -> unpack)
     if cfg.nb_worker > 1:
         if cfg.verbose:
-            print(f"[info] Using ProcessPoolExecutor with {cfg.nb_worker} workers")
-        with concurrent.futures.ProcessPoolExecutor(max_workers=cfg.nb_worker) as ex:
+            print(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
             futures = [ex.submit(process_one, c, f, cfg) for c, f in tasks]
             for fut in concurrent.futures.as_completed(futures):
                 try:
