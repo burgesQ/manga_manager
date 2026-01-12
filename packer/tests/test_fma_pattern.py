@@ -47,8 +47,8 @@ def test_fma_extras_ordering(tmp_path: Path):
     assert (vol / 'Chap 16.1.cbz').exists()
     assert (vol / 'Chap 16.2.cbz').exists()
 
-    # check ordering in stdout: main before extras, and extras in numeric order
-    out = res.stdout
+    # check ordering in stderr: main before extras, and extras in numeric order (logging uses stderr)
+    out = res.stderr
     idx_main = out.find('processing chapter 16')
     idx_e1 = out.find('processing chapter 16.1')
     idx_e2 = out.find('processing chapter 16.2')

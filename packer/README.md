@@ -59,6 +59,7 @@ Main options
 - `--dry-run`: simulate actions without changing the filesystem.
 - `--verbose`: verbose logging.
 - `--force`: overwrite destination directories if necessary.
+- Named patterns: use `--pattern` to select a named filename pattern (e.g., `mashle`, `fma`) which affects how main chapters and extras are detected.
 
 
 TODO: add tests doc (aka `uv run pytest packer`)
@@ -152,7 +153,7 @@ $ uv run pytest .
 
 ### TODO
 
-- [ ] handle extra chapters / volume extra
+- [x] handle extra chapters / volume extra
 - [ ] pass an array `[volume:chapter range]
 - [ ] handle chapters 0 / chapter A..Z
 - [ ] better logs
