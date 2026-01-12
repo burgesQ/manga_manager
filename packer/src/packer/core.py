@@ -29,37 +29,91 @@ def parse_range(text: str) -> List[int]:
     return sorted(nums)
 
 
+def _match_extra(base: str, extra_pat: Optional[re.Pattern]) -> Optional[tuple]:
+    """Return (base_num, extra) if the `extra_pat` matches the filename base.
+
+    >>> _match_extra('Ch.013.5.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
+    (13, '5')
+    >>> _match_extra('Chap 16.2.cbz', re.compile(r'(?i)chap(?:\\.|ter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
+    (16, '2')
+    >>> _match_extra('Chapter 1.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)')) is None
+    True
+    """
+    if extra_pat is None:
+        return None
+    m = extra_pat.search(base)
+    if not m:
+        return None
+    try:
+        base_num = int(m.group(1))
+        extra = m.group(2)
+        return base_num, extra
+    except Exception:
+        return None
+
+
+def _match_chapter(base: str, chapter_pat: Optional[re.Pattern]) -> Optional[int]:
+    """Return base_num if `chapter_pat` matches the filename base.
+
+    >>> _match_chapter('Ch.013.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)'))
+    13
+    >>> _match_chapter('Chapter 004 Name.cbz', re.compile(r'(?i)chapter[\\s._-]*0*([0-9]+)'))
+    4
+    >>> _match_chapter('NoMatch.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)')) is None
+    True
+    """
+    if chapter_pat is None:
+        return None
+    m = chapter_pat.search(base)
+    if not m:
+        return None
+    try:
+        return int(m.group(1))
+    except Exception:
+        return None
+
+
 def extract_chapter_number(
     filename: str,
     chapter_pat: Optional[re.Pattern] = None,
     extra_pat: Optional[re.Pattern] = None,
 ) -> List[Tuple[int, Optional[str]]]:
+    """Extract chapter numbers and optional extra suffixes from a filename.
+
+    Behavior summary:
+    - If `extra_pat` is provided and matches, the file is treated as an extra and
+      the function returns a single entry for that extra (base, extra).
+    - Otherwise, if `chapter_pat` matches, a main chapter (base, None) is returned.
+    - If neither pattern is provided or matches, a set of legacy patterns is used
+      as a fallback.
+
+    Examples:
+
+    >>> extract_chapter_number('Ch.013.5.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)'), re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
+    [(13, '5')]
+    >>> extract_chapter_number('Chap 16.cbz', re.compile(r'(?i)chap(?:\\.|ter)?[\\s._-]*0*([0-9]+)'), re.compile(r'(?i)chap(?:\\.|ter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
+    [(16, None)]
+    >>> extract_chapter_number('Chapter 2.cbz')
+    [(2, None)]
+
+    Returns a list of (base, extra) tuples where extra is None for main chapters.
+    """
     base = os.path.basename(filename)
     results: Set[Tuple[int, Optional[str]]] = set()
 
-    # Try extras pattern first when provided; if it matches we assume this is an extra
-    if extra_pat is not None:
-        m = extra_pat.search(base)
-        if m:
-            try:
-                base_num = int(m.group(1))
-                extra = m.group(2)
-                results.add((base_num, extra))
-                return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ''))
-            except Exception:
-                pass
+    # Extra pattern takes precedence when provided: treat as an extra and return it
+    extra_match = _match_extra(base, extra_pat)
+    if extra_match is not None:
+        base_num, extra = extra_match
+        results.add((base_num, extra))
+        return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ''))
 
     # Then try chapter/main pattern
-    if chapter_pat is not None:
-        m = chapter_pat.search(base)
-        if m:
-            try:
-                base_num = int(m.group(1))
-                results.add((base_num, None))
-            except Exception:
-                pass
+    chapter_match = _match_chapter(base, chapter_pat)
+    if chapter_match is not None:
+        results.add((chapter_match, None))
 
-    # Fall back to legacy patterns if none specified
+    # Fall back to legacy patterns if none found
     if not results:
         legacy_patterns = [
             re.compile(r'(?i)chapter[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
