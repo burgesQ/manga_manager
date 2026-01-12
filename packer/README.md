@@ -4,7 +4,15 @@ The `packer` purpose: for a given series, create a volume directory, move
 chapter archives (`.cbz`) into it, and extract each archive into a chapter
 subdirectory.
 
-Design decisions and constraints (first release):
+### TLDR
+
+Test
+
+```console
+$ uv run pytest .
+```
+
+### Design decisions and constraints (first release)
 
 - Supported input formats: only `*.cbz` files.
 - Source archives behavior: archives are moved (`mv`) into the volume directory and kept after extraction.
@@ -34,7 +42,7 @@ Behavior for existing destinations:
 	- If the volume directory exists: the script yields a warning and processes chapters inside it.
 	- If a chapter directory already exists: the script yields a warning and skips that chapter unless `--force` is provided, in which case the chapter directory is replaced.
 
-TODOs and current limitations
+### TODOs and current limitations
 
 - Fine-grained handling of internal archive structures (flatten vs keep subfolders): TODO — the script will raise a specific error for unhandled cases.
 - Merging or creating a volume-level `ComicInfo.xml`: handled later by a dedicated tool.
