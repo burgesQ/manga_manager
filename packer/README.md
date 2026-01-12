@@ -152,6 +152,28 @@ $ uv run pytest packer -q
 
 Doctests for regex helpers are run as part of the test suite (`tests/test_core_doctest.py`).
 
+Coverage
+
+To measure test coverage we use `pytest-cov` (adds `--cov` support to pytest). Install it as a dev dependency:
+
+```console
+$ uv add --dev pytest-cov
+```
+
+Then run coverage (terminal report):
+
+```console
+$ make -C packer test-coverage
+# or directly
+$ uv run pytest packer --cov=packer --cov-report=term-missing
+```
+
+HTML report (opens at `htmlcov/index.html` after running):
+
+```console
+$ make -C packer coverage-html
+```
+
 ### Developer notes
 
 - Logging: use `--loglevel` to control verbosity (choices: `DEBUG`, `INFO`, `WARNING`/`WARN`, `ERROR`, `CRITICAL`). Use `--verbose` as a shorthand to enable `DEBUG` only when `--loglevel` is not provided.

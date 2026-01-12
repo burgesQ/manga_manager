@@ -11,3 +11,6 @@ wheels/
 
 # Test library
 Manga
+
+# Testing
+.coverage
