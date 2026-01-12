@@ -1,0 +1,19 @@
+version = 1
+revision = 3
+requires-python = ">=3.12"
+
+[manifest]
+members = [
+    "manga-creator",
+    "packer",
+]
+
+[[package]]
+name = "manga-creator"
+version = "0.1.0"
+source = { virtual = "." }
+
+[[package]]
+name = "packer"
+version = "0.1.0"
+source = { virtual = "packer" }
