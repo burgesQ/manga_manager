@@ -301,9 +301,3 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 if __name__ == '__main__':
     raise SystemExit(main())
-def main():
-    print("Hello from packer!")
-
-
-if __name__ == "__main__":
-    main()
