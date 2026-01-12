@@ -16,6 +16,23 @@ logger = logging.getLogger(__name__)
 
 
 class Config:
+    """Runtime configuration for a packer invocation.
+
+    Holds parsed CLI options and compiled regex patterns used by worker code.
+
+    Attributes:
+        path: Source directory containing `.cbz` files.
+        dest: Destination root directory for created volumes.
+        serie: Series name used to format volume directories.
+        volume: Volume number (int). In batch mode this is amended per-spec.
+        chapter_range: List[int] chapters to include in the current volume.
+        nb_worker: Number of worker threads to use for parallel extraction.
+        dry_run: If True, perform a simulation without changing the filesystem.
+        verbose: Legacy flag for extra logging; prefer `--loglevel` now.
+        force: Overwrite existing chapter directories when True.
+        _chapter_pat/_extra_pat: Optional compiled regex patterns used to
+            detect main and extra chapters; `None` falls back to legacy patterns.
+    """
     def __init__(
         self,
         path: str,
@@ -44,6 +61,17 @@ class Config:
 
     # convenience helper for worker module
     def has_comicinfo(self, path: str) -> bool:
+        """Check whether `path` contains `ComicInfo.xml` using core.has_comicinfo.
+
+        This method exists for dependency-injection convenience: workers receive
+        a `Config` instance and can call `cfg.has_comicinfo(path)`.
+
+        Args:
+            path: path to the `.cbz` archive.
+
+        Returns:
+            bool: True if `ComicInfo.xml` is present, False otherwise.
+        """
         from .core import has_comicinfo
 
         return has_comicinfo(path)
@@ -123,6 +151,16 @@ def setup_logging(verbose: bool = False, loglevel: Optional[str] = None, force_c
 
 
 def parse_batch_spec(batch: str):
+    """Parse a batch spec string into a list of (volume, chapter_range) tuples.
+
+    Format: `vNN:range-vMM:range`, e.g. `v01:1..3-v02:4..6`.
+
+    Returns a list of tuples: [(1, [1,2,3]), (2, [4,5,6])].
+
+    Example:
+    >>> parse_batch_spec('v01:1..3-v02:4..6')
+    [(1, [1, 2, 3]), (2, [4, 5, 6])]
+    """
     specs = [s for s in batch.split('-') if s.strip()]
     parsed = []
     for s in specs:
@@ -136,6 +174,25 @@ def parse_batch_spec(batch: str):
 
 
 def main(argv=None) -> int:
+    """Command-line entry point for the `packer` tool.
+
+    Parses CLI arguments, compiles regex patterns, discovers `.cbz` files, and
+    orchestrates per-volume processing (possibly in batch mode). This function
+    is suitable to be used as the process entry point and returns an integer
+    exit code for shell consumption.
+
+    Args:
+        argv: Optional argument list (defaults to `sys.argv[1:]` when invoked
+              through the script shim).
+
+    Returns:
+        int: exit code (0 on success, non-zero on error).
+
+    Notes:
+        - This function handles top-level errors and returns a non-zero exit
+          code rather than raising exceptions; that makes it suitable to be
+          called from a shim or tests that assert on exit codes.
+    """
     p = argparse.ArgumentParser(description="Pack .cbz chapters into volume directories")
     p.add_argument('--path', required=True, help='path to root directory containing .cbz files')
     p.add_argument('--dest', default=None, help='destination root (defaults to --path)')

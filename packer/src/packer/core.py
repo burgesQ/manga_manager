@@ -14,6 +14,18 @@ CHAPTER_PATTERNS = [
 
 
 def parse_range(text: str) -> List[int]:
+    """Parse a textual chapter range into a sorted list of integers.
+
+    Accepts commas and inclusive ranges expressed with `..`.
+
+    Examples:
+    >>> parse_range('1,3,5..7')
+    [1, 3, 5, 6, 7]
+    >>> parse_range('2..4')
+    [2, 3, 4]
+
+    Raises ValueError when an end is smaller than the start.
+    """
     parts = [p.strip() for p in text.split(',') if p.strip()]
     nums: Set[int] = set()
     for p in parts:
@@ -134,6 +146,19 @@ def extract_chapter_number(
 
 
 def find_cbz_files(root: str) -> List[str]:
+    """Return a list of full paths to `.cbz` files found in `root`.
+
+    Args:
+        root: Path to directory to scan for `.cbz` files.
+
+    Returns:
+        List[str]: Absolute or relative paths (matching how `root` is passed) to
+        files whose names end with `.cbz` (case-insensitive).
+
+    Raises:
+        OSError: If scanning the directory fails (propagates the underlying
+        filesystem exception to the caller).
+    """
     files: List[str] = []
     for entry in os.listdir(root):
         if entry.lower().endswith('.cbz') and os.path.isfile(os.path.join(root, entry)):
@@ -142,6 +167,19 @@ def find_cbz_files(root: str) -> List[str]:
 
 
 def map_chapters_to_files(cbz_files: List[str]) -> Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]:
+    """Map chapter numbers to their matching archives.
+
+    Returns a mapping {base: {'mains': [(None, path), ...], 'extras': [(extra, path), ...]}}.
+
+    Example:
+    >>> m = map_chapters_to_files(['Chapter 1.cbz', 'Chapter 1.5.cbz'])
+    >>> sorted(m.keys())
+    [1]
+    >>> m[1]['mains'][0][1]
+    'Chapter 1.cbz'
+    >>> m[1]['extras'][0][0]
+    '5'
+    """
     mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}
     for p in cbz_files:
         matches = extract_chapter_number(p)
@@ -155,6 +193,20 @@ def map_chapters_to_files(cbz_files: List[str]) -> Dict[int, Dict[str, List[Tupl
 
 
 def has_comicinfo(cbz_path: str) -> bool:
+    """Check whether a `.cbz` archive contains a `ComicInfo.xml` file.
+
+    Args:
+        cbz_path: Path to the `.cbz` file to inspect.
+
+    Returns:
+        True if a file named (case-insensitive) `ComicInfo.xml` exists in the
+        archive, otherwise False.
+
+    Notes:
+        - If the given file is not a valid zip archive, this function returns
+          False (the error is handled internally). Callers may treat False as
+          "missing or invalid ComicInfo.xml" and react accordingly.
+    """
     try:
         with zipfile.ZipFile(cbz_path, 'r') as z:
             for n in z.namelist():
@@ -166,4 +218,10 @@ def has_comicinfo(cbz_path: str) -> bool:
 
 
 def format_volume_dir(dest: str, serie: str, volume: int) -> str:
+    """Return the canonical volume directory path.
+
+    Example:
+    >>> format_volume_dir('/tmp', 'Berserk', 1)
+    '/tmp/Berserk v01'
+    """
     return os.path.join(dest, f"{serie} v{volume:02d}")

@@ -14,10 +14,31 @@ logger = logging.getLogger(__name__)
 
 
 def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
-    """Process one chapter (main or extra): validate comicinfo, move file, create chapter dir.
+    """Process a single chapter archive: validate, move and extract it.
 
-    chapter_id is a string: e.g. '13' for main, '13.5' for an extra. The chapter
-    directory will be named `Chapter {base:03d}` for main or `Chapter {base:03d}.{extra}` for extras.
+    This performs the per-chapter atomic sequence:
+    1. verify `ComicInfo.xml` inside the source archive (via `cfg.has_comicinfo`).
+    2. ensure the volume directory exists (created by main thread or here if
+       missing).
+    3. move the archive into the volume directory.
+    4. create a `Chapter XXX` (or `Chapter XXX.Y`) subdirectory and extract.
+
+    Args:
+        chapter_id: identifier as string, e.g. `'13'` for main chapters or
+                    `'13.5'` for extras.
+        src_file: path to the source `.cbz` archive (before moving).
+        cfg: instance of `Config` providing runtime options (dest, serie,
+             dry_run, verbose, force, has_comicinfo helper, etc.).
+
+    Returns:
+        Tuple[str, str]: (chapter_id, dest_archive_path) where dest_archive_path
+                         points to the archive location inside the volume (or
+                         original path in dry-run contexts).
+
+    Raises:
+        RuntimeError: on missing `ComicInfo.xml`, bad archives, or unsafe
+                      extraction paths. Caller (process_volume) converts these
+                      to an exit code and error log.
     """
     logger.debug(f"[worker] start chapter={chapter_id} file={src_file}")
 
@@ -93,11 +114,37 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
 
 
 def process_volume(volume: int, chapter_range: List[int], available_files: List[str], cfg) -> Tuple[int, List[str]]:
-    """Process a single volume. Returns (exit_code, remaining_files).
+    """Process a single volume: map files to chapters then execute tasks.
 
-    This function reuses the mapping and execution logic so batch processing
-    can be sequential: after each volume, moved files are removed from
-    `available_files` to avoid double-processing.
+    This function performs the following steps:
+    - build a mapping of available `.cbz` files to chapter numbers and extras
+      using `extract_chapter_number` with `cfg` patterns;
+    - validate that all requested chapters exist and that mains are unique;
+    - prepare tasks (main + extras) and log a planned summary at INFO level;
+    - ensure the volume directory exists and execute tasks using a thread
+      pool or serially according to `cfg.nb_worker`;
+    - remove moved archives from `available_files` and return updated list.
+
+    Args:
+        volume: volume number being created.
+        chapter_range: list of chapter integers to process for this volume.
+        available_files: list of paths to candidate `.cbz` files (mutated by
+                         removing moved items when not in dry-run).
+        cfg: runtime Config with patterns and runtime flags.
+
+    Returns:
+        Tuple[int, List[str]]: (exit_code, remaining_available_files). Exit
+        codes:
+          0: success
+          2: invalid CLI or batch spec
+          3: missing chapter
+          4: duplicate mains for a chapter
+          5: task-specific TODO / not implemented
+          6: extraction or processing error
+
+    Notes:
+        - The function logs errors and returns a non-zero exit code instead of
+          raising to simplify top-level error handling.
     """
     # Build mapping using the provided patterns
     mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}

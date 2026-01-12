@@ -17,3 +17,14 @@ All package are managed with `uv` (TODO: add link & few example)
 - [ ] comic info edit
 - [ ] epub builder (kindle comic convertor <3)
 - [ ] calibre sync !?
+
+
+## TLDR
+
+```console
+$ uv run packer --dry-run --loglevel INFO \
+    --path ~/Shelf/MASHLE/ \
+    --pattern=mashle \
+    --serie "Mashle" \
+    --batch "v01:1..8-v02:9..17-v03:18..26-v04:27..35-v05:36..44-v06:45..53-v07:54..62-v08:63..72"
+```

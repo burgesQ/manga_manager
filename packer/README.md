@@ -144,18 +144,51 @@ $ uv run packer \
 
 ### Tests 
 
-Tests are managed via pytest, run as following: 
+Tests are managed via `pytest`. Run the full suite locally with:
 
-```console 
-$ uv run pytest . 
+```console
+$ uv run pytest packer -q
 ```
+
+Doctests for regex helpers are run as part of the test suite (`tests/test_core_doctest.py`).
+
+### Developer notes
+
+- Logging: use `--loglevel` to control verbosity (choices: `DEBUG`, `INFO`, `WARNING`/`WARN`, `ERROR`, `CRITICAL`). Use `--verbose` as a shorthand to enable `DEBUG` only when `--loglevel` is not provided.
+- Named patterns: `--pattern` accepts `mashle` and `fma` to match known filename styles and extras (e.g., `Ch.013.5` or `Chap 16.1`). Use `--chapter-regex` and `--extra-regex` to override patterns at runtime when necessary.
+- Running the CLI in a script context: invoking `src/packer/main.py` directly works; the entrypoint shim adjusts `sys.path` so imports succeed.
+
+Quick examples:
+
+- FMA extras (Chap 16.1, Chap 16.2) — both are associated with chapter 16 and extras are processed in numeric order:
+
+```console
+$ uv run packer \
+  --path ./FMA_series \
+  --serie "FMA" \
+  --volume 1 \
+  --chapter-range "16" \
+  --pattern fma
+```
+
+- Batch multiple volumes:
+
+```console
+$ uv run packer \
+  --path ./Shelf \
+  --serie "BatchSerie" \
+  --batch "v01:1..3-v02:4..6" \
+  --nb-worker 4
+```
+
+If you're contributing, please add unit tests under `packer/tests` and run the full test suite before creating a PR.
 
 
 ### TODO
 
 - [x] handle extra chapters / volume extra
-- [ ] pass an array `[volume:chapter range]
-- [ ] handle chapters 0 / chapter A..Z
+- [x] pass an array `[volume:chapter range]
 - [x] better logs
-- [ ] split into sub-files
+- [x] split into sub-files
 - [ ] what to do if .cbz contain sub-dir ?
+- [ ] handle chapters 0 / chapter A..Z
