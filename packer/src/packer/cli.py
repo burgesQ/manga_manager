@@ -1,10 +1,11 @@
 """CLI layer: argument parsing, config building, and top-level orchestration."""
+
 from __future__ import annotations
 
 import argparse
 import logging
-import re
 import os
+import re
 from typing import List, Optional
 
 from .core import (
@@ -34,6 +35,7 @@ class Config:
         _chapter_pat/_extra_pat: Optional compiled regex patterns used to
             detect main and extra chapters; `None` falls back to legacy patterns.
     """
+
     def __init__(
         self,
         path: str,
@@ -78,7 +80,11 @@ class Config:
         return has_comicinfo(path)
 
 
-def setup_logging(verbose: bool = False, loglevel: Optional[str] = None, force_color: Optional[bool] = None):
+def setup_logging(
+    verbose: bool = False,
+    loglevel: Optional[str] = None,
+    force_color: Optional[bool] = None,
+):
     """Configure root logger with a compact, colored formatter and emoji prefixes.
 
     - verbose -> DEBUG level, otherwise INFO
@@ -91,8 +97,8 @@ def setup_logging(verbose: bool = False, loglevel: Optional[str] = None, force_c
     # Determine numeric level (loglevel overrides verbose)
     if loglevel:
         lvl = loglevel.upper()
-        if lvl == 'WARN':
-            lvl = 'WARNING'
+        if lvl == "WARN":
+            lvl = "WARNING"
         level = getattr(logging, lvl, logging.INFO)
     else:
         level = logging.DEBUG if verbose else logging.INFO
@@ -110,20 +116,20 @@ def setup_logging(verbose: bool = False, loglevel: Optional[str] = None, force_c
 
     class ColorFormatter(logging.Formatter):
         COLORS = {
-            'DEBUG': '\x1b[34m',    # blue
-            'INFO': '\x1b[32m',     # green
-            'WARNING': '\x1b[33m',  # yellow
-            'ERROR': '\x1b[31m',    # red
-            'CRITICAL': '\x1b[31;1m',
+            "DEBUG": "\x1b[34m",  # blue
+            "INFO": "\x1b[32m",  # green
+            "WARNING": "\x1b[33m",  # yellow
+            "ERROR": "\x1b[31m",  # red
+            "CRITICAL": "\x1b[31;1m",
         }
         EMOJI = {
-            'DEBUG': '🔧',
-            'INFO': '✅',
-            'WARNING': '⚠️',
-            'ERROR': '❌',
-            'CRITICAL': '💥',
+            "DEBUG": "🔧",
+            "INFO": "✅",
+            "WARNING": "⚠️",
+            "ERROR": "❌",
+            "CRITICAL": "💥",
         }
-        RESET = '\x1b[0m'
+        RESET = "\x1b[0m"
 
         def __init__(self, use_color: bool = True):
             super().__init__()
@@ -131,9 +137,9 @@ def setup_logging(verbose: bool = False, loglevel: Optional[str] = None, force_c
 
         def format(self, record: logging.LogRecord) -> str:
             level = record.levelname
-            emoji = self.EMOJI.get(level, '')
+            emoji = self.EMOJI.get(level, "")
             if self.use_color:
-                color = self.COLORS.get(level, '')
+                color = self.COLORS.get(level, "")
                 prefix = f"{color}{emoji} {level}:{self.RESET}"
             else:
                 prefix = f"{emoji} {level}:"
@@ -162,10 +168,10 @@ def parse_batch_spec(batch: str):
     >>> parse_batch_spec('v01:1..3-v02:4..6')
     [(1, [1, 2, 3]), (2, [4, 5, 6])]
     """
-    specs = [s for s in batch.split('-') if s.strip()]
+    specs = [s for s in batch.split("-") if s.strip()]
     parsed = []
     for s in specs:
-        m = re.match(r'(?i)v\s*0*([0-9]+):(.+)', s.strip())
+        m = re.match(r"(?i)v\s*0*([0-9]+):(.+)", s.strip())
         if not m:
             raise ValueError(f"invalid batch spec: {s}")
         vol_num = int(m.group(1))
@@ -188,16 +194,16 @@ def parse_batch_file(file_path: str):
         List[Tuple[int, List[int]]]
     """
     specs = []
-    with open(file_path, 'r', encoding='utf-8') as fh:
+    with open(file_path, "r", encoding="utf-8") as fh:
         for ln in fh:
             ln = ln.strip()
-            if not ln or ln.startswith('#'):
+            if not ln or ln.startswith("#"):
                 continue
-            parts = [p.strip() for p in ln.split(',') if p.strip()]
+            parts = [p.strip() for p in ln.split(",") if p.strip()]
             if len(parts) < 2:
                 raise ValueError(f"invalid batch file line: {ln}")
             vol_spec, range_spec = parts[0], parts[1]
-            m = re.match(r'(?i)v?\s*0*([0-9]+)', vol_spec)
+            m = re.match(r"(?i)v?\s*0*([0-9]+)", vol_spec)
             if not m:
                 raise ValueError(f"invalid volume spec in batch file: {vol_spec}")
             vol_num = int(m.group(1))
@@ -220,14 +226,17 @@ def load_config_from_path(path: str):
     Returns an empty dict when no config file is present.
     """
     import json
-    cfg_path = os.path.join(path, 'packer.json')
+
+    cfg_path = os.path.join(path, "packer.json")
     if not os.path.exists(cfg_path):
         return {}
     try:
-        with open(cfg_path, 'r', encoding='utf-8') as fh:
+        with open(cfg_path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
             if not isinstance(data, dict):
-                raise ValueError(f"Invalid packer.json ({cfg_path}): top-level JSON must be an object")
+                raise ValueError(
+                    f"Invalid packer.json ({cfg_path}): top-level JSON must be an object"
+                )
             return data
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid packer.json ({cfg_path}): {e.msg}")
@@ -255,31 +264,68 @@ def main(argv=None) -> int:
           code rather than raising exceptions; that makes it suitable to be
           called from a shim or tests that assert on exit codes.
     """
-    p = argparse.ArgumentParser(description="Pack .cbz chapters into volume directories")
-    p.add_argument('--path', required=True, help='path to root directory containing .cbz files')
-    p.add_argument('--dest', default=None, help='destination root (defaults to --path)')
-    p.add_argument('--serie', required=False, default=None, help='series name used to name the volume directory (can be provided via packer.json)')
-    p.add_argument('--volume', type=int, help='volume number to create')
-    p.add_argument('--chapter-range', help='chapter range, e.g. "1..12" or "1,3,5..8"')
-    p.add_argument('--nb-worker', type=int, default=1, help='number of workers (default 1)')
-    p.add_argument('--dry-run', action='store_true', help='simulate actions')
-    p.add_argument('--verbose', action='store_true', help='verbose logging')
-    p.add_argument('--force', action='store_true', help='overwrite chapter dirs if exist')
+    p = argparse.ArgumentParser(
+        description="Pack .cbz chapters into volume directories"
+    )
+    p.add_argument(
+        "--path", required=True, help="path to root directory containing .cbz files"
+    )
+    p.add_argument("--dest", default=None, help="destination root (defaults to --path)")
+    p.add_argument(
+        "--serie",
+        required=False,
+        default=None,
+        help="series name used to name the volume directory (can be provided via packer.json)",
+    )
+    p.add_argument("--volume", type=int, help="volume number to create")
+    p.add_argument("--chapter-range", help='chapter range, e.g. "1..12" or "1,3,5..8"')
+    p.add_argument(
+        "--nb-worker", type=int, default=1, help="number of workers (default 1)"
+    )
+    p.add_argument("--dry-run", action="store_true", help="simulate actions")
+    p.add_argument("--verbose", action="store_true", help="verbose logging")
+    p.add_argument(
+        "--force", action="store_true", help="overwrite chapter dirs if exist"
+    )
 
-    p.add_argument('--pattern', choices=['default', 'mashle', 'fma'], default='default',
-                   help='named filename pattern (e.g., "mashle" expects "Ch.013" / "Ch.013.5"; "fma" supports "Chap 13" and extras "Chap 13.5")')
-    p.add_argument('--chapter-regex', type=str, default=None,
-                   help='custom regex for matching main chapters (must capture base number as group 1)')
-    p.add_argument('--extra-regex', type=str, default=None,
-                   help='custom regex for matching extra chapters (must capture base number group1 and extra suffix group2)')
+    p.add_argument(
+        "--pattern",
+        choices=["default", "mashle", "fma"],
+        default="default",
+        help='named filename pattern (e.g., "mashle" expects "Ch.013" / "Ch.013.5"; "fma" supports "Chap 13" and extras "Chap 13.5")',
+    )
+    p.add_argument(
+        "--chapter-regex",
+        type=str,
+        default=None,
+        help="custom regex for matching main chapters (must capture base number as group 1)",
+    )
+    p.add_argument(
+        "--extra-regex",
+        type=str,
+        default=None,
+        help="custom regex for matching extra chapters (must capture base number group1 and extra suffix group2)",
+    )
 
-    p.add_argument('--batch', type=str, default=None,
-                   help='batch volumes spec: "v01:1..3-v02:4..6" (multiple specs separated by "-")')
-    p.add_argument('--batch-file', type=str, default=None,
-                   help='path to a batch file (CSV lines: "vol, chapters" e.g. "v01,1..8")')
-    p.add_argument('--loglevel', type=str, default=None,
-                   choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'WARN'],
-                   help='explicit log level (overrides --verbose)')
+    p.add_argument(
+        "--batch",
+        type=str,
+        default=None,
+        help='batch volumes spec: "v01:1..3-v02:4..6" (multiple specs separated by "-")',
+    )
+    p.add_argument(
+        "--batch-file",
+        type=str,
+        default=None,
+        help='path to a batch file (CSV lines: "vol, chapters" e.g. "v01,1..8")',
+    )
+    p.add_argument(
+        "--loglevel",
+        type=str,
+        default=None,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
+        help="explicit log level (overrides --verbose)",
+    )
 
     args = p.parse_args(argv)
 
@@ -296,37 +342,45 @@ def main(argv=None) -> int:
 
     # apply config defaults only when CLI didn't provide a non-default value
     if path_config:
-        if args.pattern == 'default' and 'pattern' in path_config:
-            args.pattern = path_config['pattern']
-        if args.chapter_regex is None and 'chapter_regex' in path_config:
-            args.chapter_regex = path_config['chapter_regex']
-        if args.extra_regex is None and 'extra_regex' in path_config:
-            args.extra_regex = path_config['extra_regex']
-        if args.nb_worker == 1 and 'nb_worker' in path_config:
-            args.nb_worker = int(path_config['nb_worker'])
-        if args.batch_file is None and 'batch_file' in path_config:
+        if args.pattern == "default" and "pattern" in path_config:
+            args.pattern = path_config["pattern"]
+        if args.chapter_regex is None and "chapter_regex" in path_config:
+            args.chapter_regex = path_config["chapter_regex"]
+        if args.extra_regex is None and "extra_regex" in path_config:
+            args.extra_regex = path_config["extra_regex"]
+        if args.nb_worker == 1 and "nb_worker" in path_config:
+            args.nb_worker = int(path_config["nb_worker"])
+        if args.batch_file is None and "batch_file" in path_config:
             # allow relative path from the data dir
-            args.batch_file = os.path.join(args.path, path_config['batch_file']) if not os.path.isabs(path_config['batch_file']) else path_config['batch_file']
+            args.batch_file = (
+                os.path.join(args.path, path_config["batch_file"])
+                if not os.path.isabs(path_config["batch_file"])
+                else path_config["batch_file"]
+            )
         # allow serie to be provided from packer.json when not passed on the CLI
-        if args.serie is None and 'serie' in path_config:
-            args.serie = path_config['serie']
+        if args.serie is None and "serie" in path_config:
+            args.serie = path_config["serie"]
 
     # Validate args
     if args.batch and (args.volume or args.chapter_range):
-        logger.error('--batch cannot be combined with --volume/--chapter-range')
+        logger.error("--batch cannot be combined with --volume/--chapter-range")
         return 2
-    if not (args.batch or args.batch_file) and (args.volume is None or args.chapter_range is None):
+    if not (args.batch or args.batch_file) and (
+        args.volume is None or args.chapter_range is None
+    ):
         # try to auto-discover a `.batch` file in the source directory
-        discovered_batch = os.path.join(args.path, '.batch')
+        discovered_batch = os.path.join(args.path, ".batch")
         if os.path.exists(discovered_batch):
             args.batch_file = discovered_batch
         else:
-            logger.error('either --batch or both --volume and --chapter-range must be provided')
+            logger.error(
+                "either --batch or both --volume and --chapter-range must be provided"
+            )
             return 2
 
     # Validate that a serie name is available either via CLI or config
     if args.serie is None:
-        logger.error('either --serie or a `serie` key in packer.json must be provided')
+        logger.error("either --serie or a `serie` key in packer.json must be provided")
         return 2
 
     # compile patterns
@@ -337,15 +391,15 @@ def main(argv=None) -> int:
             chapter_pat = re.compile(args.chapter_regex)
         if args.extra_regex:
             extra_pat = re.compile(args.extra_regex)
-        if args.pattern == 'mashle' and not (chapter_pat or extra_pat):
-            chapter_pat = re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)')
-            extra_pat = re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)')
-        if args.pattern == 'fma' and not (chapter_pat or extra_pat):
+        if args.pattern == "mashle" and not (chapter_pat or extra_pat):
+            chapter_pat = re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)")
+            extra_pat = re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)")
+        if args.pattern == "fma" and not (chapter_pat or extra_pat):
             # FMA uses "Chap" and sometimes extras like Chap 16.1
-            chapter_pat = re.compile(r'(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)')
-            extra_pat = re.compile(r'(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)\.([0-9]+)')
+            chapter_pat = re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)")
+            extra_pat = re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)\.([0-9]+)")
     except re.error as e:
-        logger.error(f'Invalid regex: {e}')
+        logger.error(f"Invalid regex: {e}")
         return 2
 
     cbz_files = find_cbz_files(args.path)
@@ -390,5 +444,5 @@ def main(argv=None) -> int:
         if rc != 0:
             return rc
 
-    logger.info('Done')
+    logger.info("Done")
     return 0

@@ -1,4 +1,5 @@
 """Core utilities: parsing, filename matching, and file discovery."""
+
 from __future__ import annotations
 
 import os
@@ -7,8 +8,8 @@ import zipfile
 from typing import Dict, List, Optional, Set, Tuple
 
 CHAPTER_PATTERNS = [
-    re.compile(r'(?i)chapter[\s._-]*0*([0-9]+)'),
-    re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)'),
+    re.compile(r"(?i)chapter[\s._-]*0*([0-9]+)"),
+    re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)"),
 ]
 
 
@@ -25,11 +26,11 @@ def parse_range(text: str) -> List[int]:
 
     Raises ValueError when an end is smaller than the start.
     """
-    parts = [p.strip() for p in text.split(',') if p.strip()]
+    parts = [p.strip() for p in text.split(",") if p.strip()]
     nums: Set[int] = set()
     for p in parts:
-        if '..' in p:
-            a, b = p.split('..', 1)
+        if ".." in p:
+            a, b = p.split("..", 1)
             a_i = int(a)
             b_i = int(b)
             if b_i < a_i:
@@ -117,7 +118,7 @@ def extract_chapter_number(
     if extra_match is not None:
         base_num, extra = extra_match
         results.add((base_num, extra))
-        return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ''))
+        return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ""))
 
     # Then try chapter/main pattern
     chapter_match = _match_chapter(base, chapter_pat)
@@ -127,8 +128,8 @@ def extract_chapter_number(
     # Fall back to legacy patterns if none found
     if not results:
         legacy_patterns = [
-            re.compile(r'(?i)chapter[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
-            re.compile(r'(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)(?:\.([0-9]+))?'),
+            re.compile(r"(?i)chapter[\s._-]*0*([0-9]+)(?:\.([0-9]+))?"),
+            re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)(?:\.([0-9]+))?"),
         ]
         for pat in legacy_patterns:
             m = pat.search(base)
@@ -141,7 +142,7 @@ def extract_chapter_number(
                     continue
 
     # Sort by base then by extra (treat None as empty string for sorting)
-    return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ''))
+    return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ""))
 
 
 def find_cbz_files(root: str) -> List[str]:
@@ -160,12 +161,14 @@ def find_cbz_files(root: str) -> List[str]:
     """
     files: List[str] = []
     for entry in os.listdir(root):
-        if entry.lower().endswith('.cbz') and os.path.isfile(os.path.join(root, entry)):
+        if entry.lower().endswith(".cbz") and os.path.isfile(os.path.join(root, entry)):
             files.append(os.path.join(root, entry))
     return files
 
 
-def map_chapters_to_files(cbz_files: List[str]) -> Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]:
+def map_chapters_to_files(
+    cbz_files: List[str],
+) -> Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]:
     """Map chapter numbers to their matching archives.
 
     Returns a mapping {base: {'mains': [(None, path), ...], 'extras': [(extra, path), ...]}}.
@@ -183,11 +186,11 @@ def map_chapters_to_files(cbz_files: List[str]) -> Dict[int, Dict[str, List[Tupl
     for p in cbz_files:
         matches = extract_chapter_number(p)
         for base_num, extra in matches:
-            entry = mapping.setdefault(base_num, {'mains': [], 'extras': []})
+            entry = mapping.setdefault(base_num, {"mains": [], "extras": []})
             if extra is None:
-                entry['mains'].append((None, p))
+                entry["mains"].append((None, p))
             else:
-                entry['extras'].append((extra, p))
+                entry["extras"].append((extra, p))
     return mapping
 
 
@@ -207,9 +210,9 @@ def has_comicinfo(cbz_path: str) -> bool:
           "missing or invalid ComicInfo.xml" and react accordingly.
     """
     try:
-        with zipfile.ZipFile(cbz_path, 'r') as z:
+        with zipfile.ZipFile(cbz_path, "r") as z:
             for n in z.namelist():
-                if n.lower().endswith('comicinfo.xml'):
+                if n.lower().endswith("comicinfo.xml"):
                     return True
     except zipfile.BadZipFile:
         return False

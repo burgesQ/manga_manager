@@ -1,6 +1,11 @@
 import zipfile
 
-from packer.core import parse_range, has_comicinfo, find_cbz_files, map_chapters_to_files
+from packer.core import (
+    find_cbz_files,
+    has_comicinfo,
+    map_chapters_to_files,
+    parse_range,
+)
 
 
 def test_parse_range_simple():
@@ -10,15 +15,15 @@ def test_parse_range_simple():
 
 def test_has_comicinfo_true(tmp_path):
     p = tmp_path / "c1.cbz"
-    with zipfile.ZipFile(p, 'w') as z:
-        z.writestr('ComicInfo.xml', '<xml></xml>')
+    with zipfile.ZipFile(p, "w") as z:
+        z.writestr("ComicInfo.xml", "<xml></xml>")
     assert has_comicinfo(str(p))
 
 
 def test_has_comicinfo_false(tmp_path):
     p = tmp_path / "c2.cbz"
-    with zipfile.ZipFile(p, 'w') as z:
-        z.writestr('readme.txt', 'no comicinfo')
+    with zipfile.ZipFile(p, "w") as z:
+        z.writestr("readme.txt", "no comicinfo")
     assert not has_comicinfo(str(p))
 
 
@@ -28,8 +33,8 @@ def test_find_and_map(tmp_path):
     f2 = tmp_path / "Ch.2.cbz"
     f3 = tmp_path / "Chapter 10 Name.cbz"
     for f in (f1, f2, f3):
-        with zipfile.ZipFile(f, 'w') as z:
-            z.writestr('ComicInfo.xml', '<xml/>')
+        with zipfile.ZipFile(f, "w") as z:
+            z.writestr("ComicInfo.xml", "<xml/>")
 
     files = find_cbz_files(str(tmp_path))
     mapping = map_chapters_to_files(files)

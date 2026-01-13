@@ -1,5 +1,6 @@
 import doctest
-from packer import core, cli
+
+from packer import cli, core
 
 
 def test_core_doctests():

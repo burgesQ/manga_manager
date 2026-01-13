@@ -1,14 +1,15 @@
 """Worker primitives: per-chapter processing and per-volume orchestration."""
+
 from __future__ import annotations
 
 import concurrent.futures
+import logging
 import os
 import shutil
 import zipfile
 from typing import Dict, List, Optional, Tuple
 
 from .core import extract_chapter_number, format_volume_dir
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,8 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
         shutil.move(src_file, dest_archive)
 
     # Determine chapter dir name
-    if '.' in chapter_id:
-        base_part, extra_part = chapter_id.split('.', 1)
+    if "." in chapter_id:
+        base_part, extra_part = chapter_id.split(".", 1)
         chapter_dir_name = f"Chapter {int(base_part):03d}.{extra_part}"
     else:
         chapter_dir_name = f"Chapter {int(chapter_id):03d}"
@@ -96,14 +97,16 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
     # or depend on the moved `dest_archive` which doesn't exist in dry-run mode.
     try:
         archive_for_inspection = src_file if cfg.dry_run else dest_archive
-        with zipfile.ZipFile(archive_for_inspection, 'r') as z:
+        with zipfile.ZipFile(archive_for_inspection, "r") as z:
             names = z.namelist()
             for member in names:
-                parts = member.split('/')
-                if '..' in parts or member.startswith('/') or member.startswith('\\'):
+                parts = member.split("/")
+                if ".." in parts or member.startswith("/") or member.startswith("\\"):
                     raise RuntimeError(f"Unsafe path in archive: {member}")
             if cfg.dry_run:
-                logger.debug(f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}")
+                logger.debug(
+                    f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}"
+                )
             else:
                 z.extractall(chapter_dir)
                 logger.debug(f"[worker] extracted {dest_archive} -> {chapter_dir}")
@@ -113,7 +116,9 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
     return chapter_id, dest_archive
 
 
-def process_volume(volume: int, chapter_range: List[int], available_files: List[str], cfg) -> Tuple[int, List[str]]:
+def process_volume(
+    volume: int, chapter_range: List[int], available_files: List[str], cfg
+) -> Tuple[int, List[str]]:
     """Process a single volume: map files to chapters then execute tasks.
 
     This function performs the following steps:
@@ -149,34 +154,36 @@ def process_volume(volume: int, chapter_range: List[int], available_files: List[
     # Build mapping using the provided patterns
     mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}
     for pth in list(available_files):
-        matches = extract_chapter_number(pth, chapter_pat=cfg._chapter_pat, extra_pat=cfg._extra_pat)
+        matches = extract_chapter_number(
+            pth, chapter_pat=cfg._chapter_pat, extra_pat=cfg._extra_pat
+        )
         for base, extra in matches:
-            entry = mapping.setdefault(base, {'mains': [], 'extras': []})
+            entry = mapping.setdefault(base, {"mains": [], "extras": []})
             if extra is None:
-                entry['mains'].append((None, pth))
+                entry["mains"].append((None, pth))
             else:
-                entry['extras'].append((extra, pth))
+                entry["extras"].append((extra, pth))
 
     # Validate presence & uniqueness for this volume's chapters
     for c in chapter_range:
         entry = mapping.get(c)
-        if not entry or (not entry.get('mains') and not entry.get('extras')):
+        if not entry or (not entry.get("mains") and not entry.get("extras")):
             logger.error(f"missing chapter {c}")
             return 3, available_files
-        if len(entry.get('mains', [])) > 1:
-            mains = [p for (_, p) in entry['mains']]
+        if len(entry.get("mains", [])) > 1:
+            mains = [p for (_, p) in entry["mains"]]
             logger.error(f"multiple archives match chapter {c}: {mains}")
             return 4, available_files
 
     # Prepare tasks: include main archive for each requested chapter and any extras found
     tasks: List[Tuple[str, str]] = []  # (chapter_id, file)
     for c in chapter_range:
-        entry = mapping.get(c, {'mains': [], 'extras': []})
-        if entry.get('mains'):
-            _, main_file = entry['mains'][0]
+        entry = mapping.get(c, {"mains": [], "extras": []})
+        if entry.get("mains"):
+            _, main_file = entry["mains"][0]
             tasks.append((str(c), main_file))
         # Sort extras by numeric suffix (e.g., 16.1 before 16.2)
-        extras = sorted(entry.get('extras', []), key=lambda pair: int(pair[0]))
+        extras = sorted(entry.get("extras", []), key=lambda pair: int(pair[0]))
         for extra_suffix, extra_file in extras:
             tasks.append((f"{c}.{extra_suffix}", extra_file))
 
