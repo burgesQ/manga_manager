@@ -14,17 +14,22 @@ All package are managed with `uv` (TODO: add link & few example)
 ## TODO
 
 - [x] finish packer v1.0
+- [ ] packer v1.1
+  - [ ] DRY things up
+  - [ ] simplify the code
+  - [ ] get ride of the LLM' "foret de 'if'"
 - [ ] comic info edit
 - [ ] epub builder (kindle comic convertor <3 aka https://github.com/ciromattia/kcc#usage)
+  - [ ] no GUI spawning
 - [ ] calibre sync !?
 - [ ] update root readme for process (dl from Tachiyomi, move to host, run manga_creator script suites)
 
 
 ## TLDR
 
-### Mashle 
+### Mashle
 ### Berserk
-### FMA 
+### FMA
 ### Blue Vortex
 
 ```console
