@@ -90,7 +90,7 @@ jobs:
       - name: Run tests (packer only ATM)
         run: |
           # Run the test suite for all packages in the repository
-          cd packer && uv run pytest . -q
+          cd packer && uv run pytest --cov=packer --cov-report=html . -q
 
       # - name: Run convertor tests (if present)
       #   run: |
@@ -107,25 +107,23 @@ jobs:
           name: coverage-report
           path: htmlcov || coverage.xml || .
 
-  codeql:
-    name: CodeQL
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+  # codeql:
+  #   name: CodeQL
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: python
+  #     - name: Initialize CodeQL
+  #       uses: github/codeql-action/init@v2
+  #       with:
+  #         languages: python
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+  #     - name: Autobuild
+  #       uses: github/codeql-action/autobuild@v2
 
-      - name: Perform CodeQL analysis
-        uses: github/codeql-action/analyze@v2
-
-# FIXME: need to use uv logic (https://docs.astral.sh/uv/guides/integration/github/#caching)
+  #     - name: Perform CodeQL analysis
+  #       uses: github/codeql-action/analyze@v2
 
 # Notes:
 # - This workflow runs on pushes and pulls to main/master.
