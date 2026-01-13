@@ -46,13 +46,13 @@ jobs:
         run: uv run ruff check . || true
 
       - name: Run black (check only)
-        run: uv run  black --check --diff . || true
+        run: uv run black --check --diff . || true
 
       - name: Run isort (check only)
-        run: uv run  isort --profile black --check-only . || true
+        run: uv run isort --profile black --check-only . || true
 
       - name: Run mypy
-        run: uv run  mypy src || true
+        run: uv run mypy packer/src || true
 
       # Optional: use reviewdog to report linter findings as PR comments/annotations.
       # Uncomment and configure the following step if you want reviewdog annotations.
