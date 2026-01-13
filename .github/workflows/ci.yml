@@ -90,7 +90,7 @@ jobs:
       - name: Run tests (packer only ATM)
         run: |
           # Run the test suite for all packages in the repository
-          uv run pytest packer -q
+          cd packer && uv run pytest . -q
 
       # - name: Run convertor tests (if present)
       #   run: |
