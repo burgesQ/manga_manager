@@ -1,9 +1,6 @@
 import os
-import shutil
-import zipfile
 from pathlib import Path
 
-import pytest
 
 from packer.cli import Config
 from packer.worker import process_one, process_volume

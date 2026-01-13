@@ -4,7 +4,6 @@ from __future__ import annotations
 import os
 import re
 import zipfile
-from pathlib import PurePosixPath
 from typing import Dict, List, Optional, Set, Tuple
 
 CHAPTER_PATTERNS = [

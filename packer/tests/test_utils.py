@@ -1,8 +1,6 @@
-import os
-import tempfile
 import zipfile
 
-from packer.main import parse_range, has_comicinfo, find_cbz_files, map_chapters_to_files
+from packer.core import parse_range, has_comicinfo, find_cbz_files, map_chapters_to_files
 
 
 def test_parse_range_simple():

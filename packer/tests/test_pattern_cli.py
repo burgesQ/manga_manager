@@ -1,9 +1,5 @@
-import subprocess
-import sys
-import zipfile
 from pathlib import Path
 
-import pytest
 
 from packer.utils import (
     run_packer,

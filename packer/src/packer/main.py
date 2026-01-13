@@ -13,14 +13,7 @@ if _pkg_src not in sys.path:
     sys.path.insert(0, _pkg_src)
 
 # Re-export a selection of core helpers for compatibility (use absolute imports)
-from packer.core import (
-    parse_range,
-    has_comicinfo,
-    find_cbz_files,
-    map_chapters_to_files,
-    extract_chapter_number,
-    format_volume_dir,
-)
+
 
 # Expose CLI entry point
 from packer.cli import main
@@ -39,4 +32,3 @@ if __name__ == '__main__':
 # Legacy implementation removed. Implementation lives in `packer.cli`, `packer.core` and `packer.worker`.
 # This module intentionally only re-exports a small set of helper functions for
 # backwards compatibility and exposes the CLI entry point `main`.
-
