@@ -152,6 +152,36 @@ Tests are managed via `pytest`. Run the full suite locally with:
 $ uv run pytest packer -q
 ```
 
+### Conversion & Calibre metadata
+
+When generating EPUB/Kepub files for use with Calibre (or other e-book managers), embedded metadata is far more reliable than filename parsing alone. Suggestions to maximize metadata discovery:
+
+Convertor CLI
+
+A small `convertor` helper is available to convert existing volume directories into `.kepub.epub` files using Kindle Comic Converter (KCC):
+
+```console
+$ python -m convertor.cli <root-dir> [--force-regen] [--dry-run]
+```
+
+For each immediate subdirectory under `<root-dir>` a file named `<VolumeDir>.kepub.epub` is generated next to it unless it already exists (use `--force-regen` to override).
+
+The convertor defaults match common KCC settings used for manga (Manga mode, Stretch/Upscale, Color mode, Cropping mode) and targets the Kobo "Libra Colour" profile by default.
+
+
+- Preferred output filename: `<Serie> vNN.kepub.epub` (e.g. `Berserk v01.kepub.epub`) — keep the filename simple and use embedded metadata for rich fields.
+- Embed the following EPUB metadata inside the generated file (these map well to Calibre's import heuristics):
+  - `title`: `<Serie> vNN` or the volume title when present
+  - `series`: `<Serie>` (populate `series_index` with `NN`)
+  - `authors`: list of authors/creators
+  - `identifier`: ISBN when available, otherwise a generated UUID/URN
+  - `publisher` and `date` (release date) when known
+  - `language` and optional `tags`/`subjects` when available
+- Allow metadata overrides from `packer.json` via keys such as `serie`, `volume_title`, `authors`, `isbn`, `date`, and `publisher`. The `convertor` package will use these to set EPUB metadata.
+- Keep filenames simple and machine-friendly (avoid special characters); rely on embedded metadata to convey rich information to Calibre.
+
+Note: Calibre extracts metadata both from filenames and from embedded metadata inside the EPUB; embedding comprehensive metadata ensures best results across different cataloging policies.
+
 Doctests for regex helpers are run as part of the test suite (`tests/test_core_doctest.py`).
 
 Coverage

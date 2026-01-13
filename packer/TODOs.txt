@@ -19,3 +19,23 @@ Long-term / Nice to have:
 - Merge volume-level `ComicInfo.xml` or create a consolidated one.
 - Better logging / progress reporting UI.
 - Support for additional archive formats and chapter identifiers (A..Z, 0, etc.).
+
+# Convertor / EPUB generation (new)
+- Create a new `convertor` package (optional extra) to generate `*.kepub.epub` using KindleComicConverter (KCC) as a Python module or CLI fallback.
+- Expose `convertor.convert_volume(volume_dir: Path, out_path: Optional[Path]=None, format='kepub', options: dict=None)` and a small CLI wrapper.
+- Integrate conversion into `packer` via a `--convert` flag or `auto_convert` in `packer.json` (default: opt-in).
+- Add unit tests (mock KCC) and an optional integration test (run only when KCC is installed in CI).
+- Add CI job/matrix to optionally run the KCC integration tests when requested.
+
+# Calibre metadata / naming (new)
+- Decide and document a filename & metadata convention so Calibre can discover maximum metadata (serie, volume, authors, ISBN, release date).
+  - Suggested: output filename `<Serie> v{NN} - {VolumeTitle or series}:{volume}-{year} - {authors}.kepub.epub` (keep it simple; Calibre extracts metadata from filename but prefers embedded metadata in EPUB)
+  - Ensure the EPUB contains robust embedded metadata: `title` = `<Serie> vNN` (or volume title), `series` = `<Serie>`, `series_index` = `NN`, `authors`, `publisher` (if available), `date` (release date), and `identifier` (ISBN or generated UUID/URN).
+  - Add a `convertor` option to inject metadata from `packer.json` (`serie`, `volume_title`, `authors`, `isbn`, `date`, `publisher`).
+  - Validate generated EPUB metadata with a unit test and a small sample processed by Calibre in CI (optional; skip if Calibre not available in CI).
+
+# CI enhancements (new)
+- Make mypy strict in CI and add a `mypy.ini` / pyproject config for consistent type checking.
+- Wire up `reviewdog` to annotate PRs from linters (ruff/black/isort/mypy) and add it to dev-deps if enabled.
+- Add a multi-Python matrix (3.10, 3.11, 3.12) for the test job if broader version support is desired.
+- Add an optional integration CI job that installs KCC to run the convertor integration test matrix.
