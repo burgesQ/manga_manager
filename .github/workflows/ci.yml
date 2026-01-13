@@ -1,0 +1,117 @@
+name: CI - Lint / Test / Security
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.12]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install ruff black isort mypy
+
+      - name: Run ruff (fast)
+        run: ruff check .
+
+      - name: Run black (check only)
+        run: black --check --diff .
+
+      - name: Run isort (check only)
+        run: isort --profile black --check-only .
+
+      - name: Run mypy
+        run: mypy src || true
+
+      # Optional: use reviewdog to report linter findings as PR comments/annotations.
+      # Uncomment and configure the following step if you want reviewdog annotations.
+      # - name: Annotate ruff with reviewdog
+      #   uses: reviewdog/action-ruff@v1
+      #   with:
+      #     github_token: ${{ secrets.GITHUB_TOKEN }}
+      #     reporter: github-pr-review
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.12]
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -e .
+          pip install pytest pytest-cov
+
+      - name: Run tests (repo-wide)
+        run: |
+          # Run the test suite for all packages in the repository
+          python -m pytest -q
+
+      - name: Run convertor tests (if present)
+        run: |
+          if [ -d "convertor" ]; then
+            python -m pytest ./convertor -q
+          else
+            echo "no convertor package; skipping"
+          fi
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov || coverage.xml || .
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v2
+
+# Notes:
+# - This workflow runs on pushes and pulls to main/master.
+# - `mypy` is run with defaults and currently allowed to fail the job; remove the `|| true` to make it strict.
+# - `reviewdog` integration is provided as a commented example; enable and configure it if you want PR annotations from linters.
+# - Consider adding a separate job or matrix to test across multiple Python versions if you intend to support them.
