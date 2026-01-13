@@ -2,12 +2,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-
-def run_packer(tmp_path: Path, args):
-    script = Path(__file__).resolve().parents[1] / 'src' / 'packer' / 'main.py'
-    cmd = [sys.executable, str(script)] + args
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    return res
+from packer.utils import (
+    run_packer
+)
 
 
 def test_invalid_packer_json_causes_error(tmp_path: Path):

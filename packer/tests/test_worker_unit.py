@@ -8,15 +8,7 @@ import pytest
 from packer.cli import Config
 from packer.worker import process_one, process_volume
 
-
-def make_cbz(path: Path, name: str, include_comicinfo: bool = True):
-    p = path / name
-    with zipfile.ZipFile(p, 'w') as z:
-        if include_comicinfo:
-            z.writestr('ComicInfo.xml', '<ComicInfo></ComicInfo>')
-        z.writestr('001.jpg', 'fakeimagecontent')
-    return str(p)
-
+from packer.utils import     make_cbz
 
 def make_plain_file(path: Path, name: str):
     p = path / name

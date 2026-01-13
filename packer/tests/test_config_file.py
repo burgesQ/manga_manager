@@ -5,19 +5,10 @@ import zipfile
 from pathlib import Path
 
 
-def run_packer(tmp_path: Path, args):
-    script = Path(__file__).resolve().parents[1] / 'src' / 'packer' / 'main.py'
-    cmd = [sys.executable, str(script)] + args
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    return res
-
-
-def make_cbz(path: Path, name: str):
-    p = path / name
-    with zipfile.ZipFile(p, 'w') as z:
-        z.writestr('ComicInfo.xml', '<ComicInfo></ComicInfo>')
-        z.writestr('001.jpg', 'img')
-    return p
+from packer.utils import (
+    run_packer,
+    make_cbz
+)
 
 
 def test_config_json_applies_defaults(tmp_path: Path):

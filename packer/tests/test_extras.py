@@ -5,21 +5,10 @@ from pathlib import Path
 
 import pytest
 
-
-def make_cbz(path: Path, name: str, include_comicinfo: bool = True):
-    p = path / name
-    with zipfile.ZipFile(p, 'w') as z:
-        if include_comicinfo:
-            z.writestr('ComicInfo.xml', '<ComicInfo></ComicInfo>')
-        z.writestr('001.jpg', 'fakeimagecontent')
-    return p
-
-
-def run_packer(tmp_path: Path, args):
-    script = Path(__file__).resolve().parents[1] / 'src' / 'packer' / 'main.py'
-    cmd = [sys.executable, str(script)] + args
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    return res
+from packer.utils import (
+    run_packer,
+    make_cbz
+)
 
 
 def test_extra_chapter_assigned_to_base(tmp_path: Path):
