@@ -87,6 +87,7 @@ def convert_volume(volume_dir: Path, out_path: Path, options: dict | None = None
 
     Attempts to use the module approach first, then falls back to subprocess.
     On success returns the output path, otherwise raises subprocess.CalledProcessError.
+    FIXME: rollback on subprocess should be cut out. Module approche **must** work.
     """
     options = options or {}
     args = _build_kcc_args(volume_dir, out_path, options)
@@ -101,7 +102,7 @@ def convert_volume(volume_dir: Path, out_path: Path, options: dict | None = None
         logger.debug('kcc module invocation failed: %s', e)
 
     # Fallback to subprocess
-    rc = _run_subprocess_kcc(args)
-    if rc != 0:
-        raise subprocess.CalledProcessError(rc, ['kcc'] + args)
-    return out_path
+    # rc = _run_subprocess_kcc(args)
+    # if rc != 0:
+    #     raise subprocess.CalledProcessError(rc, ['kcc'] + args)
+    # return out_path

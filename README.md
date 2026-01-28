@@ -15,27 +15,15 @@ All package are managed with `uv` (TODO: add link & few example)
 
 - [x] finish packer v1.0
 - [ ] packer v1.1
-  - [ ] DRY things up
+  - [x] DRY things up
+  - [ ] DRY things up (again)
   - [ ] simplify the code
   - [ ] get ride of the LLM' "foret de 'if'"
+  - [ ] Inject ISBN, author and others ?
+- [ ] convertor v1.0
+  - [ ] convert to epub, take meta info somewhere
+  - [ ] epub builder (kindle comic convertor <3 aka https://github.com/ciromattia/kcc#usage)
+  - [ ] no GUI
 - [ ] comic info edit
-- [ ] epub builder (kindle comic convertor <3 aka https://github.com/ciromattia/kcc#usage)
-  - [ ] no GUI spawning
 - [ ] calibre sync !?
 - [ ] update root readme for process (dl from Tachiyomi, move to host, run manga_creator script suites)
-
-
-## TLDR
-
-### Mashle
-### Berserk
-### FMA
-### Blue Vortex
-
-```console
-$ uv run packer --dry-run --loglevel INFO \
-    --path ~/Shelf/MASHLE/ \
-    --pattern=mashle \
-    --serie "Mashle" \
-    --batch "v01:1..8-v02:9..17-v03:18..26-v04:27..35-v05:36..44-v06:45..53-v07:54..62-v08:63..72"
-```
