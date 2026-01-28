@@ -9,7 +9,9 @@ from pathlib import Path
 import logging
 import sys
 
-from . import convert_volume
+from .kcc_adapter import convert_volume
+
+print(type(convert_volume))  # Devrait afficher <class 'module'> au lieu de <class 'function'>
 
 logger = logging.getLogger('convertor')
 
@@ -45,20 +47,27 @@ def main(argv=None) -> int:
         return 0
 
     for vol in vols:
+        # TODO: find better naming convention that feet calibre meta auto-discovery.
+        # Need to find the appropriate doc about it.
+        # Otherwise, will probably need to inject some cbz meta info (not loaded by epub AFAIR ?)
         out_path = vol.with_suffix(vol.suffix + '.kepub.epub')
         if out_path.exists() and not args.force_regen:
             logger.info('skipping existing output: %s', out_path)
             continue
         logger.info('%s -> %s', vol, out_path)
-        if args.dry_run:
-            continue
+        # if args.dry_run:
+        #     continue
         try:
-            convert_volume(vol, out_path, options={
-                'manga_mode': True,
-                'stretch': True,
-                'color': True,
-                'crop': True,
-            })
+            convert_volume(
+                vol,
+                out_path,
+                options={
+                    'manga_mode': True,
+                    'stretch': True,
+                    'color': True,
+                    'crop': True,
+                },
+                dry_run=args.dry_run)
             logger.info('generated: %s', out_path)
         except Exception as e:
             logger.error('conversion failed for %s: %s', vol, e)

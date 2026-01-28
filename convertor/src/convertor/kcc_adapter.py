@@ -13,7 +13,6 @@ fails (no module installed), it will fall back to calling the `kcc` CLI via subp
 from __future__ import annotations
 
 from pathlib import Path
-import runpy
 import subprocess
 import sys
 import shlex
@@ -33,9 +32,12 @@ def _build_kcc_args(input_dir: Path, out_path: Path, options: dict) -> list[str]
     # Output file
     args.extend(['-o', str(out_path)])
 
-    # Target profile - use Kobo colour profile to match screenshot
-    # Many KCC CLI accept "--profile" or "--device"; provide both possibilities.
-    args.extend(['--device', 'kobo_libra_colour'])
+    # Target profile
+    args.extend(['--profile', 'KoLC'])  # Kobo Libra Colour
+
+    # # Target profile - use Kobo colour profile to match screenshot
+    # # Many KCC CLI accept "--profile" or "--device"; provide both possibilities.
+    # args.extend(['--device', 'kobo_libra_colour'])
 
     # Modes and flags (enable to match screenshot)
     if options.get('manga_mode', True):
@@ -43,66 +45,45 @@ def _build_kcc_args(input_dir: Path, out_path: Path, options: dict) -> list[str]
     if options.get('stretch', True):
         args.append('--stretch')
     if options.get('color', True):
-        args.append('--color')
+        args.append('--forcecolor')
     if options.get('crop', True):
-        args.append('--crop')
+        args.append('--cropping=2')
 
     # Input is directory
     args.append(str(input_dir))
     return args
 
 
-def _run_module_kcc(args: list[str]) -> int:
-    """Run KCC as a module by setting sys.argv and calling runpy.run_module.
 
-    Returns an exit code (0 success).
-    """
-    prev_argv = sys.argv[:]
-    try:
-        sys.argv = ['kcc'] + args
-        # run the kcc module as a script; it may call sys.exit internally
-        runpy.run_module('kcc', run_name='__main__')
-        return 0
-    except SystemExit as e:
-        return int(e.code or 0)
-    finally:
-        sys.argv = prev_argv
-
-
-def _run_subprocess_kcc(args: list[str]) -> int:
-    """Run the installed `kcc` CLI with the provided args.
-
-    Returns the process returncode.
-    """
-    cmd = ['kcc'] + args
-    logger.debug('Running kcc CLI: %s', shlex.join(cmd))
-    res = subprocess.run(cmd, capture_output=True, text=True)
-    logger.debug('kcc stdout: %s', res.stdout)
-    logger.debug('kcc stderr: %s', res.stderr)
-    return res.returncode
-
-
-def convert_volume(volume_dir: Path, out_path: Path, options: dict | None = None) -> Path:
+def convert_volume(
+        volume_dir: Path,
+        out_path: Path,
+        options: dict | None = None,
+        dry_run: bool = False,
+        ) -> Path:
     """Convert a volume folder into an EPUB/Kepub using KCC.
 
-    Attempts to use the module approach first, then falls back to subprocess.
     On success returns the output path, otherwise raises subprocess.CalledProcessError.
-    FIXME: rollback on subprocess should be cut out. Module approche **must** work.
     """
     options = options or {}
     args = _build_kcc_args(volume_dir, out_path, options)
 
-    # Try module first
-    try:
-        rc = _run_module_kcc(args)
-        if rc == 0:
-            return out_path
-        logger.warning('kcc module returned non-zero exit code %s; falling back to CLI', rc)
-    except Exception as e:
-        logger.debug('kcc module invocation failed: %s', e)
+    # Use kcc-c2e which is the CLI command installed by kindlecomicconverter
+    cmd = ['kcc-c2e'] + args
+    logger.debug('Running kcc: %s', shlex.join(cmd))
 
-    # Fallback to subprocess
-    # rc = _run_subprocess_kcc(args)
-    # if rc != 0:
-    #     raise subprocess.CalledProcessError(rc, ['kcc'] + args)
-    # return out_path
+    if dry_run:
+        logger.info('Dry run - would execute: %s', shlex.join(cmd))
+        return out_path
+
+    res = subprocess.run(cmd, capture_output=True, text=True)
+
+    if res.stdout:
+        logger.debug('kcc stdout: %s', res.stdout)
+    if res.stderr:
+        logger.debug('kcc stderr: %s', res.stderr)
+
+    if res.returncode != 0:
+        raise subprocess.CalledProcessError(res.returncode, cmd, res.stdout, res.stderr)
+
+    return out_path
