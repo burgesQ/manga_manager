@@ -11,8 +11,6 @@ import sys
 
 from .kcc_adapter import convert_volume
 
-print(type(convert_volume))  # Devrait afficher <class 'module'> au lieu de <class 'function'>
-
 logger = logging.getLogger('convertor')
 
 

@@ -64,15 +64,13 @@ def _build_kcc_args(
 def convert_volume(
         volume_dir: Path,
         out_path: Path,
-        options: dict | None = None,
         dry_run: bool = False,
         ) -> Path:
     """Convert a volume folder into an EPUB/Kepub using KCC.
 
     On success returns the output path, otherwise raises subprocess.CalledProcessError.
     """
-    options = options or {}
-    args = _build_kcc_args(volume_dir, out_path, options)
+    args = _build_kcc_args(volume_dir, out_path)
 
     # Use kcc-c2e which is the CLI command installed by kindlecomicconverter
     cmd = ['kcc-c2e'] + args

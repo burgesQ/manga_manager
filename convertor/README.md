@@ -12,7 +12,7 @@ $ uv run convertor <root-dir-containing-volume-dirs>
 Behavior:
 - For each immediate subdirectory of `<root-dir>`, a file named `<VolumeDir>.kepub.epub` is created next to it.
 - Existing files are skipped unless `--force-regen` is passed.
-- Defaults match KCC options visible in the UI: Manga mode, Stretch/Upscale, Color mode, Cropping mode, Kobo Libra Colour target.
+- Sensible KCC options for the device
 
 Notes:
 - The adapter prefers to run KCC as a module; if KCC is not installed it will try to call the `kcc` CLI.
@@ -21,3 +21,6 @@ Notes:
 
 - [ ] parallelize worker (1 worker = 1 epub)
 - [ ] add some kind of force / reconvert
+- [ ] refine trigger
+      Now is: For each immediate subdirectory ...
+      Should be: For each immediate subdirectory identified by convertor.json with no matching `*.kepub.epub`
