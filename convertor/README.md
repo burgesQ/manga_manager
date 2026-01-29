@@ -6,7 +6,7 @@ Small helper to convert volume directories (extracted images) into `*.kepub.epub
 Usage (from repository root):
 
 ```console
-$ python -m convertor.cli <root-dir-containing-volume-dirs>
+$ uv run convertor <root-dir-containing-volume-dirs>
 ```
 
 Behavior:
@@ -17,3 +17,7 @@ Behavior:
 Notes:
 - The adapter prefers to run KCC as a module; if KCC is not installed it will try to call the `kcc` CLI.
 - For testing, the convertor package includes unit tests that mock the conversion step.
+
+
+- [ ] parallelize worker (1 worker = 1 epub)
+- [ ] add some kind of force / reconvert

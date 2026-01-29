@@ -6,7 +6,7 @@ subdirectory.
 
 ### TLDR
 
-Test
+Test (from the repository root)
 
 ```console
 $ uv run pytest .
@@ -144,7 +144,7 @@ $ uv run packer \
     --nb-worker 4
 ```
 
-### Tests 
+### Tests
 
 Tests are managed via `pytest`. Run the full suite locally with:
 
@@ -247,3 +247,4 @@ If you're contributing, please add unit tests under `packer/tests` and run the f
 - [ ] what to do if .cbz contain sub-dir ?
 - [ ] handle chapters 0 / chapter A..Z
 - [ ] rework readme
+- [ ] doc about packer.json & volumes.csv
