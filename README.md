@@ -22,8 +22,10 @@ All package are managed with `uv` (TODO: add link & few example)
   - [ ] Inject ISBN, author and others ?
 - [ ] convertor v1.0
   - [ ] convert to epub, take meta info somewhere
-  - [ ] epub builder (kindle comic convertor <3 aka https://github.com/ciromattia/kcc#usage)
-  - [ ] no GUI
-- [ ] comic info edit
+  - [x] epub builder (kindle comic convertor <3 aka https://github.com/ciromattia/kcc#usage)
+  - [x] no GUI
+- [ ] epub meta
+  - [ ] edit meta from epub
+
 - [ ] calibre sync !?
 - [ ] update root readme for process (dl from Tachiyomi, move to host, run manga_creator script suites)
