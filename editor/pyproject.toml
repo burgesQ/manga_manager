@@ -1,0 +1,23 @@
+[project]
+name = "editor"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "ebooklib"
+]
+
+[project.scripts]
+editor = "editor.main:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[pytest]
+pythonpath = "src"
+console_output_style = "progress"

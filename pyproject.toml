@@ -10,6 +10,7 @@ dependencies = []
 members = [
     "packer",
     "convertor",
+    "editor",
 ]
 
 [dependency-groups]
