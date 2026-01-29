@@ -58,16 +58,7 @@ def main(argv=None) -> int:
         # if args.dry_run:
         #     continue
         try:
-            convert_volume(
-                vol,
-                out_path,
-                options={
-                    'manga_mode': True,
-                    'stretch': True,
-                    'color': True,
-                    'crop': True,
-                },
-                dry_run=args.dry_run)
+            convert_volume(vol, out_path, dry_run=args.dry_run)
             logger.info('generated: %s', out_path)
         except Exception as e:
             logger.error('conversion failed for %s: %s', vol, e)

@@ -21,7 +21,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def _build_kcc_args(input_dir: Path, out_path: Path, options: dict) -> list[str]:
+def _build_kcc_args(
+        input_dir: Path,
+        out_path: Path) -> list[str]:
     """Create a list of CLI args for kcc based on the requested options.
 
     Note: arguments chosen to be robust across CLI or module invocation. We pass
@@ -29,27 +31,31 @@ def _build_kcc_args(input_dir: Path, out_path: Path, options: dict) -> list[str]
     fallback will still attempt the same invocation.
     """
     args: list[str] = []
-    # Output file
+    # Output file.
     args.extend(['-o', str(out_path)])
 
-    # Target profile
-    args.extend(['--profile', 'KoLC'])  # Kobo Libra Colour
+    # Target profile.
+    # Kobo Libra Colour.
+    args.extend(['--profile', 'KoLC'])
 
-    # # Target profile - use Kobo colour profile to match screenshot
-    # # Many KCC CLI accept "--profile" or "--device"; provide both possibilities.
-    # args.extend(['--device', 'kobo_libra_colour'])
+    # Try to increase the quality of magnification.
+    args.append("--hq")
 
-    # Modes and flags (enable to match screenshot)
-    if options.get('manga_mode', True):
-        args.append('--manga-mode')
-    if options.get('stretch', True):
-        args.append('--stretch')
-    if options.get('color', True):
-        args.append('--forcecolor')
-    if options.get('crop', True):
-        args.append('--cropping=2')
+    # Double page parsing mode.
+    # 0: Split 1: Rotate 2: Both.
+    args.extend(['-r', '2'])
 
-    # Input is directory
+    # Modes and flags (enable to match screenshot).
+    args.append('--manga-style')
+    # Stretch images to device's resolution.
+    args.append('--stretch')
+    # Don't convert images to grayscale.
+    args.append('--forcecolor')
+    # Set cropping mode.
+    # 0: Disabled 1: Margins 2: Margins + page numbers.
+    args.extend(['--cropping', '2'])
+
+    # Input is directory.
     args.append(str(input_dir))
     return args
 
