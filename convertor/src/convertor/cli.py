@@ -11,7 +11,8 @@ import sys
 
 from packer.cli import setup_logging
 
-from .worker import convert_volumes_parallel, print_summary
+# from .worker import convert_volumes_parallel, print_summary
+from .kcc_adapter import convert_volume
 
 logger = logging.getLogger('convertor')
 
@@ -59,8 +60,6 @@ def main(argv=None) -> int:
 
     setup_logging(args.verbose, loglevel=args.loglevel)
 
-    # logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
-
     root = Path(args.root)
     if not root.exists():
         logger.error('root path does not exist: %s', root)
@@ -71,13 +70,34 @@ def main(argv=None) -> int:
         logger.warning('no volume directories found under %s', root)
         return 0
 
-    res = convert_volumes_parallel(
-        vols,
-        force_regen=args.force_regen,
-        dry_run=args.dry_run,
-        max_workers=args.nb_worker)
+    # each vol can be assign to a worker.
+    # Worker mode. KCC doesn't seems freendly with it ..
+    # res= convert_volumes_parallel(
+    #     vols,
+    #     force_regen=args.force_regen,
+    #     dry_run=args.dry_run,
+    #     max_workers=args.nb_worker)
+    # print_summary(res)
 
-    print_summary(res)
+    for vol in vols:
+        out_path = vol.with_suffix(vol.suffix + '.kepub.epub')
+
+
+        if out_path.exists():
+            if args.force_regen:
+                # TODO: remove existing file before processing
+                pass
+            else:
+                logger.info('skipping existing output: %s', out_path)
+                continue
+
+        logger.info('%s -> %s', vol, out_path)
+
+        try:
+            convert_volume(vol, out_path, dry_run=args.dry_run)
+            logger.info('generated: %s', out_path)
+        except Exception as e:
+            logger.error('conversion failed for %s: %s', vol, e)
 
     return 0
 

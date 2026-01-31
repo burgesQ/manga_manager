@@ -96,12 +96,6 @@ def convert_single_volume(
         result_path = convert_volume(
             volume,
             out_path,
-            options={
-                'manga_mode': True,
-                'stretch': True,
-                'color': True,
-                'crop': True,
-            },
             dry_run=False,
         )
 
