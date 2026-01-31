@@ -9,7 +9,9 @@ from pathlib import Path
 import logging
 import sys
 
-from .kcc_adapter import convert_volume
+from packer.cli import setup_logging
+
+from .worker import convert_volumes_parallel, print_summary
 
 logger = logging.getLogger('convertor')
 
@@ -25,14 +27,39 @@ def find_volume_dirs(root: Path) -> list[Path]:
 
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(description='Convert volume directories under a root to kepub.epub using KCC')
-    p.add_argument('root', help='root folder containing volume directories')
-    p.add_argument('--force-regen', action='store_true', help='regenerate output files even if they already exist')
-    p.add_argument('--dry-run', action='store_true', help="don't actually run conversion; just print what would be done")
-    p.add_argument('--verbose', action='store_true', help='verbose logging')
+    p.add_argument(
+        'root',
+        help='root folder containing volume directories')
+    p.add_argument(
+        '--force-regen',
+        action='store_true',
+        help='regenerate output files even if they already exist')
+    p.add_argument(
+        '--dry-run',
+        action='store_true',
+        help="don't actually run conversion; just print what would be done")
+    p.add_argument(
+        '--verbose',
+        action='store_true',
+        help='verbose logging')
+    p.add_argument(
+        '--loglevel', '-l',
+        type=str,
+        default=None,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
+        help='explicit log level (overrides --verbose)',
+    )
+    p.add_argument(
+        '--nb-worker', '-w',
+        type=int,
+        default=1,
+        help="number of workers (default 1)")
 
     args = p.parse_args(argv)
 
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
+    setup_logging(args.verbose, loglevel=args.loglevel)
+
+    # logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format='%(levelname)s: %(message)s')
 
     root = Path(args.root)
     if not root.exists():
@@ -44,22 +71,14 @@ def main(argv=None) -> int:
         logger.warning('no volume directories found under %s', root)
         return 0
 
-    for vol in vols:
-        # TODO: find better naming convention that feet calibre meta auto-discovery.
-        # Need to find the appropriate doc about it.
-        # Otherwise, will probably need to inject some cbz meta info (not loaded by epub AFAIR ?)
-        out_path = vol.with_suffix(vol.suffix + '.kepub.epub')
-        if out_path.exists() and not args.force_regen:
-            logger.info('skipping existing output: %s', out_path)
-            continue
-        logger.info('%s -> %s', vol, out_path)
-        # if args.dry_run:
-        #     continue
-        try:
-            convert_volume(vol, out_path, dry_run=args.dry_run)
-            logger.info('generated: %s', out_path)
-        except Exception as e:
-            logger.error('conversion failed for %s: %s', vol, e)
+    res = convert_volumes_parallel(
+        vols,
+        force_regen=args.force_regen,
+        dry_run=args.dry_run,
+        max_workers=args.nb_worker)
+
+    print_summary(res)
+
     return 0
 
 
