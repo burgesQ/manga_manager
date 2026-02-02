@@ -1,93 +1,100 @@
 """Adapter for Kindle Comic Converter (KCC).
 
-This adapter constructs a minimal set of arguments that matches the screenshot:
-- Manga mode
-- Stretch/Upscale
-- Color mode
-- Cropping mode
-- Target profile: Kobo ("Kobo Libra Colour")
+This module exposes a small, testable class that builds the argv list expected
+by KCC and runs the `kcc` module via `runpy.run_module`. Per project policy we
+execute KCC as a module (no subprocess fallback) to keep behavior consistent.
 
-The adapter will first attempt to run KCC as a module (via runpy.run_module). If that
-fails (no module installed), it will fall back to calling the `kcc` CLI via subprocess.
+Design decisions:
+- Use a `NamedTuple` for the built invocation to avoid anonymous tuples.
+- Keep arguments passed to the module stable and matching the UI choices
+  (manga, stretch/upscale, color, cropping, Kobo profile).
 """
 from __future__ import annotations
 
 from pathlib import Path
-import subprocess
+from typing import NamedTuple, Tuple
+import runpy
 import sys
-import shlex
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-def _build_kcc_args(
-        input_dir: Path,
-        out_path: Path) -> list[str]:
-    """Create a list of CLI args for kcc based on the requested options.
+class KCCInvocation(NamedTuple):
+    """Representation of a KCC module invocation.
 
-    Note: arguments chosen to be robust across CLI or module invocation. We pass
-    flags likely supported by the kcc CLI. If KCC changes flags, the subprocess
-    fallback will still attempt the same invocation.
+    Attributes:
+        args: tuple of command-line arguments passed to `sys.argv` for the module.
     """
-    args: list[str] = []
-    # Output file.
-    args.extend(['-o', str(out_path)])
 
-    # Target profile.
-    # Kobo Libra Colour.
-    args.extend(['--profile', 'KoLC'])
-
-    # Try to increase the quality of magnification.
-    args.append("--hq")
-
-    # Double page parsing mode.
-    # 0: Split 1: Rotate 2: Both.
-    args.extend(['-r', '2'])
-
-    # Modes and flags (enable to match screenshot).
-    args.append('--manga-style')
-    # Stretch images to device's resolution.
-    args.append('--stretch')
-    # Don't convert images to grayscale.
-    args.append('--forcecolor')
-    # Set cropping mode.
-    # 0: Disabled 1: Margins 2: Margins + page numbers.
-    args.extend(['--cropping', '2'])
-
-    # Input is directory.
-    args.append(str(input_dir))
-    return args
+    args: Tuple[str, ...]
 
 
+class KCCAdapter:
+    """Builds arguments and runs the KCC module.
 
-def convert_volume(
-        volume_dir: Path,
-        out_path: Path,
-        dry_run: bool = False,
-        ) -> Path:
-    """Convert a volume folder into an EPUB/Kepub using KCC.
-
-    On success returns the output path, otherwise raises subprocess.CalledProcessError.
+    This class is intentionally small to make it easy to unit-test and mock.
     """
-    args = _build_kcc_args(volume_dir, out_path)
 
-    # Use kcc-c2e which is the CLI command installed by kindlecomicconverter
-    cmd = ['kcc-c2e'] + args
-    logger.debug('Running kcc: %s', shlex.join(cmd))
+    MODULE_NAME = "kcc"
+
+    def build_invocation(self, input_dir: Path, out_path: Path) -> KCCInvocation:
+        """Build a `KCCInvocation` representing the argv to pass to the module.
+
+        The returned invocation is a NamedTuple (no anonymous tuples used).
+        """
+        args: list[str] = []
+        args.extend(["-o", str(out_path)])
+        args.extend(["--profile", "kobo_libra_colour"])  # device/profile preference
+        args.append("--hq")
+        args.extend(["-r", "2"])  # double-page parsing mode
+        args.append("--manga-style")
+        args.append("--stretch")
+        args.append("--forcecolor")
+        args.extend(["--cropping", "2"])  # cropping mode
+        args.append(str(input_dir))
+
+        return KCCInvocation(tuple(args))
+
+    def run_module(self, invocation: KCCInvocation) -> int:
+        """Run the KCC module with the given invocation.
+
+        Returns 0 on success; raises `RuntimeError` for non-zero exit codes.
+        """
+        prev_argv = sys.argv[:]
+        try:
+            sys.argv = [self.MODULE_NAME] + list(invocation.args)
+            # runpy.run_module may raise SystemExit; capture it
+            try:
+                runpy.run_module(self.MODULE_NAME, run_name="__main__")
+                return 0
+            except SystemExit as se:
+                code = int(se.code or 0)
+                if code == 0:
+                    return 0
+                raise RuntimeError(f"kcc module exited with code {code}")
+        finally:
+            sys.argv = prev_argv
+
+
+def convert_volume(volume_dir: Path, out_path: Path, dry_run: bool = False) -> Path:
+    """Convert a volume folder into an EPUB/Kepub using KCC (module-only).
+
+    This function uses :class:`KCCAdapter` internally. The public API purposely
+    does not accept an `options` parameter — arguments passed to KCC are fixed
+    to match the UI defaults.
+    """
+    adapter = KCCAdapter()
+    invocation = adapter.build_invocation(volume_dir, out_path)
+
+    cmd_display = " ".join([KCCAdapter.MODULE_NAME] + list(invocation.args))
+    logger.debug("KCC invocation: %s", cmd_display)
 
     if dry_run:
-        logger.info('Dry run - would execute: %s', shlex.join(cmd))
+        logger.info("Dry run: would execute %s", cmd_display)
         return out_path
 
-    res = subprocess.run(cmd, capture_output=True, text=True)
-
-    if res.stdout:
-        logger.debug('kcc stdout: %s', res.stdout)
-    if res.stderr:
-        logger.debug('kcc stderr: %s', res.stderr)
-
-    if res.returncode != 0:
-        raise subprocess.CalledProcessError(res.returncode, cmd, res.stdout, res.stderr)
-
+    rc = adapter.run_module(invocation)
+    if rc != 0:
+        raise RuntimeError(f"kcc module returned non-zero exit code {rc}")
     return out_path

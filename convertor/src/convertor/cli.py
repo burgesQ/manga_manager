@@ -80,13 +80,15 @@ def main(argv=None) -> int:
     # print_summary(res)
 
     for vol in vols:
-        out_path = vol.with_suffix(vol.suffix + '.kepub.epub')
-
+        # default output path: sibling file named <volume_dir_name>.kepub.epub
+        out_path = vol.parent / (vol.name + '.kepub.epub')
 
         if out_path.exists():
             if args.force_regen:
-                # TODO: remove existing file before processing
-                pass
+                try:
+                    out_path.unlink()
+                except Exception:
+                    logger.warning('could not remove existing output: %s', out_path)
             else:
                 logger.info('skipping existing output: %s', out_path)
                 continue
