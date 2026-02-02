@@ -4,67 +4,77 @@ from __future__ import annotations
 
 import concurrent.futures
 import logging
-import os
 import shutil
 import zipfile
-from typing import Dict, List, Optional, Tuple
+from pathlib import Path
+from typing import Dict, List, NamedTuple, Optional, Tuple, TypeAlias
 
 from .core import extract_chapter_number, format_volume_dir
 
 logger = logging.getLogger(__name__)
 
 
-def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
+class Task(NamedTuple):
+    """Task to process: chapter ID and source file path."""
+
+    chapter_id: str
+    src: str
+
+
+class ProcessResult(NamedTuple):
+    """Result of processing a chapter: chapter ID and destination archive path."""
+
+    chapter_id: str
+    dest_archive: str
+
+
+class ProcessVolumeResult(NamedTuple):
+    """Result of processing a volume: exit code and remaining available files."""
+
+    exit_code: int
+    remaining_files: List[str]
+
+
+# Type alias for simplified mapping
+ChapterToFilesMapping: TypeAlias = Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]
+
+
+def _ensure_dir(path: Path, dry_run: bool) -> None:
+    """Create directory if it doesn't exist."""
+    if not path.exists():
+        logger.debug(f"[worker] creating dir: {path}")
+        if not dry_run:
+            path.mkdir(parents=True, exist_ok=True)
+        else:
+            logger.debug(f"[dry-run] mkdir {path}")
+    else:
+        logger.debug(f"[worker] dir exists: {path}")
+
+
+def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
     """Process a single chapter archive: validate, move and extract it.
 
-    This performs the per-chapter atomic sequence:
-    1. verify `ComicInfo.xml` inside the source archive (via `cfg.has_comicinfo`).
-    2. ensure the volume directory exists (created by main thread or here if
-       missing).
-    3. move the archive into the volume directory.
-    4. create a `Chapter XXX` (or `Chapter XXX.Y`) subdirectory and extract.
-
-    Args:
-        chapter_id: identifier as string, e.g. `'13'` for main chapters or
-                    `'13.5'` for extras.
-        src_file: path to the source `.cbz` archive (before moving).
-        cfg: instance of `Config` providing runtime options (dest, serie,
-             dry_run, verbose, force, has_comicinfo helper, etc.).
-
-    Returns:
-        Tuple[str, str]: (chapter_id, dest_archive_path) where dest_archive_path
-                         points to the archive location inside the volume (or
-                         original path in dry-run contexts).
-
-    Raises:
-        RuntimeError: on missing `ComicInfo.xml`, bad archives, or unsafe
-                      extraction paths. Caller (process_volume) converts these
-                      to an exit code and error log.
+    Public API unchanged; internals use pathlib and helper utilities.
     """
     logger.debug(f"[worker] start chapter={chapter_id} file={src_file}")
 
-    # Validate comicinfo
-    logger.debug(f"[worker] verifying ComicInfo.xml in {src_file}")
-    if not cfg.has_comicinfo(src_file):
-        raise RuntimeError(f"Missing ComicInfo.xml in {src_file}")
+    src_path = Path(src_file)
 
-    volume_dir = format_volume_dir(cfg.dest, cfg.serie, cfg.volume)
-    if not os.path.exists(volume_dir):
-        logger.debug(f"[worker] creating volume dir: {volume_dir}")
-        if not cfg.dry_run:
-            os.makedirs(volume_dir, exist_ok=True)
-        else:
-            logger.debug(f"[dry-run] mkdir {volume_dir}")
-    else:
-        logger.debug(f"[worker] volume dir exists: {volume_dir}")
+    # Validate comicinfo
+    logger.debug(f"[worker] verifying ComicInfo.xml in {src_path}")
+    if not cfg.has_comicinfo(str(src_path)):
+        raise RuntimeError(f"Missing ComicInfo.xml in {src_path}")
+
+    volume_dir = Path(format_volume_dir(cfg.dest, cfg.serie, cfg.volume))
+    _ensure_dir(volume_dir, cfg.dry_run)
 
     # Move archive
-    dest_archive = os.path.join(volume_dir, os.path.basename(src_file))
+    dest_archive = volume_dir / src_path.name
     if cfg.dry_run:
-        logger.debug(f"[dry-run] mv {src_file} -> {dest_archive}")
+        logger.debug(f"[dry-run] mv {src_path} -> {dest_archive}")
     else:
         logger.debug(f"[worker] moving archive to {dest_archive}")
-        shutil.move(src_file, dest_archive)
+        shutil.move(str(src_path), str(dest_archive))
 
     # Determine chapter dir name
     if "." in chapter_id:
@@ -72,32 +82,25 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
         chapter_dir_name = f"Chapter {int(base_part):03d}.{extra_part}"
     else:
         chapter_dir_name = f"Chapter {int(chapter_id):03d}"
-    chapter_dir = os.path.join(volume_dir, chapter_dir_name)
+    chapter_dir = volume_dir / chapter_dir_name
 
-    if os.path.exists(chapter_dir):
+    if chapter_dir.exists():
         if cfg.force:
             logger.debug(f"[worker] force-remove existing chapter dir: {chapter_dir}")
-            shutil.rmtree(chapter_dir)
-            if not cfg.dry_run:
-                os.makedirs(chapter_dir, exist_ok=True)
-            else:
-                logger.debug(f"[dry-run] mkdir {chapter_dir}")
+            shutil.rmtree(str(chapter_dir))
+            _ensure_dir(chapter_dir, cfg.dry_run)
         else:
-            # According to rules: warn and skip
             logger.warning(f"chapter dir exists, skipping: {chapter_dir}")
-            return chapter_id, dest_archive
+            return ProcessResult(chapter_id, str(dest_archive))
     else:
-        logger.debug(f"[worker] creating chapter dir: {chapter_dir}")
-        if not cfg.dry_run:
-            os.makedirs(chapter_dir, exist_ok=True)
-        else:
-            logger.debug(f"[dry-run] mkdir {chapter_dir}")
+        _ensure_dir(chapter_dir, cfg.dry_run)
 
-    # Safe extraction (prevent path traversal). In dry-run, inspect the original src file but do not extract
-    # or depend on the moved `dest_archive` which doesn't exist in dry-run mode.
+    # Safe extraction (prevent path traversal). In dry-run, inspect the original
+    # src file but do not extract or depend on the moved `dest_archive` which
+    # doesn't exist in dry-run mode.
     try:
-        archive_for_inspection = src_file if cfg.dry_run else dest_archive
-        with zipfile.ZipFile(archive_for_inspection, "r") as z:
+        archive_for_inspection = src_path if cfg.dry_run else dest_archive
+        with zipfile.ZipFile(str(archive_for_inspection), "r") as z:
             names = z.namelist()
             for member in names:
                 parts = member.split("/")
@@ -108,51 +111,24 @@ def process_one(chapter_id: str, src_file: str, cfg) -> Tuple[str, str]:
                     f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}"
                 )
             else:
-                z.extractall(chapter_dir)
+                z.extractall(str(chapter_dir))
                 logger.debug(f"[worker] extracted {dest_archive} -> {chapter_dir}")
     except zipfile.BadZipFile:
         raise RuntimeError(f"Bad zip file: {archive_for_inspection}")
 
-    return chapter_id, dest_archive
+    return ProcessResult(chapter_id, str(dest_archive))
 
 
 def process_volume(
     volume: int, chapter_range: List[int], available_files: List[str], cfg
-) -> Tuple[int, List[str]]:
+) -> ProcessVolumeResult:
     """Process a single volume: map files to chapters then execute tasks.
 
-    This function performs the following steps:
-    - build a mapping of available `.cbz` files to chapter numbers and extras
-      using `extract_chapter_number` with `cfg` patterns;
-    - validate that all requested chapters exist and that mains are unique;
-    - prepare tasks (main + extras) and log a planned summary at INFO level;
-    - ensure the volume directory exists and execute tasks using a thread
-      pool or serially according to `cfg.nb_worker`;
-    - remove moved archives from `available_files` and return updated list.
-
-    Args:
-        volume: volume number being created.
-        chapter_range: list of chapter integers to process for this volume.
-        available_files: list of paths to candidate `.cbz` files (mutated by
-                         removing moved items when not in dry-run).
-        cfg: runtime Config with patterns and runtime flags.
-
-    Returns:
-        Tuple[int, List[str]]: (exit_code, remaining_available_files). Exit
-        codes:
-          0: success
-          2: invalid CLI or batch spec
-          3: missing chapter
-          4: duplicate mains for a chapter
-          5: task-specific TODO / not implemented
-          6: extraction or processing error
-
-    Notes:
-        - The function logs errors and returns a non-zero exit code instead of
-          raising to simplify top-level error handling.
+    This function keeps the original behaviour while using Task NamedTuple and
+    pathlib internally for clarity.
     """
     # Build mapping using the provided patterns
-    mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}
+    mapping: ChapterToFilesMapping = {}  # type: ignore[assignment]
     for pth in list(available_files):
         matches = extract_chapter_number(
             pth, chapter_pat=cfg._chapter_pat, extra_pat=cfg._extra_pat
@@ -169,39 +145,36 @@ def process_volume(
         entry = mapping.get(c)
         if not entry or (not entry.get("mains") and not entry.get("extras")):
             logger.error(f"missing chapter {c}")
-            return 3, available_files
+            return ProcessVolumeResult(3, available_files)
         if len(entry.get("mains", [])) > 1:
             mains = [p for (_, p) in entry["mains"]]
             logger.error(f"multiple archives match chapter {c}: {mains}")
-            return 4, available_files
+            return ProcessVolumeResult(4, available_files)
 
-    # Prepare tasks: include main archive for each requested chapter and any extras found
-    tasks: List[Tuple[str, str]] = []  # (chapter_id, file)
+    # Prepare tasks: include main archive for each requested chapter and any
+    # extras found
+    tasks: List[Task] = []
     for c in chapter_range:
         entry = mapping.get(c, {"mains": [], "extras": []})
         if entry.get("mains"):
             _, main_file = entry["mains"][0]
-            tasks.append((str(c), main_file))
+            tasks.append(Task(str(c), main_file))
         # Sort extras by numeric suffix (e.g., 16.1 before 16.2)
-        extras = sorted(entry.get("extras", []), key=lambda pair: int(pair[0]))
+        extras = sorted(
+            entry.get("extras", []),
+            key=lambda pair: int(pair[0]) if pair[0] is not None else 0,
+        )
         for extra_suffix, extra_file in extras:
-            tasks.append((f"{c}.{extra_suffix}", extra_file))
+            tasks.append(Task(f"{c}.{extra_suffix}", extra_file))
 
     # Planned tasks are important summary info for the user
     logger.info(f"[info] planned tasks for volume {volume}:")
-    for cid, f in tasks:
-        logger.info(f"[info]  chapter {cid} -> {f}")
+    for t in tasks:
+        logger.info(f"[info]  chapter {t.chapter_id} -> {t.src}")
 
     # Ensure volume dir exists (main thread creates it to avoid races)
-    volume_dir = format_volume_dir(cfg.dest, cfg.serie, volume)
-    if not os.path.exists(volume_dir):
-        logger.debug(f"[info] creating volume dir: {volume_dir}")
-        if not cfg.dry_run:
-            os.makedirs(volume_dir, exist_ok=True)
-        else:
-            logger.debug(f"[dry-run] mkdir {volume_dir}")
-    else:
-        logger.debug(f"[info] volume dir exists: {volume_dir}")
+    volume_dir = Path(format_volume_dir(cfg.dest, cfg.serie, volume))
+    _ensure_dir(volume_dir, cfg.dry_run)
 
     moved_files: List[str] = []
 
@@ -209,33 +182,43 @@ def process_volume(
     if cfg.nb_worker > 1:
         logger.debug(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
         with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
-            futures = [ex.submit(process_one, c, f, cfg) for c, f in tasks]
+            futures = [ex.submit(process_one, t.chapter_id, t.src, cfg) for t in tasks]
             for fut in concurrent.futures.as_completed(futures):
                 try:
-                    cid, dest = fut.result()
-                    moved_files.append(dest if not cfg.dry_run else f"DRY:{cid}")
-                    logger.debug(f"Processed: {(cid, dest)}")
+                    result = fut.result()
+                    moved_files.append(
+                        result.dest_archive
+                        if not cfg.dry_run
+                        else f"DRY:{result.chapter_id}"
+                    )
+                    logger.debug(
+                        f"Processed: {(result.chapter_id, result.dest_archive)}"
+                    )
                 except Exception as e:
                     logger.error(f"{e}")
-                    return 6, available_files
+                    return ProcessVolumeResult(6, available_files)
     else:
-        for cid, f in tasks:
-            logger.debug(f"[info] processing chapter {cid}")
+        for t in tasks:
+            logger.debug(f"[info] processing chapter {t.chapter_id}")
             try:
-                cid, dest = process_one(cid, f, cfg)
-                moved_files.append(dest if not cfg.dry_run else f"DRY:{cid}")
-                logger.debug(f"Processed: {(cid, dest)}")
+                result = process_one(t.chapter_id, t.src, cfg)
+                moved_files.append(
+                    result.dest_archive
+                    if not cfg.dry_run
+                    else f"DRY:{result.chapter_id}"
+                )
+                logger.debug(f"Processed: {(result.chapter_id, result.dest_archive)}")
             except Exception as e:
                 logger.error(f"{e}")
-                return 6, available_files
+                return ProcessVolumeResult(6, available_files)
 
     # Remove moved files from available_files (non-dry-run)
     if not cfg.dry_run:
         for dest in moved_files:
-            if dest and os.path.exists(dest):
-                basename = os.path.basename(dest)
+            if dest and Path(dest).exists():
+                basename = Path(dest).name
                 for orig in list(available_files):
-                    if os.path.basename(orig) == basename:
+                    if Path(orig).name == basename:
                         available_files.remove(orig)
                         break
-    return 0, available_files
+    return ProcessVolumeResult(0, available_files)

@@ -133,8 +133,9 @@ def test_process_one_skip_if_chapter_exists(tmp_path: Path):
 
     cid, moved = process_one("4", src_file, cfg)
     assert cid == "4"
-    # file should be moved but because chapter existed and force=False process_one returns early
-    # The archive should have been moved into volume dir even if extraction skipped
+    # file should be moved but because chapter existed and force=False
+    # process_one returns early. The archive should have been moved into
+    # volume dir even if extraction skipped
     assert (dest / "S v01" / "Chapter 4.cbz".lstrip()).exists() or (
         dest / "S v01" / "Chapter 4.cbz".replace("Chapter ", "Chapter ").lstrip()
     ).exists()

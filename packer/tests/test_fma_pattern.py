@@ -30,9 +30,9 @@ def test_fma_extras_ordering(tmp_path: Path):
             "1",
         ],
     )
-    assert (
-        res.returncode == 0
-    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert res.returncode == 0, (
+        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    )
 
     vol = src / "FMA v01"
     assert vol.exists()
@@ -41,7 +41,8 @@ def test_fma_extras_ordering(tmp_path: Path):
     assert (vol / "Chap 16.1.cbz").exists()
     assert (vol / "Chap 16.2.cbz").exists()
 
-    # check ordering in stderr: main before extras, and extras in numeric order (logging uses stderr)
+    # check ordering in stderr: main before extras, and extras in numeric
+    # order (logging uses stderr)
     out = res.stderr
     idx_main = out.find("processing chapter 16")
     idx_e1 = out.find("processing chapter 16.1")

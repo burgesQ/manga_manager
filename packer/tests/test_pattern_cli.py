@@ -25,9 +25,9 @@ def test_named_pattern_mashle(tmp_path: Path):
             "mashle",
         ],
     )
-    assert (
-        res.returncode == 0
-    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert res.returncode == 0, (
+        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    )
 
     vol = src / "Mashle v01"
     assert vol.exists()
@@ -57,9 +57,9 @@ def test_custom_regex_override(tmp_path: Path):
             r"(?i)X_0*([0-9]+)",
         ],
     )
-    assert (
-        res.returncode == 0
-    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert res.returncode == 0, (
+        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    )
 
     vol = src / "Custom v01"
     assert vol.exists()

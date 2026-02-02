@@ -85,10 +85,11 @@ def setup_logging(
     loglevel: Optional[str] = None,
     force_color: Optional[bool] = None,
 ):
-    """Configure root logger with a compact, colored formatter and emoji prefixes.
+    """Configure root logger with a compact, colored formatter and emoji.
 
     - verbose -> DEBUG level, otherwise INFO
-    - loglevel: explicit string level to override verbose (e.g. DEBUG|INFO|WARNING|ERROR)
+    - loglevel: explicit string level to override verbose
+      (e.g. DEBUG|INFO|WARNING|ERROR)
     - force_color: True/False to override automatic TTY detection
     """
     root = logging.getLogger()
@@ -235,7 +236,8 @@ def load_config_from_path(path: str):
             data = json.load(fh)
             if not isinstance(data, dict):
                 raise ValueError(
-                    f"Invalid packer.json ({cfg_path}): top-level JSON must be an object"
+                    f"Invalid packer.json ({cfg_path}): "
+                    "top-level JSON must be an object"
                 )
             return data
     except json.JSONDecodeError as e:
@@ -275,7 +277,8 @@ def main(argv=None) -> int:
         "--serie",
         required=False,
         default=None,
-        help="series name used to name the volume directory (can be provided via packer.json)",
+        help="series name used to name the volume directory "
+        "(can be provided via packer.json)",
     )
     p.add_argument("--volume", type=int, help="volume number to create")
     p.add_argument("--chapter-range", help='chapter range, e.g. "1..12" or "1,3,5..8"')
@@ -292,26 +295,30 @@ def main(argv=None) -> int:
         "--pattern",
         choices=["default", "mashle", "fma"],
         default="default",
-        help='named filename pattern (e.g., "mashle" expects "Ch.013" / "Ch.013.5"; "fma" supports "Chap 13" and extras "Chap 13.5")',
+        help='named pattern (e.g., "mashle" expects "Ch.013" / "Ch.013.5"; '
+        '"fma" supports "Chap 13" and extras "Chap 13.5")',
     )
     p.add_argument(
         "--chapter-regex",
         type=str,
         default=None,
-        help="custom regex for matching main chapters (must capture base number as group 1)",
+        help="custom regex for matching main chapters "
+        "(must capture base number as group 1)",
     )
     p.add_argument(
         "--extra-regex",
         type=str,
         default=None,
-        help="custom regex for matching extra chapters (must capture base number group1 and extra suffix group2)",
+        help="custom regex for matching extra chapters "
+        "(must capture base number group1 and extra suffix group2)",
     )
 
     p.add_argument(
         "--batch",
         type=str,
         default=None,
-        help='batch volumes spec: "v01:1..3-v02:4..6" (multiple specs separated by "-")',
+        help='batch volumes spec: "v01:1..3-v02:4..6" '
+        '(multiple specs separated by "-")',
     )
     p.add_argument(
         "--batch-file",
@@ -418,7 +425,8 @@ def main(argv=None) -> int:
         extra_pat=extra_pat,
     )
 
-    # Parse batch specs (priority: --batch > --batch-file > discovered .batch > single volume)
+    # Parse batch specs
+    # Priority: --batch > --batch-file > discovered .batch > single volume
     batch_specs = []
     if args.batch:
         try:

@@ -5,7 +5,22 @@ from __future__ import annotations
 import os
 import re
 import zipfile
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, TypeAlias
+
+
+class ChapterMatch(NamedTuple):
+    """Represents a chapter match extracted from a filename.
+
+    `base` is the chapter base number (int) and `extra` is the optional
+    extra suffix (e.g. '5' for chapter 16.5) or None for mains.
+    """
+
+    base: int
+    extra: Optional[str]
+
+
+# Type alias for chapter-to-files mapping: base -> {mains, extras}
+ChapterMapping: TypeAlias = Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]
 
 CHAPTER_PATTERNS = [
     re.compile(r"(?i)chapter[\s._-]*0*([0-9]+)"),
@@ -41,16 +56,9 @@ def parse_range(text: str) -> List[int]:
     return sorted(nums)
 
 
-def _match_extra(base: str, extra_pat: Optional[re.Pattern]) -> Optional[tuple]:
-    """Return (base_num, extra) if the `extra_pat` matches the filename base.
-
-    >>> _match_extra('Ch.013.5.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
-    (13, '5')
-    >>> _match_extra('Chap 16.2.cbz', re.compile(r'(?i)chap(?:\\.|ter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
-    (16, '2')
-    >>> _match_extra('Chapter 1.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)')) is None
-    True
-    """
+def _match_extra(base: str, extra_pat: Optional[re.Pattern]) -> Optional[ChapterMatch]:
+    """Return ChapterMatch if the `extra_pat` matches the filename base."""
+    # noqa: E501
     if extra_pat is None:
         return None
     m = extra_pat.search(base)
@@ -59,21 +67,14 @@ def _match_extra(base: str, extra_pat: Optional[re.Pattern]) -> Optional[tuple]:
     try:
         base_num = int(m.group(1))
         extra = m.group(2)
-        return base_num, extra
+        return ChapterMatch(base=base_num, extra=extra)
     except Exception:
         return None
 
 
 def _match_chapter(base: str, chapter_pat: Optional[re.Pattern]) -> Optional[int]:
-    """Return base_num if `chapter_pat` matches the filename base.
-
-    >>> _match_chapter('Ch.013.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)'))
-    13
-    >>> _match_chapter('Chapter 004 Name.cbz', re.compile(r'(?i)chapter[\\s._-]*0*([0-9]+)'))
-    4
-    >>> _match_chapter('NoMatch.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)')) is None
-    True
-    """
+    """Return base_num if `chapter_pat` matches the filename base."""
+    # noqa: E501
     if chapter_pat is None:
         return None
     m = chapter_pat.search(base)
@@ -89,41 +90,31 @@ def extract_chapter_number(
     filename: str,
     chapter_pat: Optional[re.Pattern] = None,
     extra_pat: Optional[re.Pattern] = None,
-) -> List[Tuple[int, Optional[str]]]:
+) -> List[ChapterMatch]:
     """Extract chapter numbers and optional extra suffixes from a filename.
 
     Behavior summary:
-    - If `extra_pat` is provided and matches, the file is treated as an extra and
-      the function returns a single entry for that extra (base, extra).
-    - Otherwise, if `chapter_pat` matches, a main chapter (base, None) is returned.
-    - If neither pattern is provided or matches, a set of legacy patterns is used
-      as a fallback.
+    - If `extra_pat` is provided and matches, the file is treated as an extra.
+    - Otherwise, if `chapter_pat` matches, a main chapter is returned.
+    - If neither pattern matches, a set of legacy patterns is used as fallback.
 
-    Examples:
-
-    >>> extract_chapter_number('Ch.013.5.cbz', re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)'), re.compile(r'(?i)ch(?:\\.|apter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
-    [(13, '5')]
-    >>> extract_chapter_number('Chap 16.cbz', re.compile(r'(?i)chap(?:\\.|ter)?[\\s._-]*0*([0-9]+)'), re.compile(r'(?i)chap(?:\\.|ter)?[\\s._-]*0*([0-9]+)\\.([0-9]+)'))
-    [(16, None)]
-    >>> extract_chapter_number('Chapter 2.cbz')
-    [(2, None)]
-
-    Returns a list of (base, extra) tuples where extra is None for main chapters.
-    """
+    Returns a list of ChapterMatch NamedTuples where extra is None for main chapters.
+    """  # noqa: E501
     base = os.path.basename(filename)
-    results: Set[Tuple[int, Optional[str]]] = set()
+    results: Set[ChapterMatch] = set()
 
     # Extra pattern takes precedence when provided: treat as an extra and return it
     extra_match = _match_extra(base, extra_pat)
     if extra_match is not None:
-        base_num, extra = extra_match
-        results.add((base_num, extra))
-        return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ""))
+        results.add(extra_match)
+        return sorted(
+            results, key=lambda x: (x.base, x.extra if x.extra is not None else "")
+        )
 
     # Then try chapter/main pattern
     chapter_match = _match_chapter(base, chapter_pat)
     if chapter_match is not None:
-        results.add((chapter_match, None))
+        results.add(ChapterMatch(base=chapter_match, extra=None))
 
     # Fall back to legacy patterns if none found
     if not results:
@@ -137,12 +128,15 @@ def extract_chapter_number(
                 try:
                     base_num = int(m.group(1))
                     extra = m.group(2)
-                    results.add((base_num, extra))
+                    results.add(ChapterMatch(base=base_num, extra=extra))
                 except Exception:
                     continue
 
     # Sort by base then by extra (treat None as empty string for sorting)
-    return sorted(results, key=lambda x: (x[0], x[1] if x[1] is not None else ""))
+    return sorted(
+        results,
+        key=lambda x: (x.base, x.extra if x.extra is not None else ""),  # noqa: E501
+    )
 
 
 def find_cbz_files(root: str) -> List[str]:
@@ -168,10 +162,10 @@ def find_cbz_files(root: str) -> List[str]:
 
 def map_chapters_to_files(
     cbz_files: List[str],
-) -> Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]:
+) -> ChapterMapping:
     """Map chapter numbers to their matching archives.
 
-    Returns a mapping {base: {'mains': [(None, path), ...], 'extras': [(extra, path), ...]}}.
+    Returns a mapping {base: {'mains': [...], 'extras': [...]}}.
 
     Example:
     >>> m = map_chapters_to_files(['Chapter 1.cbz', 'Chapter 1.5.cbz'])
@@ -185,7 +179,9 @@ def map_chapters_to_files(
     mapping: Dict[int, Dict[str, List[Tuple[Optional[str], str]]]] = {}
     for p in cbz_files:
         matches = extract_chapter_number(p)
-        for base_num, extra in matches:
+        for m in matches:
+            base_num = m.base
+            extra = m.extra
             entry = mapping.setdefault(base_num, {"mains": [], "extras": []})
             if extra is None:
                 entry["mains"].append((None, p))

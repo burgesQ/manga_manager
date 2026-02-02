@@ -22,7 +22,8 @@ def test_invalid_packer_json_causes_error(tmp_path: Path):
             "1",
         ],
     )
-    # Expect CLI to error out with code 2 and an explanatory message that includes the file path
+    # Expect CLI to error out with code 2 and an explanatory message
+    # that includes the file path
     assert res.returncode == 2
     out = res.stderr or res.stdout
     assert "Invalid packer.json" in out

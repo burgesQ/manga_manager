@@ -29,9 +29,9 @@ def test_dry_run_no_files_moved(tmp_path: Path):
             "--dry-run",
         ],
     )
-    assert (
-        res.returncode == 0
-    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert res.returncode == 0, (
+        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    )
 
     # original files must still be present
     assert (src / "Chapter 1.cbz").exists()
@@ -65,9 +65,9 @@ def test_concurrent_move_and_extract(tmp_path: Path):
             "4",
         ],
     )
-    assert (
-        res.returncode == 0
-    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert res.returncode == 0, (
+        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    )
 
     volume_dir = src / "TestSerie v02"
     assert volume_dir.exists()
@@ -84,9 +84,9 @@ def test_concurrent_move_and_extract(tmp_path: Path):
         chapter_dir = volume_dir / f"Chapter {i:03d}"
         assert chapter_dir.exists(), f"chapter dir not found: {chapter_dir}"
         # check extracted files
-        assert (
-            chapter_dir / "001.jpg"
-        ).exists(), f"extracted image missing: {chapter_dir}"
-        assert (
-            chapter_dir / "ComicInfo.xml"
-        ).exists(), f"ComicInfo.xml missing in {chapter_dir}"
+        assert (chapter_dir / "001.jpg").exists(), (
+            f"extracted image missing: {chapter_dir}"
+        )
+        assert (chapter_dir / "ComicInfo.xml").exists(), (
+            f"ComicInfo.xml missing in {chapter_dir}"
+        )

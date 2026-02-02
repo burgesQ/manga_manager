@@ -24,9 +24,9 @@ def test_extra_chapter_assigned_to_base(tmp_path: Path):
             "13",
         ],
     )
-    assert (
-        res.returncode == 0
-    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert res.returncode == 0, (
+        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    )
 
     volume_dir = src / "Mashle v01"
     assert volume_dir.exists()
