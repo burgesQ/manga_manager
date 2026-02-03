@@ -209,3 +209,35 @@ def format_volume_dir(dest: str, serie: str, volume: int) -> str:
     '/tmp/Berserk v01'
     """
     return os.path.join(dest, f"{serie} v{volume:02d}")
+
+
+def format_chapter_dir(base: int | str, extra: str | None = None) -> str:
+    """Return the canonical chapter directory name.
+
+    Examples:
+    >>> format_chapter_dir(13)
+    'Chapter 013'
+    >>> format_chapter_dir(13, '5')
+    'Chapter 013.5'
+    """
+    try:
+        b = int(base)
+    except Exception:
+        # if base is not an int-like, fall back to string formatting
+        b = int(str(base))
+    if extra is None:
+        return f"Chapter {b:03d}"
+    return f"Chapter {b:03d}.{extra}"
+
+
+# Named patterns for convenience (used by CLI when --pattern is set)
+NAMED_PATTERNS = {
+    "mashle": (
+        re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)"),
+        re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
+    ),
+    "fma": (
+        re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)"),
+        re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
+    ),
+}

@@ -11,6 +11,7 @@ from typing import List, Optional
 from .core import (
     find_cbz_files,
     parse_range,
+    NAMED_PATTERNS,
 )
 from .worker import process_volume
 
@@ -337,13 +338,9 @@ def main(argv=None) -> int:
             chapter_pat = re.compile(args.chapter_regex)
         if args.extra_regex:
             extra_pat = re.compile(args.extra_regex)
-        if args.pattern == "mashle" and not (chapter_pat or extra_pat):
-            chapter_pat = re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)")
-            extra_pat = re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)")
-        if args.pattern == "fma" and not (chapter_pat or extra_pat):
-            # FMA uses "Chap" and sometimes extras like Chap 16.1
-            chapter_pat = re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)")
-            extra_pat = re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)\.([0-9]+)")
+        # Use named patterns if requested and no custom regex provided
+        if args.pattern in NAMED_PATTERNS and not (chapter_pat or extra_pat):
+            chapter_pat, extra_pat = NAMED_PATTERNS[args.pattern]
     except re.error as e:
         logger.error(f"Invalid regex: {e}")
         return 2

@@ -9,7 +9,7 @@ import zipfile
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Tuple, TypeAlias
 
-from .core import extract_chapter_number, format_volume_dir
+from .core import extract_chapter_number, format_volume_dir, format_chapter_dir
 
 logger = logging.getLogger(__name__)
 
@@ -54,12 +54,12 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
         logger.debug(f"[worker] moving archive to {dest_archive}")
         shutil.move(str(src_path), str(dest_archive))
 
-    # Determine chapter dir name
+    # Determine chapter dir name (use canonical helper from core)
     if "." in chapter_id:
         base_part, extra_part = chapter_id.split(".", 1)
-        chapter_dir_name = f"Chapter {int(base_part):03d}.{extra_part}"
+        chapter_dir_name = format_chapter_dir(base_part, extra_part)
     else:
-        chapter_dir_name = f"Chapter {int(chapter_id):03d}"
+        chapter_dir_name = format_chapter_dir(chapter_id, None)
     chapter_dir = volume_dir / chapter_dir_name
 
     if chapter_dir.exists():
