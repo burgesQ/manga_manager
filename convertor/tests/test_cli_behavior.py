@@ -10,7 +10,8 @@ def run_convertor(tmp_path: Path, args):
     repo_root = str(Path(__file__).resolve().parents[2])
     cmd = [sys.executable, '-m', 'convertor.cli'] + args
     env = os.environ.copy()
-    env['PYTHONPATH'] = repo_root
+    # Ensure the package source dir is on PYTHONPATH so `-m convertor.cli` works
+    env['PYTHONPATH'] = repo_root + os.pathsep + os.path.join(repo_root, 'convertor', 'src') + os.pathsep + os.path.join(repo_root, 'packer', 'src')
     res = subprocess.run(cmd,
                          capture_output=True,
                          text=True,

@@ -2,19 +2,20 @@
 
 Usage: python -m convertor <root_dir> [--force-regen] [--dry-run]
 """
+
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 import logging
 import sys
+from pathlib import Path
 
 from packer.cli import setup_logging
 
 # from .worker import convert_volumes_parallel, print_summary
-from .kcc_adapter import convert_volume
+from convertor.kcc_adapter import convert_volume
 
-logger = logging.getLogger('convertor')
+logger = logging.getLogger("convertor")
 
 
 def find_volume_dirs(root: Path) -> list[Path]:
@@ -27,34 +28,32 @@ def find_volume_dirs(root: Path) -> list[Path]:
 
 
 def main(argv=None) -> int:
-    p = argparse.ArgumentParser(description='Convert volume directories under a root to kepub.epub using KCC')
+    p = argparse.ArgumentParser(
+        description="Convert volume directories under a root to kepub.epub using KCC"
+    )
+    p.add_argument("root", help="root folder containing volume directories")
     p.add_argument(
-        'root',
-        help='root folder containing volume directories')
+        "--force-regen",
+        action="store_true",
+        help="regenerate output files even if they already exist",
+    )
     p.add_argument(
-        '--force-regen',
-        action='store_true',
-        help='regenerate output files even if they already exist')
+        "--dry-run",
+        action="store_true",
+        help="don't actually run conversion; just print what would be done",
+    )
+    p.add_argument("--verbose", action="store_true", help="verbose logging")
     p.add_argument(
-        '--dry-run',
-        action='store_true',
-        help="don't actually run conversion; just print what would be done")
-    p.add_argument(
-        '--verbose',
-        action='store_true',
-        help='verbose logging')
-    p.add_argument(
-        '--loglevel', '-l',
+        "--loglevel",
+        "-l",
         type=str,
         default=None,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
-        help='explicit log level (overrides --verbose)',
+        help="explicit log level (overrides --verbose)",
     )
     p.add_argument(
-        '--nb-worker', '-w',
-        type=int,
-        default=1,
-        help="number of workers (default 1)")
+        "--nb-worker", "-w", type=int, default=1, help="number of workers (default 1)"
+    )
 
     args = p.parse_args(argv)
 
@@ -62,12 +61,12 @@ def main(argv=None) -> int:
 
     root = Path(args.root)
     if not root.exists():
-        logger.error('root path does not exist: %s', root)
+        logger.error("root path does not exist: %s", root)
         return 2
 
     vols = find_volume_dirs(root)
     if not vols:
-        logger.warning('no volume directories found under %s', root)
+        logger.warning("no volume directories found under %s", root)
         return 0
 
     # each vol can be assign to a worker.
@@ -81,28 +80,28 @@ def main(argv=None) -> int:
 
     for vol in vols:
         # default output path: sibling file named <volume_dir_name>.kepub.epub
-        out_path = vol.parent / (vol.name + '.kepub.epub')
+        out_path = vol.parent / (vol.name + ".kepub.epub")
 
         if out_path.exists():
             if args.force_regen:
                 try:
                     out_path.unlink()
                 except Exception:
-                    logger.warning('could not remove existing output: %s', out_path)
+                    logger.warning("could not remove existing output: %s", out_path)
             else:
-                logger.info('skipping existing output: %s', out_path)
+                logger.info("skipping existing output: %s", out_path)
                 continue
 
-        logger.info('%s -> %s', vol, out_path)
+        logger.info("%s -> %s", vol, out_path)
 
         try:
             convert_volume(vol, out_path, dry_run=args.dry_run)
-            logger.info('generated: %s', out_path)
+            logger.info("generated: %s", out_path)
         except Exception as e:
-            logger.error('conversion failed for %s: %s', vol, e)
+            logger.error("conversion failed for %s: %s", vol, e)
 
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     raise SystemExit(main(sys.argv[1:]))

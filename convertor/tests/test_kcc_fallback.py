@@ -13,10 +13,10 @@ def test_fallback_to_alternative_module(tmp_path: Path):
     file.write_text("import sys\nsys.exit(0)\n")
     sys.path.insert(0, str(td))
 
+    # Ensure resolution occurs at initialization time and picks our alt module
+    KCCAdapter.POSSIBLE_MODULE_NAMES = ("nonexistent_module_12345", "kcc_alt")
     adapter = KCCAdapter()
-    # Temporarily override the candidate list to include a non-existent name
-    # first and then our alt module
-    adapter.POSSIBLE_MODULE_NAMES = ("nonexistent_module_12345", "kcc_alt")
+    assert getattr(adapter, "_resolved_module", None) == "kcc_alt"
 
     inv = adapter.build_invocation(td, tmp_path / "out.epub")
     try:

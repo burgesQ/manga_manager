@@ -37,15 +37,43 @@ class KCCAdapter:
     """
 
     MODULE_NAME = "kcc"
-    # Module names to attempt when running KCC. Some installs expose different
-    # module/package names (or provide an entry module). Trying multiple names
-    # improves robustness across environments.
+    # Module names to attempt when detecting the correct module. We resolve the
+    # final module once during adapter initialization and then use that single
+    # module name for all invocations (no repeated looping at run time).
     POSSIBLE_MODULE_NAMES = (
         "kcc",
         "kcc.__main__",
         "kcc.kcc",
         "kindlecomicconverter",
     )
+
+    def __init__(self, module_name: str | None = None):
+        """Create adapter and resolve the actual module name to use.
+
+        If `module_name` is provided, it will be used (no detection). Otherwise
+        we attempt to find the first importable name in `POSSIBLE_MODULE_NAMES`.
+        The resolved name is stored in ``_resolved_module`` and used by
+        `run_module` (so we don't loop over candidates on each invocation).
+        """
+        import importlib.util
+
+        if module_name:
+            self._resolved_module = module_name
+            logger.debug("KCCAdapter resolving explicit module: %s", module_name)
+            return
+
+        resolved = None
+        for cand in (self.MODULE_NAME,) + self.POSSIBLE_MODULE_NAMES:
+            try:
+                if importlib.util.find_spec(cand) is not None:
+                    resolved = cand
+                    break
+            except (ImportError, ModuleNotFoundError, ValueError):
+                # Some import hooks or stubbed modules may raise on spec lookup;
+                # treat as not found and continue to the next candidate.
+                continue
+        self._resolved_module = resolved
+        logger.debug("KCCAdapter resolved module: %s", resolved)
 
     def build_invocation(self, input_dir: Path, out_path: Path) -> KCCInvocation:
         """Build a `KCCInvocation` representing the argv to pass to the module.
@@ -76,33 +104,25 @@ class KCCAdapter:
         when no suitable module can be found.
         """
         prev_argv = sys.argv[:]
-        tried = []
-        # Build candidate list: prefer explicit MODULE_NAME first, then fall back
-        # to the configured POSSIBLE_MODULE_NAMES (avoid duplicates).
-        candidates = [self.MODULE_NAME] + [n for n in self.POSSIBLE_MODULE_NAMES if n != self.MODULE_NAME]
         try:
-            for module_name in candidates:
-                tried.append(module_name)
-                sys.argv = [module_name] + list(invocation.args)
-                logger.debug("trying kcc module name: %s", module_name)
-                try:
-                    runpy.run_module(module_name, run_name="__main__")
+            mod = getattr(self, "_resolved_module", None)
+            if not mod:
+                # list candidates for diagnostic
+                raise RuntimeError(
+                    "kcc module not importable (tried: %s); "
+                    "ensure KCC is installed and available on PYTHONPATH"
+                    % ", ".join((self.MODULE_NAME,) + self.POSSIBLE_MODULE_NAMES)
+                )
+            sys.argv = [mod] + list(invocation.args)
+            logger.debug("running kcc module: %s", mod)
+            try:
+                runpy.run_module(mod, run_name="__main__")
+                return 0
+            except SystemExit as se:
+                code = int(se.code or 0)
+                if code == 0:
                     return 0
-                except (ModuleNotFoundError, ImportError):
-                    # try next candidate
-                    logger.debug("module not found: %s", module_name)
-                    continue
-                except SystemExit as se:
-                    code = int(se.code or 0)
-                    if code == 0:
-                        return 0
-                    raise RuntimeError(f"kcc module exited with code {code}")
-            # If we get here, no module was importable
-            raise RuntimeError(
-                "kcc module not importable (tried: %s); "
-                "ensure KCC is installed and available on PYTHONPATH"
-                % ", ".join(tried)
-            )
+                raise RuntimeError(f"kcc module exited with code {code}")
         finally:
             sys.argv = prev_argv
 

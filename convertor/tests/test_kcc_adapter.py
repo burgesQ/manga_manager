@@ -33,7 +33,8 @@ def test_run_module_success_and_failure(tmp_path: Path):
         # simulate failure in a different module (avoid runpy caching issues)
         fail_file = td / "kcc_fail.py"
         fail_file.write_text("import sys\nsys.exit(3)\n")
-        adapter.MODULE_NAME = "kcc_fail"
+        # Force the adapter to use the failing module (we resolve once at init)
+        adapter._resolved_module = "kcc_fail"
         with pytest.raises(RuntimeError):
             adapter.run_module(inv)
     finally:

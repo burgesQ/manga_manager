@@ -44,10 +44,19 @@ def test_kcc_adapter_module_invocation(tmp_path, monkeypatch):
     # simulate runpy.run_module executing and not raising SystemExit
     monkeypatch.setattr('runpy.run_module', lambda name, run_name=None: None)
 
+    # Make a dummy importable 'kcc' module so the adapter resolves at init time
+    from importlib.machinery import ModuleSpec
+    mod = types.ModuleType('kcc')
+    mod.__spec__ = ModuleSpec('kcc', loader=None)
+    sys.modules['kcc'] = mod
+
     vol = tmp_path / 'Vol'
     vol.mkdir()
     out = tmp_path / 'Vol.kepub.epub'
 
-    # call the adapter; should return the output path
-    res = kcc_adapter.convert_volume(vol, out, dry_run=False)
-    assert res == out
+    try:
+        # call the adapter; should return the output path
+        res = kcc_adapter.convert_volume(vol, out, dry_run=False)
+        assert res == out
+    finally:
+        del sys.modules['kcc']
