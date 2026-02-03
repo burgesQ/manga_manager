@@ -37,6 +37,15 @@ class KCCAdapter:
     """
 
     MODULE_NAME = "kcc"
+    # Module names to attempt when running KCC. Some installs expose different
+    # module/package names (or provide an entry module). Trying multiple names
+    # improves robustness across environments.
+    POSSIBLE_MODULE_NAMES = (
+        "kcc",
+        "kcc.__main__",
+        "kcc.kcc",
+        "kindlecomicconverter",
+    )
 
     def build_invocation(self, input_dir: Path, out_path: Path) -> KCCInvocation:
         """Build a `KCCInvocation` representing the argv to pass to the module.
@@ -59,20 +68,41 @@ class KCCAdapter:
     def run_module(self, invocation: KCCInvocation) -> int:
         """Run the KCC module with the given invocation.
 
-        Returns 0 on success; raises `RuntimeError` for non-zero exit codes.
+        Tries a list of candidate module names (see ``POSSIBLE_MODULE_NAMES``)
+        and runs the first one that is importable. This keeps behavior module-only
+        while being robust to packaging variations.
+
+        Returns 0 on success; raises `RuntimeError` for non-zero exit codes or
+        when no suitable module can be found.
         """
         prev_argv = sys.argv[:]
+        tried = []
+        # Build candidate list: prefer explicit MODULE_NAME first, then fall back
+        # to the configured POSSIBLE_MODULE_NAMES (avoid duplicates).
+        candidates = [self.MODULE_NAME] + [n for n in self.POSSIBLE_MODULE_NAMES if n != self.MODULE_NAME]
         try:
-            sys.argv = [self.MODULE_NAME] + list(invocation.args)
-            # runpy.run_module may raise SystemExit; capture it
-            try:
-                runpy.run_module(self.MODULE_NAME, run_name="__main__")
-                return 0
-            except SystemExit as se:
-                code = int(se.code or 0)
-                if code == 0:
+            for module_name in candidates:
+                tried.append(module_name)
+                sys.argv = [module_name] + list(invocation.args)
+                logger.debug("trying kcc module name: %s", module_name)
+                try:
+                    runpy.run_module(module_name, run_name="__main__")
                     return 0
-                raise RuntimeError(f"kcc module exited with code {code}")
+                except (ModuleNotFoundError, ImportError):
+                    # try next candidate
+                    logger.debug("module not found: %s", module_name)
+                    continue
+                except SystemExit as se:
+                    code = int(se.code or 0)
+                    if code == 0:
+                        return 0
+                    raise RuntimeError(f"kcc module exited with code {code}")
+            # If we get here, no module was importable
+            raise RuntimeError(
+                "kcc module not importable (tried: %s); "
+                "ensure KCC is installed and available on PYTHONPATH"
+                % ", ".join(tried)
+            )
         finally:
             sys.argv = prev_argv
 
