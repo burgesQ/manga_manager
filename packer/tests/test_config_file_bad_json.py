@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from packer.utils import run_packer
+from packer.tests.conftest import run_packer
 
 
 def test_invalid_packer_json_causes_error(tmp_path: Path):

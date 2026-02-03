@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from packer.utils import make_cbz, run_packer
+from packer.tests.conftest import make_cbz, run_packer
 
 
 def test_config_json_applies_defaults(tmp_path: Path):

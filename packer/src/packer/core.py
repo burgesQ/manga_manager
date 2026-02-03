@@ -5,22 +5,8 @@ from __future__ import annotations
 import os
 import re
 import zipfile
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, TypeAlias
-
-
-class ChapterMatch(NamedTuple):
-    """Represents a chapter match extracted from a filename.
-
-    `base` is the chapter base number (int) and `extra` is the optional
-    extra suffix (e.g. '5' for chapter 16.5) or None for mains.
-    """
-
-    base: int
-    extra: Optional[str]
-
-
-# Type alias for chapter-to-files mapping: base -> {mains, extras}
-ChapterMapping: TypeAlias = Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]
+from typing import Dict, List, Optional, Set, Tuple, TypeAlias
+from .types_ import ChapterMatch, ChapterMapping
 
 CHAPTER_PATTERNS = [
     re.compile(r"(?i)chapter[\s._-]*0*([0-9]+)"),

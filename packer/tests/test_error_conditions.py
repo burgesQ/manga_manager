@@ -1,7 +1,7 @@
 import zipfile
 from pathlib import Path
 
-from packer.utils import make_cbz, run_packer
+from packer.tests.conftest import make_cbz, run_packer
 
 
 def test_invalid_regex_returns_2(tmp_path: Path):

@@ -90,15 +90,7 @@ jobs:
       - name: Run tests (packer only ATM)
         run: |
           # Run the test suite for all packages in the repository
-          cd packer && uv run pytest --cov=packer --cov-report=html . -q
-
-      # - name: Run convertor tests (if present)
-      #   run: |
-      #     if [ -d "convertor" ]; then
-      #       uv run pytest ./convertor -q
-      #     else
-      #       echo "no convertor package; skipping"
-      #     fi
+          uv run pytest --cov=packer --cov=convertor --cov=editor --cov-report=html . -q
 
       - name: Upload coverage
         if: always()

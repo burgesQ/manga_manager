@@ -14,29 +14,7 @@ from .core import extract_chapter_number, format_volume_dir
 logger = logging.getLogger(__name__)
 
 
-class Task(NamedTuple):
-    """Task to process: chapter ID and source file path."""
-
-    chapter_id: str
-    src: str
-
-
-class ProcessResult(NamedTuple):
-    """Result of processing a chapter: chapter ID and destination archive path."""
-
-    chapter_id: str
-    dest_archive: str
-
-
-class ProcessVolumeResult(NamedTuple):
-    """Result of processing a volume: exit code and remaining available files."""
-
-    exit_code: int
-    remaining_files: List[str]
-
-
-# Type alias for simplified mapping
-ChapterToFilesMapping: TypeAlias = Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]
+from .types_ import Task, ProcessResult, ProcessVolumeResult, ChapterToFilesMapping
 
 
 def _ensure_dir(path: Path, dry_run: bool) -> None:
@@ -131,7 +109,7 @@ def process_volume(
     mapping: ChapterToFilesMapping = {}  # type: ignore[assignment]
     for pth in list(available_files):
         matches = extract_chapter_number(
-            pth, chapter_pat=cfg._chapter_pat, extra_pat=cfg._extra_pat
+            pth, chapter_pat=cfg.chapter_pat, extra_pat=cfg.extra_pat
         )
         for base, extra in matches:
             entry = mapping.setdefault(base, {"mains": [], "extras": []})

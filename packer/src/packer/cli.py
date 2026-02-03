@@ -16,68 +16,7 @@ from .worker import process_volume
 
 logger = logging.getLogger(__name__)
 
-
-class Config:
-    """Runtime configuration for a packer invocation.
-
-    Holds parsed CLI options and compiled regex patterns used by worker code.
-
-    Attributes:
-        path: Source directory containing `.cbz` files.
-        dest: Destination root directory for created volumes.
-        serie: Series name used to format volume directories.
-        volume: Volume number (int). In batch mode this is amended per-spec.
-        chapter_range: List[int] chapters to include in the current volume.
-        nb_worker: Number of worker threads to use for parallel extraction.
-        dry_run: If True, perform a simulation without changing the filesystem.
-        verbose: Legacy flag for extra logging; prefer `--loglevel` now.
-        force: Overwrite existing chapter directories when True.
-        _chapter_pat/_extra_pat: Optional compiled regex patterns used to
-            detect main and extra chapters; `None` falls back to legacy patterns.
-    """
-
-    def __init__(
-        self,
-        path: str,
-        dest: str,
-        serie: str,
-        volume: int,
-        chapter_range: List[int],
-        nb_worker: int = 1,
-        dry_run: bool = False,
-        verbose: bool = False,
-        force: bool = False,
-        chapter_pat: Optional[re.Pattern] = None,
-        extra_pat: Optional[re.Pattern] = None,
-    ):
-        self.path = path
-        self.dest = dest
-        self.serie = serie
-        self.volume = volume
-        self.chapter_range = chapter_range
-        self.nb_worker = nb_worker
-        self.dry_run = dry_run
-        self.verbose = verbose
-        self.force = force
-        self._chapter_pat = chapter_pat
-        self._extra_pat = extra_pat
-
-    # convenience helper for worker module
-    def has_comicinfo(self, path: str) -> bool:
-        """Check whether `path` contains `ComicInfo.xml` using core.has_comicinfo.
-
-        This method exists for dependency-injection convenience: workers receive
-        a `Config` instance and can call `cfg.has_comicinfo(path)`.
-
-        Args:
-            path: path to the `.cbz` archive.
-
-        Returns:
-            bool: True if `ComicInfo.xml` is present, False otherwise.
-        """
-        from .core import has_comicinfo
-
-        return has_comicinfo(path)
+from .config import Config
 
 
 def setup_logging(
