@@ -30,8 +30,10 @@ def test_run_module_success_and_failure(tmp_path: Path):
     try:
         rc = adapter.run_module(inv)
         assert rc == 0
-        # simulate failure
-        file.write_text("import sys\nsys.exit(3)\n")
+        # simulate failure in a different module (avoid runpy caching issues)
+        fail_file = td / "kcc_fail.py"
+        fail_file.write_text("import sys\nsys.exit(3)\n")
+        adapter.MODULE_NAME = "kcc_fail"
         with pytest.raises(RuntimeError):
             adapter.run_module(inv)
     finally:
