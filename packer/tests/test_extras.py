@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_extra_chapter_assigned_to_base(tmp_path: Path):
+def test_extra_chapter_assigned_to_base(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 

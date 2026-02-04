@@ -1,10 +1,9 @@
 import json
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_config_json_applies_defaults(tmp_path: Path):
+def test_config_json_applies_defaults(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     # put a packer.json config with pattern fma and a batch file

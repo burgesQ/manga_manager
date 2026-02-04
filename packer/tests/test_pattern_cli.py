@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_named_pattern_mashle(tmp_path: Path):
+def test_named_pattern_mashle(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 
@@ -35,7 +34,7 @@ def test_named_pattern_mashle(tmp_path: Path):
     assert (vol / "Ch.013.5.cbz").exists()
 
 
-def test_custom_regex_override(tmp_path: Path):
+def test_custom_regex_override(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 

@@ -1,10 +1,9 @@
 import zipfile
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_invalid_regex_returns_2(tmp_path: Path):
+def test_invalid_regex_returns_2(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     make_cbz(src, "Chapter 1.cbz")
@@ -27,7 +26,7 @@ def test_invalid_regex_returns_2(tmp_path: Path):
     assert "Invalid regex" in res.stderr
 
 
-def test_invalid_batch_spec_returns_2(tmp_path: Path):
+def test_invalid_batch_spec_returns_2(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     res = run_packer(
@@ -37,14 +36,14 @@ def test_invalid_batch_spec_returns_2(tmp_path: Path):
     assert "invalid batch spec" in res.stderr.lower()
 
 
-def test_missing_args_returns_2(tmp_path: Path):
+def test_missing_args_returns_2(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     res = run_packer(tmp_path, ["--path", str(src), "--serie", "X"])
     assert res.returncode == 2
 
 
-def test_duplicate_mains_returns_4(tmp_path: Path):
+def test_duplicate_mains_returns_4(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     make_cbz(src, "Chapter 1.cbz")
@@ -57,7 +56,7 @@ def test_duplicate_mains_returns_4(tmp_path: Path):
     assert "multiple archives match chapter" in res.stderr.lower()
 
 
-def test_missing_comicinfo_returns_6(tmp_path: Path):
+def test_missing_comicinfo_returns_6(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     make_cbz(src, "Chapter 1.cbz", include_comicinfo=False)
@@ -78,7 +77,7 @@ def test_missing_comicinfo_returns_6(tmp_path: Path):
     assert "missing ComicInfo" in res.stderr or "Missing ComicInfo" in res.stderr
 
 
-def test_bad_zip_returns_6(tmp_path: Path):
+def test_bad_zip_returns_6(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     p = src / "Chapter 1.cbz"
@@ -103,7 +102,7 @@ def test_bad_zip_returns_6(tmp_path: Path):
     assert ("Bad zip file" in res.stderr) or ("Missing ComicInfo" in res.stderr)
 
 
-def test_path_traversal_detected(tmp_path: Path):
+def test_path_traversal_detected(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     p = src / "Chapter 1.cbz"

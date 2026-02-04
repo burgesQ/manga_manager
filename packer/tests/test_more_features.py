@@ -1,10 +1,9 @@
 import re
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_warn_loglevel_suppresses_info(tmp_path: Path):
+def test_warn_loglevel_suppresses_info(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     make_cbz(src, "Chapter 1.cbz")
@@ -28,7 +27,7 @@ def test_warn_loglevel_suppresses_info(tmp_path: Path):
     assert "planned tasks" not in res.stderr
 
 
-def test_extras_without_main_ok(tmp_path: Path):
+def test_extras_without_main_ok(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     # only an extra, no main
@@ -55,14 +54,14 @@ def test_extras_without_main_ok(tmp_path: Path):
     assert (vol / "Chapter 004.5").exists()
 
 
-def test_multinumber_filename_parsing():
+def test_multinumber_filename_parsing(run_packer):
     re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)")
     re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)")
     # filename contains volume and chapter numbers, ensure we extract chapter 13 extra 2
     run_packer(Path("."), [])
 
 
-def test_planned_tasks_order_with_workers(tmp_path: Path):
+def test_planned_tasks_order_with_workers(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     # create main and extras

@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_dry_run_no_files_moved(tmp_path: Path):
+def test_dry_run_no_files_moved(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 
@@ -42,7 +41,7 @@ def test_dry_run_no_files_moved(tmp_path: Path):
     assert not volume_dir.exists()
 
 
-def test_concurrent_move_and_extract(tmp_path: Path):
+def test_concurrent_move_and_extract(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 

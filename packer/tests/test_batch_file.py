@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from packer.testing import make_cbz, run_packer
 
 
-def test_batch_file_parsing(tmp_path: Path):
+def test_batch_file_parsing(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     # create chapters
@@ -31,7 +30,7 @@ def test_batch_file_parsing(tmp_path: Path):
     assert (src / "BatchFile v02").exists()
 
 
-def test_auto_discover_batch_file(tmp_path: Path):
+def test_auto_discover_batch_file(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     # create chapters
