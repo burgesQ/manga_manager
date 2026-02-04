@@ -1,5 +1,7 @@
 from pathlib import Path
 import sys
+import os
+import subprocess
 import pytest
 
 from convertor.kcc_adapter import KCCAdapter, KCCInvocation
@@ -18,24 +20,26 @@ def test_build_invocation(tmp_path: Path):
     assert "--manga-style" in args
 
 
-def test_run_module_success_and_failure(tmp_path: Path):
-    td = tmp_path / "kccmod"
-    td.mkdir()
-    file = td / "kcc.py"
-    # success
-    file.write_text("import sys\nsys.exit(0)\n")
-    sys.path.insert(0, str(td))
+def test_run_module_success_and_failure(tmp_path: Path, monkeypatch):
+    # Create a fake 'kcc-c2e' executable that succeeds
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    exe = bin_dir / "kcc-c2e"
+    exe.write_text("#!/bin/sh\nexit 0\n")
+    st = exe.stat()
+    exe.chmod(st.st_mode | 0o111)
+    monkeypatch.setenv("PATH", str(bin_dir) + os.pathsep + os.environ.get("PATH", ""))
+
     adapter = KCCAdapter()
-    inv = adapter.build_invocation(td, tmp_path / "out.epub")
-    try:
-        rc = adapter.run_module(inv)
-        assert rc == 0
-        # simulate failure in a different module (avoid runpy caching issues)
-        fail_file = td / "kcc_fail.py"
-        fail_file.write_text("import sys\nsys.exit(3)\n")
-        # Force the adapter to use the failing module (we resolve once at init)
-        adapter._resolved_module = "kcc_fail"
-        with pytest.raises(RuntimeError):
-            adapter.run_module(inv)
-    finally:
-        sys.path.pop(0)
+    inv = adapter.build_invocation(tmp_path, tmp_path / "out.epub")
+
+    rc = adapter.run_module(inv)
+    assert rc == 0
+
+    # Now make the executable fail (non-zero exit) and assert subprocess.CalledProcessError
+    exe.write_text("#!/bin/sh\nexit 3\n")
+    st = exe.stat()
+    exe.chmod(st.st_mode | 0o111)
+
+    with pytest.raises(subprocess.CalledProcessError):
+        adapter.run_module(inv)

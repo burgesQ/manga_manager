@@ -1,26 +1,22 @@
 import sys
+import os
 from pathlib import Path
 import pytest
 
 from convertor.kcc_adapter import KCCAdapter
 
 
-def test_fallback_to_alternative_module(tmp_path: Path):
-    # Create an alternative module file that will act as the implementation
-    td = tmp_path / "kccalt"
-    td.mkdir()
-    file = td / "kcc_alt.py"
-    file.write_text("import sys\nsys.exit(0)\n")
-    sys.path.insert(0, str(td))
+def test_kcc_uses_kcc_c2e_executable_when_present(tmp_path: Path, monkeypatch):
+    # create a fake kcc-c2e executable and ensure PATH includes it
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    exe = bin_dir / "kcc-c2e"
+    exe.write_text("#!/bin/sh\nexit 0\n")
+    st = exe.stat()
+    exe.chmod(st.st_mode | 0o111)
+    monkeypatch.setenv("PATH", str(bin_dir) + os.pathsep + os.environ.get("PATH", ""))
 
-    # Ensure resolution occurs at initialization time and picks our alt module
-    KCCAdapter.POSSIBLE_MODULE_NAMES = ("nonexistent_module_12345", "kcc_alt")
     adapter = KCCAdapter()
-    assert getattr(adapter, "_resolved_module", None) == "kcc_alt"
-
-    inv = adapter.build_invocation(td, tmp_path / "out.epub")
-    try:
-        rc = adapter.run_module(inv)
-        assert rc == 0
-    finally:
-        sys.path.pop(0)
+    inv = adapter.build_invocation(tmp_path, tmp_path / "out.epub")
+    rc = adapter.run_module(inv)
+    assert rc == 0

@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path
 import subprocess
 import types
@@ -41,22 +42,19 @@ def test_kcc_adapter_module_invocation(tmp_path, monkeypatch):
     _ensure_importable_root()
     from convertor import kcc_adapter
 
-    # simulate runpy.run_module executing and not raising SystemExit
-    monkeypatch.setattr('runpy.run_module', lambda name, run_name=None: None)
-
-    # Make a dummy importable 'kcc' module so the adapter resolves at init time
-    from importlib.machinery import ModuleSpec
-    mod = types.ModuleType('kcc')
-    mod.__spec__ = ModuleSpec('kcc', loader=None)
-    sys.modules['kcc'] = mod
+    # Create a fake 'kcc-c2e' executable and ensure PATH includes it
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    exe = bin_dir / "kcc-c2e"
+    exe.write_text("#!/bin/sh\nexit 0\n")
+    st = exe.stat()
+    exe.chmod(st.st_mode | 0o111)
+    monkeypatch.setenv("PATH", str(bin_dir) + os.pathsep + os.environ.get("PATH", ""))
 
     vol = tmp_path / 'Vol'
     vol.mkdir()
     out = tmp_path / 'Vol.kepub.epub'
 
-    try:
-        # call the adapter; should return the output path
-        res = kcc_adapter.convert_volume(vol, out, dry_run=False)
-        assert res == out
-    finally:
-        del sys.modules['kcc']
+    # call the adapter; should return the output path
+    res = kcc_adapter.convert_volume(vol, out, dry_run=False)
+    assert res == out
