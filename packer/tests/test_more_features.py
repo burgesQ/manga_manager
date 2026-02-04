@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-from packer.tests.conftest import make_cbz, run_packer
+from packer.testing import make_cbz, run_packer
 
 
 def test_warn_loglevel_suppresses_info(tmp_path: Path):

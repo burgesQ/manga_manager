@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from packer.cli import Config
-from packer.tests.conftest import make_cbz
+from packer.testing import make_cbz
 from packer.worker import process_one, process_volume
 
 

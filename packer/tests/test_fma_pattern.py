@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from packer.tests.conftest import make_cbz, run_packer
+from packer.testing import make_cbz, run_packer
 
 
 def test_fma_extras_ordering(tmp_path: Path):

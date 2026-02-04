@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from packer.tests.conftest import make_cbz, run_packer
+from packer.testing import make_cbz, run_packer
 
 
 def test_serie_can_be_provided_via_packer_json(tmp_path: Path):
