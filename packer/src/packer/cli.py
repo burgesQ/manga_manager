@@ -9,9 +9,9 @@ import re
 from typing import List, Optional
 
 from .core import (
+    NAMED_PATTERNS,
     find_cbz_files,
     parse_range,
-    NAMED_PATTERNS,
 )
 from .worker import process_volume
 
@@ -233,10 +233,10 @@ def main(argv=None) -> int:
 
     p.add_argument(
         "--pattern",
-        choices=["default", "mashle", "fma"],
+        choices=["default", "mashle", "fma", "animeSama"],
         default="default",
         help='named pattern (e.g., "mashle" expects "Ch.013" / "Ch.013.5"; '
-        '"fma" supports "Chap 13" and extras "Chap 13.5")',
+        '"fma" supports "Chap 13" and extras "Chap 13.5" ; "animeSama" is for French scans)',
     )
     p.add_argument(
         "--chapter-regex",
@@ -341,6 +341,8 @@ def main(argv=None) -> int:
         # Use named patterns if requested and no custom regex provided
         if args.pattern in NAMED_PATTERNS and not (chapter_pat or extra_pat):
             chapter_pat, extra_pat = NAMED_PATTERNS[args.pattern]
+            logger.debug(f"using named regex pattern: {args.pattern}")
+
     except re.error as e:
         logger.error(f"Invalid regex: {e}")
         return 2

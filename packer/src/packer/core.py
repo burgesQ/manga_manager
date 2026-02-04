@@ -6,7 +6,8 @@ import os
 import re
 import zipfile
 from typing import Dict, List, Optional, Set, Tuple, TypeAlias
-from .types_ import ChapterMatch, ChapterMapping
+
+from .types_ import ChapterMapping, ChapterMatch
 
 CHAPTER_PATTERNS = [
     re.compile(r"(?i)chapter[\s._-]*0*([0-9]+)"),
@@ -239,5 +240,9 @@ NAMED_PATTERNS = {
     "fma": (
         re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)"),
         re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
+    ),
+    "animeSama": (
+        re.compile(r"(?i)chap(?:\.|itre)?[\s._-]*0*([0-9]+)"),
+        re.compile(r"(?i)chap(?:\.|itre)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
     ),
 }
