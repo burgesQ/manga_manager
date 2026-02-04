@@ -76,8 +76,9 @@ def test_convert_volume_raises_if_package_unexecutable_and_no_exec(tmp_path: Pat
     sys.path.insert(0, str(pkg_parent))
     try:
         # Adapter currently invokes the external 'kcc-c2e' directly; when it is
-        # missing subprocess.run will raise FileNotFoundError
-        with pytest.raises(FileNotFoundError):
+        # missing subprocess.run will raise FileNotFoundError or it may raise a
+        # subprocess.CalledProcessError if an existing binary exits non-zero.
+        with pytest.raises((FileNotFoundError, subprocess.CalledProcessError)):
             convertor.convert_volume(vol, None)
     finally:
         sys.path.pop(0)

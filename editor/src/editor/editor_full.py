@@ -24,6 +24,7 @@ except ImportError:
     sys.exit(1)
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 class EPUBMetadata:
@@ -205,8 +206,36 @@ class EPUBMetadata:
                 {"name": "calibre:series_index", "content": str(series_index)},
             )
 
+    def _ensure_toc_uids(self):
+        """Ensure all TOC items have a UID to satisfy EPUB writer requirements."""
+        try:
+            def _walk(items, counter=[0]):
+                if isinstance(items, (list, tuple)):
+                    for it in items:
+                        _walk(it, counter)
+                else:
+                    uid = getattr(items, "uid", None)
+                    if not uid:
+                        candidate = getattr(items, "href", None) or getattr(items, "file_name", None) or getattr(items, "title", None)
+                        candidate = candidate or f"nav{counter[0]}"
+                        # sanitize candidate
+                        candidate = re.sub(r"[^A-Za-z0-9_-]", "_", str(candidate))
+                        if not candidate:
+                            candidate = f"nav{counter[0]}"
+                        try:
+                            items.uid = candidate
+                        except Exception:
+                            # Some item types may not allow setting uid; ignore
+                            pass
+                    counter[0] += 1
+            _walk(self.book.toc, [0])
+        except Exception:
+            logger.exception("Error ensuring TOC uids")
+
     def save(self):
         """Save EPUB with updated metadata."""
+        # Ensure TOC entries have valid uids to avoid lxml TypeError
+        self._ensure_toc_uids()
         epub.write_epub(str(self.filepath), self.book)
         logger.info(f"Saved: {self.filepath.name}")
 
@@ -336,6 +365,15 @@ def inject_metadata(
                 publisher=publisher,
             )
 
+            # Debug: log TOC items before saving to help diagnose None uid
+            try:
+                logger.debug(f"  TOC: {epub_meta.book.toc!r}")
+                for it in epub_meta.book.toc:
+                    uid = getattr(it, "uid", None)
+                    logger.debug(f"  TOC item: type={type(it)} uid={uid} repr={it!r}")
+            except Exception:
+                logger.exception("  Error while logging TOC")
+
             # Save
             epub_meta.save()
 
@@ -348,8 +386,8 @@ def inject_metadata(
 
             success_count += 1
 
-        except Exception as e:
-            logger.error(f"  ✗ Error processing {epub_file.name}: {e}")
+        except Exception:
+            logger.exception(f"  ✗ Error processing {epub_file.name}:")
             error_count += 1
 
     # Summary
