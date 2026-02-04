@@ -11,6 +11,9 @@ wheels/
 
 # Test library
 Manga
+Series
+Test
+Test.bck
 
 # Testing
 .coverage
