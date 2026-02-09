@@ -22,7 +22,7 @@ import logging
 import sys
 from pathlib import Path
 
-from editor.editor_full import dump_metadata, inject_metadata
+from editor.editor_full import dump_metadata, inject_metadata, clear_metadata
 from packer.cli import setup_logging
 
 logger = logging.getLogger("editor")
@@ -50,7 +50,7 @@ def main(argv=None) -> int:
     # Inject command
     inject_parser = subparsers.add_parser("inject", help="Inject metadata into EPUBs")
     inject_parser.add_argument(
-        "epub_dir", type=Path, help="Directory containing EPUB files"
+        "path", type=Path, help="File or directory containing EPUB files"
     )
     inject_parser.add_argument("metadata", type=Path, help="YAML metadata file")
     inject_parser.add_argument(
@@ -72,13 +72,31 @@ def main(argv=None) -> int:
     # Dump command
     dump_parser = subparsers.add_parser("dump", help="Dump metadata from EPUBs")
     dump_parser.add_argument(
-        "epub_dir", type=Path, help="Directory containing EPUB files"
+        "path", type=Path, help="File or directory containing EPUB files"
     )
     dump_parser.add_argument(
         "--output", "-o", type=Path, help="Output YAML file (default: print to stdout)"
     )
     dump_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
     dump_parser.add_argument(
+        "--loglevel",
+        "-l",
+        type=str,
+        default=None,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
+        help="explicit log level (overrides --verbose)",
+    )
+
+    # Clear command
+    clear_parser = subparsers.add_parser("clear", help="Clear metadata from EPUBs")
+    clear_parser.add_argument(
+        "path", type=Path, help="File or directory containing EPUB files"
+    )
+    clear_parser.add_argument(
+        "--dry-run", action="store_true", help="Simulate without making changes"
+    )
+    clear_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
+    clear_parser.add_argument(
         "--loglevel",
         "-l",
         type=str,
@@ -101,14 +119,17 @@ def main(argv=None) -> int:
     if args.command == "inject":
         print("inject")
         return inject_metadata(
-            args.epub_dir,
+            args.path,
             args.metadata,
             force=args.force,
             dry_run=args.dry_run,
         )
     elif args.command == "dump":
         print("dump")
-        return dump_metadata(args.epub_dir, args.output)
+        return dump_metadata(args.path, args.output)
+    elif args.command == "clear":
+        print("clear")
+        return clear_metadata(args.path, dry_run=args.dry_run)
 
     return 0
 

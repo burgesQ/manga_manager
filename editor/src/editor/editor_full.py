@@ -3,6 +3,11 @@
 
 TODO: clean that up, helpers & refacto.
 TODO: loads of tests
+TODO: inject calibre' tags (Manga, Seinen, Shonen, Horror, Fiction, Mystery, Fantasy...)
+TODO: inject calibre ids (isbn, kobo)
+TODO: kobo library collection (Manga, Thriller)
+TODO: language
+FIXME: ISBN is a calibre id
 
 """
 
@@ -68,6 +73,7 @@ class EPUBMetadata:
 
         # Dublin Core metadata
         dc = self.book.metadata.get("http://purl.org/dc/elements/1.1/", {})
+        logger.debug(f"meta: {dc}")
 
         # Title
         if dc.get("title"):
@@ -116,6 +122,8 @@ class EPUBMetadata:
 
         # Calibre-specific metadata
         opf_meta = self.book.metadata.get("http://www.idpf.org/2007/opf", {})
+        logger.debug(f"opf meta: {opf_meta}")
+
         for item in opf_meta.get("meta", []):
             if isinstance(item, tuple) and len(item) >= 2:
                 content = item[0]
@@ -141,6 +149,7 @@ class EPUBMetadata:
         date: str | None = None,
         isbn: str | None = None,
         publisher: str | None = None,
+        language: str = "en-Us",
     ):
         """Set metadata in EPUB file.
 
@@ -152,16 +161,19 @@ class EPUBMetadata:
             self.book.set_title(title)
 
         # Set author(s)
-        if author:
+        if author is not None:
             # Clear existing authors
             dc_ns = "http://purl.org/dc/elements/1.1/"
             if dc_ns not in self.book.metadata:
                 self.book.metadata[dc_ns] = {}
+            # Always clear first
             self.book.metadata[dc_ns]["creator"] = []
-
-            authors = [author] if isinstance(author, str) else author
-            for auth in authors:
-                self.book.add_author(auth)
+            
+            # Add new ones if author is truthy
+            if author:
+                authors = [author] if isinstance(author, str) else author
+                for auth in authors:
+                    self.book.add_author(auth)
 
         # Set publisher
         if publisher:
@@ -171,25 +183,26 @@ class EPUBMetadata:
         if date:
             self.book.add_metadata("DC", "date", date)
 
+        # Set language.
+        if date:
+            self.book.add_metadata("DC", "language", language)
+
         # Set ISBN
         if isbn:
-            # Remove existing ISBN
-            dc_ns = "http://purl.org/dc/elements/1.1/"
-            if (
-                dc_ns in self.book.metadata
-                and "identifier" in self.book.metadata[dc_ns]
-            ):
-                identifiers = []
-                for ident in self.book.metadata[dc_ns]["identifier"]:
-                    attrs = (
-                        ident[1] if isinstance(ident, tuple) and len(ident) > 1 else {}
-                    )
-                    if not (isinstance(attrs, dict) and attrs.get("id") == "isbn"):
-                        identifiers.append(ident)
-                self.book.metadata[dc_ns]["identifier"] = identifiers
+            # Clean ISBN
+            clean_isbn = isbn.replace("-", "").replace(" ", "")
 
-            # Add new ISBN
-            self.book.add_metadata("DC", "identifier", isbn, {"id": "isbn"})
+            # Format 1: identifier avec scheme opf (préféré par Calibre)
+            # On utilise 'isbn' comme scheme dans la valeur
+            self.book.add_metadata(
+                "DC", "identifier", f"isbn:{clean_isbn}", {"id": "isbn"}
+            )
+
+            # Format 2: aussi ajouter comme identifiant pur pour compatibilité
+            # Certains readers cherchent un identifier sans préfixe
+            self.book.add_metadata(
+                "DC", "identifier", clean_isbn, {"opf:scheme": "ISBN"}
+            )
 
         # Set series (Calibre format)
         if series:
@@ -209,6 +222,7 @@ class EPUBMetadata:
     def _ensure_toc_uids(self):
         """Ensure all TOC items have a UID to satisfy EPUB writer requirements."""
         try:
+
             def _walk(items, counter=[0]):
                 if isinstance(items, (list, tuple)):
                     for it in items:
@@ -216,7 +230,11 @@ class EPUBMetadata:
                 else:
                     uid = getattr(items, "uid", None)
                     if not uid:
-                        candidate = getattr(items, "href", None) or getattr(items, "file_name", None) or getattr(items, "title", None)
+                        candidate = (
+                            getattr(items, "href", None)
+                            or getattr(items, "file_name", None)
+                            or getattr(items, "title", None)
+                        )
                         candidate = candidate or f"nav{counter[0]}"
                         # sanitize candidate
                         candidate = re.sub(r"[^A-Za-z0-9_-]", "_", str(candidate))
@@ -228,6 +246,7 @@ class EPUBMetadata:
                             # Some item types may not allow setting uid; ignore
                             pass
                     counter[0] += 1
+
             _walk(self.book.toc, [0])
         except Exception:
             logger.exception("Error ensuring TOC uids")
@@ -269,19 +288,30 @@ def load_yaml_metadata(yaml_path: Path) -> dict:
 
 
 def inject_metadata(
-    epub_dir: Path,
+    path: Path,
     yaml_path: Path,
     force: bool = False,
     dry_run: bool = False,
 ):
-    """Inject metadata into EPUB files from YAML configuration."""
+    """Inject metadata into EPUB files from YAML configuration.
+    
+    Args:
+        path: Either a single EPUB file or a directory containing EPUBs.
+        yaml_path: Path to the YAML metadata file.
+        force: If True, overwrite existing metadata.
+        dry_run: If True, show what would be done without modifying files.
+        
+    Returns:
+        0 on success, 1 on error.
+    """
 
     if not yaml_path.exists():
         logger.error(f"Metadata file not found: {yaml_path}")
         return 1
 
-    if not epub_dir.exists() or not epub_dir.is_dir():
-        logger.error(f"EPUB directory not found: {epub_dir}")
+    epub_files = _get_epub_files(path)
+    if not epub_files:
+        logger.error(f"No EPUB files found in {path}")
         return 1
 
     # Load metadata
@@ -291,20 +321,10 @@ def inject_metadata(
     publisher_data = metadata.get("publisher", {})
     volumes_data = {v["number"]: v for v in metadata.get("volumes", [])}
 
-    # Find all EPUB files
-    epub_files = sorted(epub_dir.glob("*.epub"))
-    epub_files += sorted(epub_dir.glob("*.kepub.epub"))
-
-    # Remove duplicates (kepub.epub might be counted twice)
-    epub_files = list(dict.fromkeys(epub_files))
-
-    if not epub_files:
-        logger.warning(f"No EPUB files found in {epub_dir}")
-        return 0
-
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
     logger.info(f"Series: {series_name}")
     logger.info(f"Author: {author}")
+    logger.info(f"Publisher: {publisher_data}")
 
     success_count = 0
     skip_count = 0
@@ -336,46 +356,66 @@ def inject_metadata(
                 skip_count += 1
                 continue
 
-            if dry_run:
-                logger.info(f"  [DRY RUN] Would inject metadata for volume {vol_num}")
-                success_count += 1
-                continue
+            #if dry_run:
+            #    logger.info(f"  [DRY RUN] Would inject metadata for volume {vol_num}")
+            #    success_count += 1
+            #    continue
 
             # Prepare metadata
             title = vol_data.get("title")
             if not title:
                 title = f"{series_name} v{vol_num:02d}"
 
+            # TODO: parametrize language from metadata.yaml
+
             # Use English metadata if available, otherwise Japanese
-            locale_data = vol_data.get("english", vol_data.get("japanese", {}))
+            locale_data = vol_data.get("english", {})
             release_date = locale_data.get("release_date")
             isbn = locale_data.get("isbn")
 
             # Use English publisher if available
-            publisher = publisher_data.get("english", publisher_data.get("japanese"))
+            publisher = publisher_data.get("english")
+
+            # if dry_run:
+            #     logger.info(
+            #         f"  [DRY RUN] Would inject metadata for volume {float(vol_num)}"
+            #     )
+            #     logger.info(f"  [DRY RUN] Title {title}")
+            #     logger.info(f"  [DRY RUN] Release date {release_date}")
+            #     logger.info(f"  [DRY RUN] ISBN {isbn}")
+
+            #     success_count += 1
+            #     continue
 
             # Inject metadata
-            epub_meta.set_metadata(
-                title=title,
-                author=author,
-                series=series_name,
-                series_index=float(vol_num),
-                date=release_date,
-                isbn=isbn,
-                publisher=publisher,
-            )
+            if dry_run:
+                logger.info(
+                    f"  [DRY RUN] Would inject metadata for volume {float(vol_num)}"
+                )
+            else:
+                epub_meta.set_metadata(
+                    title=title,
+                    author=author,
+                    series=series_name,
+                    series_index=float(vol_num),
+                    date=release_date,
+                    isbn=isbn,
+                    publisher=publisher,
+                    language="en-US",
+                    # TODO: better injection
+                )
 
-            # Debug: log TOC items before saving to help diagnose None uid
-            try:
-                logger.debug(f"  TOC: {epub_meta.book.toc!r}")
-                for it in epub_meta.book.toc:
-                    uid = getattr(it, "uid", None)
-                    logger.debug(f"  TOC item: type={type(it)} uid={uid} repr={it!r}")
-            except Exception:
-                logger.exception("  Error while logging TOC")
+                # # Debug: log TOC items before saving to help diagnose None uid
+                # try:
+                #     logger.debug(f"  TOC: {epub_meta.book.toc!r}")
+                #     for it in epub_meta.book.toc:
+                #         uid = getattr(it, "uid", None)
+                #         logger.debug(f"  TOC item: type={type(it)} uid={uid} repr={it!r}")
+                # except Exception:
+                #     logger.exception("  Error while logging TOC")
 
-            # Save
-            epub_meta.save()
+                # Save
+                epub_meta.save()
 
             logger.info(f"  ✓ Injected metadata:")
             logger.info(f"    Title: {title}")
@@ -403,21 +443,21 @@ def inject_metadata(
     return 1 if error_count > 0 else 0
 
 
-def dump_metadata(epub_dir: Path, output_path: Path | None = None):
-    """Dump metadata from EPUB files to YAML."""
+def dump_metadata(path: Path, output_path: Path | None = None):
+    """Dump metadata from EPUB files to YAML.
+    
+    Args:
+        path: Either a single EPUB file or a directory containing EPUBs.
+        output_path: Optional path to save the YAML output.
+        
+    Returns:
+        0 on success, 1 on error.
+    """
 
-    if not epub_dir.exists() or not epub_dir.is_dir():
-        logger.error(f"EPUB directory not found: {epub_dir}")
-        return 1
-
-    # Find all EPUB files
-    epub_files = sorted(epub_dir.glob("*.epub"))
-    epub_files += sorted(epub_dir.glob("*.kepub.epub"))
-    epub_files = list(dict.fromkeys(epub_files))
-
+    epub_files = _get_epub_files(path)
     if not epub_files:
-        logger.warning(f"No EPUB files found in {epub_dir}")
-        return 0
+        logger.error(f"No EPUB files found in {path}")
+        return 1
 
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
 
@@ -498,3 +538,92 @@ def dump_metadata(epub_dir: Path, output_path: Path | None = None):
         print("=" * 60)
 
     return 0
+
+def _get_epub_files(path: Path) -> list[Path]:
+    """Get EPUB files from either a single file or a directory.
+    
+    Args:
+        path: Either a single EPUB file or a directory containing EPUB files.
+        
+    Returns:
+        A list of EPUB file paths.
+    """
+    if path.is_file():
+        if path.suffix.lower() in (".epub", ".kepub"):
+            return [path]
+        else:
+            logger.warning(f"File is not an EPUB: {path}")
+            return []
+    elif path.is_dir():
+        epub_files = sorted(path.glob("*.epub"))
+        epub_files += sorted(path.glob("*.kepub.epub"))
+        # Remove duplicates
+        return list(dict.fromkeys(epub_files))
+    else:
+        logger.error(f"Path does not exist: {path}")
+        return []
+
+
+def clear_metadata(path: Path, dry_run: bool = False) -> int:
+    """Clear all metadata from EPUB files.
+    
+    Args:
+        path: Either a single EPUB file or a directory containing EPUBs.
+        dry_run: If True, show what would be done without modifying files.
+        
+    Returns:
+        0 on success, 1 on error.
+    """
+    epub_files = _get_epub_files(path)
+    
+    if not epub_files:
+        logger.warning(f"No EPUB files found in {path}")
+        return 0
+    
+    logger.info(f"Found {len(epub_files)} EPUB file(s)")
+    
+    success_count = 0
+    error_count = 0
+    
+    for epub_file in epub_files:
+        try:
+            logger.info(f"Processing: {epub_file.name}")
+            
+            if dry_run:
+                logger.info(f"  [DRY RUN] Would clear metadata from {epub_file.name}")
+                success_count += 1
+                continue
+            
+            # Load EPUB
+            epub_meta = EPUBMetadata(epub_file)
+            
+            # Clear major metadata fields by setting them to empty values
+            epub_meta.set_metadata(
+                title="",
+                author=[],  # empty list triggers author clearing
+                series="",
+                series_index=None,
+                date="",
+                isbn="",
+                publisher="",
+            )
+            
+            # Save changes
+            epub_meta.save()
+            logger.info(f"  ✓ Cleared metadata from {epub_file.name}")
+            success_count += 1
+            
+        except Exception as e:
+            logger.error(f"  ✗ Error processing {epub_file.name}: {e}")
+            error_count += 1
+    
+    # Summary
+    logger.info(f"\n{'=' * 60}")
+    logger.info("SUMMARY")
+    logger.info("=" * 60)
+    logger.info(f"Total files:     {len(epub_files)}")
+    logger.info(f"✓ Processed:     {success_count}")
+    logger.info(f"✗ Errors:        {error_count}")
+    logger.info("=" * 60)
+    
+    return 1 if error_count > 0 else 0
