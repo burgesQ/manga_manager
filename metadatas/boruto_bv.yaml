@@ -1,0 +1,233 @@
+series: "Boruto: Naruto Next Generations"
+author: 
+  - "Ukyō Kodachi (vol. 1-13)"
+  - "Masashi Kishimoto (vol. 14-20)"
+illustrator: Mikio Ikemoto
+publisher:
+  japanese: Shueisha
+  english: Viz Media
+source_url: https://en.wikipedia.org/wiki/List_of_Boruto_chapters
+
+volumes:
+  # Part 1: Boruto: Naruto Next Generations
+  - number: 1
+    title: "Uzumaki Boruto!!"
+    japanese:
+      release_date: "2016-08-04"
+      isbn: "9784088807560"
+    english:
+      release_date: "2017-04-04"
+      isbn: "9781421592084"
+
+  - number: 2
+    japanese:
+      release_date: "2017-01-04"
+      isbn: "9784088808277"
+    english:
+      release_date: "2017-08-01"
+      isbn: "9781421592107"
+
+  - number: 3
+    japanese:
+      release_date: "2017-05-02"
+      isbn: "9784088810782"
+    english:
+      release_date: "2017-11-07"
+      isbn: "9781421592336"
+
+  - number: 4
+    japanese:
+      release_date: "2017-11-02"
+      isbn: "9784088812274"
+    english:
+      release_date: "2018-03-06"
+      isbn: "9781421599182"
+
+  - number: 5
+    japanese:
+      release_date: "2018-04-04"
+      isbn: "9784088814131"
+    english:
+      release_date: "2018-08-07"
+      isbn: "9781421599786"
+
+  - number: 6
+    japanese:
+      release_date: "2018-09-04"
+      isbn: "9784088816562"
+    english:
+      release_date: "2019-02-05"
+      isbn: "9781974700455"
+
+  - number: 7
+    japanese:
+      release_date: "2019-01-04"
+      isbn: "9784088817224"
+    english:
+      release_date: "2019-08-06"
+      isbn: "9781974703814"
+
+  - number: 8
+    japanese:
+      release_date: "2019-05-02"
+      isbn: "9784088818658"
+    english:
+      release_date: "2020-01-07"
+      isbn: "9781974707218"
+
+  - number: 9
+    japanese:
+      release_date: "2019-09-04"
+      isbn: "9784088820811"
+    english:
+      release_date: "2020-05-05"
+      isbn: "9781974711581"
+
+  - number: 10
+    japanese:
+      release_date: "2019-12-27"
+      isbn: "9784088821931"
+    english:
+      release_date: "2020-11-03"
+      isbn: "9781974716890"
+
+  - number: 11
+    japanese:
+      release_date: "2020-04-03"
+      isbn: "9784088822907"
+    english:
+      release_date: "2021-02-02"
+      isbn: "9781974720057"
+
+  - number: 12
+    japanese:
+      release_date: "2020-08-04"
+      isbn: "9784088824123"
+    english:
+      release_date: "2021-07-06"
+      isbn: "9781974722853"
+
+  - number: 13
+    japanese:
+      release_date: "2020-12-28"
+      isbn: "9784088825373"
+    english:
+      release_date: "2021-10-05"
+      isbn: "9781974725090"
+
+  - number: 14
+    japanese:
+      release_date: "2021-04-02"
+      isbn: "9784088826455"
+    english:
+      release_date: "2022-01-04"
+      isbn: "9781974727506"
+
+  - number: 15
+    japanese:
+      release_date: "2021-08-04"
+      isbn: "9784088827742"
+    english:
+      release_date: "2022-07-05"
+      isbn: "9781974731367"
+
+  - number: 16
+    japanese:
+      release_date: "2021-12-03"
+      isbn: "9784088828930"
+    english:
+      release_date: "2022-11-01"
+      isbn: "9781974734931"
+
+  - number: 17
+    japanese:
+      release_date: "2022-04-04"
+      isbn: "9784088831121"
+    english:
+      release_date: "2023-05-02"
+      isbn: "9781974738595"
+
+  - number: 18
+    japanese:
+      release_date: "2022-09-02"
+      isbn: "9784088832470"
+    english:
+      release_date: "2023-08-01"
+      isbn: "9781974741274"
+
+  - number: 19
+    japanese:
+      release_date: "2023-01-04"
+      isbn: "9784088833828"
+    english:
+      release_date: "2024-04-02"
+      isbn: "9781974743360"
+
+  - number: 20
+    japanese:
+      release_date: "2023-05-02"
+      isbn: "9784088835327"
+    english:
+      release_date: "2024-08-06"
+      isbn: "9781974745548"
+
+  # Part 2: Boruto: Two Blue Vortex
+  - number: 21
+    part: 2
+    series_title: "Boruto: Two Blue Vortex"
+    title: "Boruto"
+    japanese:
+      release_date: "2024-01-04"
+      isbn: "9784088838243"
+    english:
+      release_date: "2025-02-04"
+      isbn: "9781974747184"
+
+  - number: 22
+    part: 2
+    series_title: "Boruto: Two Blue Vortex"
+    japanese:
+      release_date: "2024-04-04"
+      isbn: "9784088840734"
+    english:
+      release_date: "2025-06-03"
+      isbn: "9781974755028"
+
+  - number: 23
+    part: 2
+    series_title: "Boruto: Two Blue Vortex"
+    japanese:
+      release_date: "2024-09-04"
+      isbn: "9784088841786"
+    english:
+      release_date: "2025-10-07"
+      isbn: "9781974758500"
+
+  - number: 24
+    part: 2
+    series_title: "Boruto: Two Blue Vortex"
+    japanese:
+      release_date: "2025-01-04"
+      isbn: "9784088843612"
+    english:
+      release_date: "2026-02-03"
+      isbn: "9781974761562"
+
+  - number: 25
+    part: 2
+    series_title: "Boruto: Two Blue Vortex"
+    japanese:
+      release_date: "2025-06-04"
+      isbn: "9784088845166"
+
+  - number: 26
+    part: 2
+    series_title: "Boruto: Two Blue Vortex"
+    japanese:
+      release_date: "2025-09-04"
+      isbn: "9784088847313"
+
+notes: |
+  - Part 1 (volumes 1-20): Boruto: Naruto Next Generations
+  - Part 2 (volumes 21+): Boruto: Two Blue Vortex (started August 2023 after hiatus)
+  - Writer changed from Ukyō Kodachi to Masashi Kishimoto starting with volume 14

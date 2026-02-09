@@ -1,0 +1,169 @@
+series: Mashle
+author: Hajime Kōmoto
+publisher:
+  japanese: Shueisha
+  english: Viz Media
+source_url: https://en.wikipedia.org/wiki/List_of_Mashle_chapters
+
+volumes:
+  - number: 1
+    title: "Mash Burnedead and the Body of the Gods"
+    japanese:
+      release_date: "2020-06-04"
+      isbn: "9784088823294"
+    english:
+      release_date: "2021-07-20"
+      isbn: "9781974719297"
+
+  - number: 2
+    title: "Mash Burnedead and the Mysterious Maze"
+    japanese:
+      release_date: "2020-08-04"
+      isbn: "9784088823775"
+    english:
+      release_date: "2021-09-07"
+      isbn: "9781974723515"
+
+  - number: 3
+    title: "Mash Burnedead and the Shuriken Thrower"
+    japanese:
+      release_date: "2020-10-02"
+      isbn: "9784088824253"
+    english:
+      release_date: "2021-11-02"
+      isbn: "9781974725113"
+
+  - number: 4
+    title: "Mash Burnedead and the Survival of the Fittest"
+    japanese:
+      release_date: "2021-01-04"
+      isbn: "9784088825267"
+    english:
+      release_date: "2022-01-04"
+      isbn: "9781974725373"
+
+  - number: 5
+    title: "Mash Burnedead and the Unpopular Classmate"
+    japanese:
+      release_date: "2021-04-02"
+      isbn: "9784088825755"
+    english:
+      release_date: "2022-03-01"
+      isbn: "9781974727131"
+
+  - number: 6
+    title: "Mash Burnedead and the Magic of Iron"
+    japanese:
+      release_date: "2021-06-04"
+      isbn: "9784088826394"
+    english:
+      release_date: "2022-05-17"
+      isbn: "9781974729029"
+
+  - number: 7
+    title: "Mash Burnedead and the Puppet Master"
+    japanese:
+      release_date: "2021-09-03"
+      isbn: "9784088827285"
+    english:
+      release_date: "2022-08-19"
+      isbn: "9781974732050"
+
+  - number: 8
+    title: "Mash Burnedead and the Wolves of Magic"
+    japanese:
+      release_date: "2021-11-04"
+      isbn: "9784088827872"
+    english:
+      release_date: "2022-10-04"
+      isbn: "9781974732357"
+
+  - number: 9
+    title: "Mash Burnedead and the Divine Visionaries"
+    japanese:
+      release_date: "2022-01-04"
+      isbn: "9784088828442"
+    english:
+      release_date: "2023-01-03"
+      isbn: "9781974734191"
+
+  - number: 10
+    title: "Mash Burnedead and the Big Gamble"
+    japanese:
+      release_date: "2022-04-04"
+      isbn: "9784088830360"
+    english:
+      release_date: "2023-03-07"
+      isbn: "9781974736126"
+
+  - number: 11
+    title: "Mash Burnedead and the Tri-Magic-Athalon"
+    japanese:
+      release_date: "2022-07-04"
+      isbn: "9784088830971"
+    english:
+      release_date: "2023-05-02"
+      isbn: "9781974736645"
+
+  - number: 12
+    title: "Mash Burnedead and the Goddess of Death"
+    japanese:
+      release_date: "2022-10-04"
+      isbn: "9784088831596"
+    english:
+      release_date: "2023-08-01"
+      isbn: "9781974738618"
+
+  - number: 13
+    title: "Rayne Ames and the Strongest Pole Arm User"
+    japanese:
+      release_date: "2022-10-04"
+      isbn: "9784088832586"
+    english:
+      release_date: "2023-09-12"
+      isbn: "9781974740475"
+
+  - number: 14
+    title: "Mash Burnedead and the Origin of the Greatest Magic User"
+    japanese:
+      release_date: "2023-01-04"
+      isbn: "9784088834030"
+    english:
+      release_date: "2023-12-05"
+      isbn: "9781974741076"
+
+  - number: 15
+    title: "Mash Burnedead and the Unseen Pressure"
+    japanese:
+      release_date: "2023-03-03"
+      isbn: "9784088834269"
+    english:
+      release_date: "2024-04-25"
+      isbn: "9781974743230"
+
+  - number: 16
+    title: "Mash Burnedead and the Magic of Mirrors"
+    japanese:
+      release_date: "2023-04-04"
+      isbn: "9784088834474"
+    english:
+      release_date: "2024-07-24"
+      isbn: "9781974745821"
+
+  - number: 17
+    title: "Mash Burnedead and the Survival of Blood"
+    japanese:
+      release_date: "2023-07-04"
+      isbn: "9784088835686"
+    english:
+      release_date: "2024-10-24"
+      isbn: "9781974748853"
+
+  - number: 18
+    title: "Mash Burnedead and You Look, You Lose"
+    japanese:
+      release_date: "2023-10-04"
+      isbn: "9784088836683"
+    english:
+      release_date: "2025-01-16"
+      isbn: "9781974749515"

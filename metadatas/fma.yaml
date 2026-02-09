@@ -1,0 +1,215 @@
+series: Fullmetal Alchemist
+author: Hiromu Arakawa
+publisher:
+  japanese: Square Enix
+  english: Viz Media
+source_url: https://en.wikipedia.org/wiki/List_of_Fullmetal_Alchemist_chapters
+
+volumes:
+  - number: 1
+    japanese:
+      release_date: "2002-01-22"
+      isbn: "9784757506206"
+    english:
+      release_date: "2005-05-03"
+      isbn: "9781591169208"
+
+  - number: 2
+    japanese:
+      release_date: "2002-05-22"
+      isbn: "9784757506992"
+    english:
+      release_date: "2005-09-13"
+      isbn: "9781591169239"
+
+  - number: 3
+    japanese:
+      release_date: "2002-08-22"
+      isbn: "9784757507913"
+    english:
+      release_date: "2006-01-17"
+      isbn: "9781591169253"
+
+  - number: 4
+    japanese:
+      release_date: "2002-11-22"
+      isbn: "9784757508552"
+    english:
+      release_date: "2006-05-16"
+      isbn: "9781591169291"
+
+  - number: 5
+    japanese:
+      release_date: "2003-03-22"
+      isbn: "9784757509665"
+    english:
+      release_date: "2006-09-19"
+      isbn: "9781421501758"
+
+  - number: 6
+    japanese:
+      release_date: "2003-07-22"
+      isbn: "9784757510470"
+    english:
+      release_date: "2007-01-16"
+      isbn: "9781421503196"
+
+  - number: 7
+    japanese:
+      release_date: "2003-10-22"
+      isbn: "9784757511651"
+    english:
+      release_date: "2007-05-15"
+      isbn: "9781421504582"
+
+  - number: 8
+    japanese:
+      release_date: "2004-01-22"
+      isbn: "9784757512306"
+    english:
+      release_date: "2007-09-18"
+      isbn: "9781421504599"
+
+  - number: 9
+    japanese:
+      release_date: "2004-05-21"
+      isbn: "9784757513181"
+    english:
+      release_date: "2008-01-15"
+      isbn: "9781421504599"
+
+  - number: 10
+    japanese:
+      release_date: "2004-08-21"
+      isbn: "9784757513860"
+    english:
+      release_date: "2008-05-20"
+      isbn: "9781421504612"
+
+  - number: 11
+    japanese:
+      release_date: "2004-12-22"
+      isbn: "9784757514966"
+    english:
+      release_date: "2008-09-16"
+      isbn: "9781421508382"
+
+  - number: 12
+    japanese:
+      release_date: "2005-03-22"
+      isbn: "9784757515734"
+    english:
+      release_date: "2009-01-20"
+      isbn: "9781421508399"
+
+  - number: 13
+    japanese:
+      release_date: "2005-07-22"
+      isbn: "9784757516380"
+    english:
+      release_date: "2009-05-19"
+      isbn: "9781421511580"
+
+  - number: 14
+    japanese:
+      release_date: "2005-11-22"
+      isbn: "9784757517196"
+    english:
+      release_date: "2009-09-15"
+      isbn: "9781421513799"
+
+  - number: 15
+    japanese:
+      release_date: "2006-02-22"
+      isbn: "9784757518124"
+    english:
+      release_date: "2010-01-19"
+      isbn: "9781421513805"
+
+  - number: 16
+    japanese:
+      release_date: "2006-08-22"
+      isbn: "9784757519657"
+    english:
+      release_date: "2010-05-18"
+      isbn: "9781421513812"
+
+  - number: 17
+    japanese:
+      release_date: "2006-12-22"
+      isbn: "9784757520646"
+    english:
+      release_date: "2010-09-21"
+      isbn: "9781421513812"
+
+  - number: 18
+    japanese:
+      release_date: "2007-04-21"
+      isbn: "9784757521759"
+    english:
+      release_date: "2011-01-18"
+      isbn: "9781421525365"
+
+  - number: 19
+    japanese:
+      release_date: "2007-08-22"
+      isbn: "9784757522374"
+    english:
+      release_date: "2011-05-17"
+      isbn: "9781421525686"
+
+  - number: 20
+    japanese:
+      release_date: "2008-01-22"
+    english:
+      release_date: "2011-09-20"
+      isbn: "9781421530345"
+
+  - number: 21
+    japanese:
+      release_date: "2008-04-22"
+    english:
+      release_date: "2012-01-17"
+      isbn: "9781421532325"
+
+  - number: 22
+    japanese:
+      release_date: "2008-08-22"
+    english:
+      release_date: "2012-05-15"
+      isbn: "9781421534134"
+
+  - number: 23
+    japanese:
+      release_date: "2008-12-22"
+    english:
+      release_date: "2012-09-18"
+      isbn: "9781421536309"
+
+  - number: 24
+    japanese:
+      release_date: "2009-04-22"
+    english:
+      release_date: "2013-01-15"
+      isbn: "9781421538129"
+
+  - number: 25
+    japanese:
+      release_date: "2009-08-22"
+    english:
+      release_date: "2013-05-21"
+      isbn: "9781421539249"
+
+  - number: 26
+    japanese:
+      release_date: "2010-08-21"
+    english:
+      release_date: "2011-09-20"
+      isbn: "9781421539621"
+
+  - number: 27
+    japanese:
+      release_date: "2010-11-22"
+    english:
+      release_date: "2011-12-20"
+      isbn: "9781421539843"
