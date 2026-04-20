@@ -22,7 +22,7 @@ Notes:
  On platforms where KCC is installed via package manager or as a Python module, module-run may be preferred.
  Unit tests mock `runpy` and `subprocess.run` so they run reliably in CI and locally.
 
-- [ ] parallelize worker (1 worker = 1 epub)
+- [x] parallelize worker (1 worker = 1 epub)
  `--force-regen`: force regeneration of existing output files (attempts to remove file first).
  `--dry-run`: only print planned actions without running conversion.
  `--nb-worker`: reserved (not used aggressively by KCC due to potential concurrency issues).
