@@ -6,7 +6,6 @@ TODO: loads of tests
 TODO: inject calibre' tags (Manga, Seinen, Shonen, Horror, Fiction, Mystery, Fantasy...)
 TODO: inject calibre ids (isbn, kobo)
 TODO: kobo library collection (Manga, Thriller)
-TODO: language
 FIXME: ISBN is a calibre id
 
 """
@@ -105,6 +104,14 @@ class EPUBMetadata:
                 dc["date"][0][0] if isinstance(dc["date"][0], tuple) else dc["date"][0]
             )
 
+        # Language
+        if dc.get("language"):
+            meta["language"] = (
+                dc["language"][0][0]
+                if isinstance(dc["language"][0], tuple)
+                else dc["language"][0]
+            )
+
         # ISBN
         if dc.get("identifier"):
             for identifier in dc["identifier"]:
@@ -149,7 +156,7 @@ class EPUBMetadata:
         date: str | None = None,
         isbn: str | None = None,
         publisher: str | None = None,
-        language: str = "en-Us",
+        language: str = "en-US",
     ):
         """Set metadata in EPUB file.
 
@@ -168,7 +175,7 @@ class EPUBMetadata:
                 self.book.metadata[dc_ns] = {}
             # Always clear first
             self.book.metadata[dc_ns]["creator"] = []
-            
+
             # Add new ones if author is truthy
             if author:
                 authors = [author] if isinstance(author, str) else author
@@ -186,6 +193,7 @@ class EPUBMetadata:
         # Set language.
         if language:
             self.book.add_metadata("DC", "language", language)
+            self.book.set_language(language)
 
         # Set ISBN
         if isbn:
@@ -294,13 +302,13 @@ def inject_metadata(
     dry_run: bool = False,
 ):
     """Inject metadata into EPUB files from YAML configuration.
-    
+
     Args:
         path: Either a single EPUB file or a directory containing EPUBs.
         yaml_path: Path to the YAML metadata file.
         force: If True, overwrite existing metadata.
         dry_run: If True, show what would be done without modifying files.
-        
+
     Returns:
         0 on success, 1 on error.
     """
@@ -319,6 +327,9 @@ def inject_metadata(
     series_name = metadata.get("series")
     author = metadata.get("author")
     publisher_data = metadata.get("publisher", {})
+    # Top-level `language` applies to every volume; per-volume `language` overrides it.
+    # Default to "en-US" when neither is provided.
+    series_language = metadata.get("language", "en-US")
     volumes_data = {v["number"]: v for v in metadata.get("volumes", [])}
 
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
@@ -356,7 +367,7 @@ def inject_metadata(
                 skip_count += 1
                 continue
 
-            #if dry_run:
+            # if dry_run:
             #    logger.info(f"  [DRY RUN] Would inject metadata for volume {vol_num}")
             #    success_count += 1
             #    continue
@@ -366,7 +377,9 @@ def inject_metadata(
             if not title:
                 title = f"{series_name} v{vol_num:02d}"
 
-            # TODO: parametrize language from metadata.yaml
+            # Resolve language: per-volume value overrides the series-level
+            # (top-level YAML) value, which itself defaults to "en-US".
+            language = vol_data.get("language", series_language)
 
             # Use English metadata if available, otherwise Japanese
             locale_data = vol_data.get("english", {})
@@ -401,8 +414,7 @@ def inject_metadata(
                     date=release_date,
                     isbn=isbn,
                     publisher=publisher,
-                    language="en-US",
-                    # TODO: better injection
+                    language=language,
                 )
 
                 # # Debug: log TOC items before saving to help diagnose None uid
@@ -445,11 +457,11 @@ def inject_metadata(
 
 def dump_metadata(path: Path, output_path: Path | None = None):
     """Dump metadata from EPUB files to YAML.
-    
+
     Args:
         path: Either a single EPUB file or a directory containing EPUBs.
         output_path: Optional path to save the YAML output.
-        
+
     Returns:
         0 on success, 1 on error.
     """
@@ -539,12 +551,13 @@ def dump_metadata(path: Path, output_path: Path | None = None):
 
     return 0
 
+
 def _get_epub_files(path: Path) -> list[Path]:
     """Get EPUB files from either a single file or a directory.
-    
+
     Args:
         path: Either a single EPUB file or a directory containing EPUB files.
-        
+
     Returns:
         A list of EPUB file paths.
     """
@@ -566,37 +579,37 @@ def _get_epub_files(path: Path) -> list[Path]:
 
 def clear_metadata(path: Path, dry_run: bool = False) -> int:
     """Clear all metadata from EPUB files.
-    
+
     Args:
         path: Either a single EPUB file or a directory containing EPUBs.
         dry_run: If True, show what would be done without modifying files.
-        
+
     Returns:
         0 on success, 1 on error.
     """
     epub_files = _get_epub_files(path)
-    
+
     if not epub_files:
         logger.warning(f"No EPUB files found in {path}")
         return 0
-    
+
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
-    
+
     success_count = 0
     error_count = 0
-    
+
     for epub_file in epub_files:
         try:
             logger.info(f"Processing: {epub_file.name}")
-            
+
             if dry_run:
                 logger.info(f"  [DRY RUN] Would clear metadata from {epub_file.name}")
                 success_count += 1
                 continue
-            
+
             # Load EPUB
             epub_meta = EPUBMetadata(epub_file)
-            
+
             # Clear major metadata fields by setting them to empty values
             epub_meta.set_metadata(
                 title="",
@@ -607,16 +620,16 @@ def clear_metadata(path: Path, dry_run: bool = False) -> int:
                 isbn="",
                 publisher="",
             )
-            
+
             # Save changes
             epub_meta.save()
             logger.info(f"  ✓ Cleared metadata from {epub_file.name}")
             success_count += 1
-            
+
         except Exception as e:
             logger.error(f"  ✗ Error processing {epub_file.name}: {e}")
             error_count += 1
-    
+
     # Summary
     logger.info(f"\n{'=' * 60}")
     logger.info("SUMMARY")
@@ -625,5 +638,5 @@ def clear_metadata(path: Path, dry_run: bool = False) -> int:
     logger.info(f"✓ Processed:     {success_count}")
     logger.info(f"✗ Errors:        {error_count}")
     logger.info("=" * 60)
-    
+
     return 1 if error_count > 0 else 0
