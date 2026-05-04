@@ -184,7 +184,7 @@ class EPUBMetadata:
             self.book.add_metadata("DC", "date", date)
 
         # Set language.
-        if date:
+        if language:
             self.book.add_metadata("DC", "language", language)
 
         # Set ISBN
