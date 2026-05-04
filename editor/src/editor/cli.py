@@ -107,17 +107,17 @@ def main(argv=None) -> int:
 
     args = parser.parse_args(argv)
 
-    print(f"{args}")
-
     if not args.command:
         parser.print_help()
         return 1
 
     setup_logging(args.verbose, loglevel=args.loglevel)
 
+    logger.debug("parsed args: %s", args)
+
     # Execute command
     if args.command == "inject":
-        print("inject")
+        logger.debug("running inject command")
         return inject_metadata(
             args.path,
             args.metadata,
@@ -125,10 +125,10 @@ def main(argv=None) -> int:
             dry_run=args.dry_run,
         )
     elif args.command == "dump":
-        print("dump")
+        logger.debug("running dump command")
         return dump_metadata(args.path, args.output)
     elif args.command == "clear":
-        print("clear")
+        logger.debug("running clear command")
         return clear_metadata(args.path, dry_run=args.dry_run)
 
     return 0
