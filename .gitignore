@@ -17,3 +17,6 @@ Test.bck
 
 # Testing
 .coverage
+
+# Claude Code worktrees
+.claude/
