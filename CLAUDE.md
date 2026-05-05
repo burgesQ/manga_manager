@@ -1,6 +1,6 @@
-# manga_manager — CLAUDE.md
+# CLAUDE.md
 
-Documentation for Claude Code sessions working on this repository.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -40,6 +40,8 @@ src/packer/
 └── main.py      # entry point shim
 ```
 
+Test helpers (`run_packer`, `make_cbz`) live in both `packer/tests/conftest.py` (pytest fixtures) and `packer.testing` (importable module) — use either in new tests.
+
 Key behaviors:
 - Every `.cbz` **must** contain `ComicInfo.xml` or the script errors and exits
 - Chapter ranges: `1..12`, `1,3,5..8` (non-contiguous)
@@ -56,7 +58,8 @@ Reads EPUB files and injects/dumps/clears metadata defined in a YAML file.
 ```
 src/editor/
 ├── cli.py          # subcommands: inject / dump / clear
-├── editor_full.py  # core EPUB metadata logic via ebooklib
+├── editor_full.py  # active core: Dublin Core + Calibre metadata via ebooklib
+├── editor.py       # older/simpler implementation — not used by CLI, kept as reference
 └── main.py         # entry point shim
 ```
 
@@ -92,13 +95,15 @@ Execution strategy: tries KCC as a Python module first (`runpy`), falls back to 
 ## Dev Commands
 
 ```bash
+# Initial setup
+uv sync
+
 # Run all tests
 uv run pytest .
 
-# Run tests for a single package
+# Run tests for a single package or file
 uv run pytest packer -q
-uv run pytest editor -q
-uv run pytest convertor -q
+uv run pytest packer/tests/test_core_regex.py -k "test_fma"
 
 # Run with coverage (as CI does)
 uv run pytest --cov=packer --cov=convertor --cov=editor --cov-report=html . -q
@@ -112,10 +117,10 @@ uv run black --check --diff .
 # Import order check
 uv run isort --profile black --check-only .
 
-# Type check
+# Type check (packer only; mypy not yet configured for editor/convertor)
 uv run mypy packer/src
 
-# Apply auto-fixes (ruff)
+# Apply auto-fixes
 uv run ruff check --fix .
 uv run black .
 uv run isort --profile black .
@@ -130,6 +135,8 @@ uv run editor dump  ./volumes --output out.yaml
 uv run editor clear ./volumes
 uv run convertor ./volumes [--force-regen] [--dry-run]
 ```
+
+> **Note:** CI runs all linters with `|| true` — they report issues but never fail the pipeline. Fix lint errors locally before pushing.
 
 ---
 
@@ -151,36 +158,9 @@ uv run convertor ./volumes [--force-regen] [--dry-run]
 
 ## Roadmap / TODOs
 
-### packer (short-term)
-- [ ] Define extraction policy: `--flatten` vs `--keep-structure` flag
-- [ ] Robust `ComicInfo.xml` detection: missing / multiple / case-insensitive / malformed
-- [ ] Secure extraction (path traversal prevention)
-- [ ] `--skip-missing` / `--continue-on-error` flags
-- [ ] DRY up `core.py` + `worker.py` — reduce "forest of ifs" inherited from LLM sessions
-- [ ] Handle chapters `0` and `A..Z` identifiers
-- [ ] Handle `.cbz` with internal subdirectories (flatten vs keep)
+See `packer/TODOs.txt` for the authoritative task list. Key open items:
 
-### packer (medium-term)
-- [ ] Integration tests: dry-run + real extraction including concurrency
-- [ ] Centralize exit codes as named constants
-
-### editor
-- [ ] Inject Calibre tags (genre: Manga, Seinen, Shonen, …)
-- [ ] Inject Calibre IDs (ISBN as calibre id, kobo)
-- [ ] Parametrize language from metadata YAML (currently hardcoded `en-US`)
-- [ ] Kobo library collection support
-
-### convertor
-- [ ] Parallelize workers (1 worker = 1 EPUB)
-- [ ] Parametrize KCC settings via config / CLI instead of hardcoding
-
-### CI
-- [ ] Make mypy strict (remove `|| true`)
-- [ ] Multi-Python matrix (3.10, 3.11, 3.12)
-- [ ] Optional KCC integration CI job
-- [ ] Reviewdog PR annotations
-
-### Future
-- [ ] Calibre sync
-- [ ] Full workflow doc (download from Tachiyomi → manga_manager pipeline)
-- [ ] Batch metadata per volume / per series
+- **packer:** secure extraction (path traversal), `ComicInfo.xml` robustness, `--flatten`/`--keep-structure`, exit-code constants
+- **editor:** language parametrization from YAML (currently hardcoded `en-US`), Calibre tag/ID injection
+- **convertor:** parallelize workers, parametrize KCC settings
+- **CI:** make mypy strict, multi-Python matrix, reviewdog PR annotations

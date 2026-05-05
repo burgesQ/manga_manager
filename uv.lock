@@ -195,7 +195,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "kindlecomicconverter", git = "ssh://git@github.com/ciromattia/kcc?tag=v9.3.8" }]
+requires-dist = [{ name = "kindlecomicconverter", git = "https://github.com/ciromattia/kcc?tag=v9.3.8" }]
 
 [[package]]
 name = "coverage"
@@ -338,7 +338,7 @@ wheels = [
 [[package]]
 name = "kindlecomicconverter"
 version = "9.3.8"
-source = { git = "ssh://git@github.com/ciromattia/kcc?tag=v9.3.8#9b63b7af2cb181907e70cbaa861dea368b64b21e" }
+source = { git = "https://github.com/ciromattia/kcc?tag=v9.3.8#9b63b7af2cb181907e70cbaa861dea368b64b21e" }
 dependencies = [
     { name = "distro" },
     { name = "mozjpeg-lossless-optimization" },
