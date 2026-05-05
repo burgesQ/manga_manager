@@ -98,6 +98,32 @@ tags:
   - seinen
 ```
 
+#### `language` (optional)
+
+The top-level `language` key sets the EPUB language tag for every volume in the
+series. It can be any BCP 47 / Dublin Core language code (e.g. `"en-US"`,
+`"fr"`, `"ja"`). When omitted, the inject command falls back to `"en-US"`.
+
+A volume entry may also carry its own `language` key, which overrides the
+series-level value for that volume only.
+
+```yaml
+series: "Boruto"
+author: "Masashi Kishimoto"
+language: "en-US"          # applies to every volume by default
+
+volumes:
+  - number: 1
+    english:
+      release_date: "2017-04-04"
+      isbn: "9781421592114"
+  - number: 2
+    language: "ja"          # this volume overrides the series-level language
+    japanese:
+      release_date: "2017-05-02"
+      isbn: "9784088810454"
+```
+
 ### Test Suite
 
 Run tests from repository root:
