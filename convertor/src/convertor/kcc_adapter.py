@@ -2,24 +2,21 @@
 
 This module exposes a small, testable class that builds the argv list expected
 by KCC and runs the `kcc` module via `runpy.run_module`. Per project policy we
-execute KCC as a module (no subprocess fallback) to keep behavior consistent.
+execute KCC as a module (no subprocess fallback) to keep behaviour consistent.
 
 Design decisions:
 - Use a `NamedTuple` for the built invocation to avoid anonymous tuples.
 - Keep arguments passed to the module stable and matching the UI choices
-  (manga, color, cropping, Kobo profile).
+  (manga, colour, cropping, Kobo profile).
 """
 
 from __future__ import annotations
 
 import logging
-import runpy
 import shlex
-import shutil
 import subprocess
-import sys
 from pathlib import Path
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 logger = logging.getLogger(__name__)
 
@@ -61,14 +58,12 @@ class KCCAdapter:
         """Run the KCC module with the given invocation.
 
         Tries a list of candidate module names (see ``POSSIBLE_MODULE_NAMES``)
-        and runs the first one that is importable. This keeps behavior module-only
+        and runs the first one that is importable. This keeps behaviour module-only
         while being robust to packaging variations.
 
         Returns 0 on success; raises `RuntimeError` for non-zero exit codes or
         when no suitable module can be found.
         """
-        prev_argv = sys.argv[:]
-
         # Use kcc-c2e which is the CLI command installed by kindlecomicconverter
         cmd = ["kcc-c2e"] + invocation.args
         logger.debug("Running kcc: %s", shlex.join(cmd))
@@ -102,13 +97,7 @@ def convert_volume(volume_dir: Path, out_path: Path, dry_run: bool = False) -> P
     """
     adapter = KCCAdapter()
     args = adapter.build_invocation(volume_dir, out_path)
-
-    # cmd_display = " ".join([KCCAdapter.MODULE_NAME] + list(invocation.args))
     logger.debug(f"kcc CLI args invocation: {args}")
-
-    # if dry_run:
-    #     logger.info("Dry run: would execute %s", cmd_display)
-    #     return out_path
 
     rc = adapter.run_module(args, dry_run=dry_run)
     if rc != 0:
