@@ -7,7 +7,7 @@ execute KCC as a module (no subprocess fallback) to keep behavior consistent.
 Design decisions:
 - Use a `NamedTuple` for the built invocation to avoid anonymous tuples.
 - Keep arguments passed to the module stable and matching the UI choices
-  (manga, stretch/upscale, color, cropping, Kobo profile).
+  (manga, color, cropping, Kobo profile).
 """
 
 from __future__ import annotations
@@ -51,7 +51,6 @@ class KCCAdapter:
         args.append("--hq")
         args.extend(["-r", "2"])  # double-page parsing mode
         args.append("--manga-style")
-        args.append("--stretch")
         args.append("--forcecolor")
         args.extend(["--cropping", "2"])  # cropping mode
         args.append(str(input_dir))

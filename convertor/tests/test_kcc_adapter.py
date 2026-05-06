@@ -18,6 +18,7 @@ def test_build_invocation(tmp_path: Path):
     assert "-o" in args
     assert str(out) in args
     assert "--manga-style" in args
+    assert "--stretch" not in args
 
 
 def test_run_module_success_and_failure(tmp_path: Path, monkeypatch):
