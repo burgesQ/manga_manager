@@ -123,4 +123,4 @@ def test_path_traversal_detected(tmp_path: Path, make_cbz, run_packer):
         ],
     )
     assert res.returncode == 6
-    assert "Unsafe path" in res.stderr or "Unsafe path" in res.stdout
+    assert "Path traversal detected" in res.stderr or "Path traversal detected" in res.stdout

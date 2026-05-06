@@ -4,18 +4,18 @@ from packer.cli import setup_logging
 
 
 def test_color_enabled_shows_emoji_and_ansi(capsys):
-    # Force color output and log an INFO message
+    # Force colour output and log an INFO message
     setup_logging(verbose=False, force_color=True)
     logger = logging.getLogger("test_color_enabled")
     logger.info("hello color")
     captured = capsys.readouterr()
     err = captured.err
     assert "✅ INFO:" in err
-    assert "\x1b[" in err  # ANSI escape sequences present when colored
+    assert "\x1b[" in err  # ANSI escape sequences present when coloured
 
 
 def test_color_disabled_no_ansi_but_emoji_present(capsys):
-    # Force color off: expect emoji but no ANSI escapes
+    # Force colour off: expect emoji but no ANSI escapes
     setup_logging(verbose=False, force_color=False)
     logger = logging.getLogger("test_color_disabled")
     logger.info("hello plain")
@@ -67,4 +67,4 @@ def test_cli_loglevel_debug_shows_processing(tmp_path):
         f"packer failed: stdout={res.stdout} stderr={res.stderr}"
     )
     assert "🔧 DEBUG:" in res.stderr
-    assert "processing chapter 1" in res.stderr
+    assert "Extracting chapter 1" in res.stderr
