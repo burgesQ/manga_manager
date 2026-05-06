@@ -29,3 +29,9 @@ dev = [
 [pytest]
 pythonpath = "src"
 console_output_style = "progress"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
