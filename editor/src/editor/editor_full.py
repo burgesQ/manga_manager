@@ -163,8 +163,11 @@ class EPUBMetadata:
         TODO: set calibre tags (genre & other)
         """
 
-        # Set title
+        # Set title — clear existing entries first so inject replaces rather than appends
         if title:
+            dc_ns = "http://purl.org/dc/elements/1.1/"
+            if dc_ns in self.book.metadata and "title" in self.book.metadata[dc_ns]:
+                self.book.metadata[dc_ns]["title"] = []
             self.book.set_title(title)
 
         # Set author(s)
@@ -244,7 +247,7 @@ class EPUBMetadata:
                             or getattr(items, "title", None)
                         )
                         candidate = candidate or f"nav{counter[0]}"
-                        # sanitize candidate
+                        # sanitise candidate
                         candidate = re.sub(r"[^A-Za-z0-9_-]", "_", str(candidate))
                         if not candidate:
                             candidate = f"nav{counter[0]}"
