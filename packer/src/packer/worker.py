@@ -10,11 +10,20 @@ from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Tuple, TypeAlias
 
 from .core import extract_chapter_number, format_volume_dir, format_chapter_dir
+from .exit_codes import DUPLICATE_CHAPTER, MISSING_CHAPTER, PROCESSING_ERROR, SUCCESS
+from .types_ import ChapterToFilesMapping, ProcessResult, ProcessVolumeResult, Task
 
 logger = logging.getLogger(__name__)
 
 
-from .types_ import Task, ProcessResult, ProcessVolumeResult, ChapterToFilesMapping
+def _safe_extract(zf: zipfile.ZipFile, dest: Path) -> None:
+    """Extract *zf* into *dest*, raising ValueError on path-traversal attempts."""
+    resolved_dest = str(dest.resolve())
+    for member in zf.infolist():
+        resolved = str((dest / member.filename).resolve())
+        if not (resolved == resolved_dest or resolved.startswith(resolved_dest + "/")):
+            raise ValueError(f"Path traversal detected: {member.filename}")
+    zf.extractall(dest)
 
 
 def _ensure_dir(path: Path, dry_run: bool) -> None:
@@ -79,17 +88,12 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
     try:
         archive_for_inspection = src_path if cfg.dry_run else dest_archive
         with zipfile.ZipFile(str(archive_for_inspection), "r") as z:
-            names = z.namelist()
-            for member in names:
-                parts = member.split("/")
-                if ".." in parts or member.startswith("/") or member.startswith("\\"):
-                    raise RuntimeError(f"Unsafe path in archive: {member}")
             if cfg.dry_run:
                 logger.debug(
                     f"[dry-run] extract {archive_for_inspection} -> {chapter_dir}"
                 )
             else:
-                z.extractall(str(chapter_dir))
+                _safe_extract(z, chapter_dir)
                 logger.debug(f"[worker] extracted {dest_archive} -> {chapter_dir}")
     except zipfile.BadZipFile:
         raise RuntimeError(f"Bad zip file: {archive_for_inspection}")
@@ -120,14 +124,14 @@ def process_volume(
 
     # Validate presence & uniqueness for this volume's chapters
     for c in chapter_range:
-        entry = mapping.get(c)
-        if not entry or (not entry.get("mains") and not entry.get("extras")):
+        ch_entry: Optional[dict[str, list]] = mapping.get(c)
+        if not ch_entry or (not ch_entry.get("mains") and not ch_entry.get("extras")):
             logger.error(f"missing chapter {c}")
-            return ProcessVolumeResult(3, available_files)
-        if len(entry.get("mains", [])) > 1:
-            mains = [p for (_, p) in entry["mains"]]
+            return ProcessVolumeResult(MISSING_CHAPTER, available_files)
+        if len(ch_entry.get("mains", [])) > 1:
+            mains = [p for (_, p) in ch_entry["mains"]]
             logger.error(f"multiple archives match chapter {c}: {mains}")
-            return ProcessVolumeResult(4, available_files)
+            return ProcessVolumeResult(DUPLICATE_CHAPTER, available_files)
 
     # Prepare tasks: include main archive for each requested chapter and any
     # extras found
@@ -146,6 +150,8 @@ def process_volume(
             tasks.append(Task(f"{c}.{extra_suffix}", extra_file))
 
     # Planned tasks are important summary info for the user
+    total_tasks = len(tasks)
+    dry_prefix = "[DRY RUN] " if cfg.dry_run else ""
     logger.info(f"[info] planned tasks for volume {volume}:")
     for t in tasks:
         logger.info(f"[info]  chapter {t.chapter_id} -> {t.src}")
@@ -160,8 +166,16 @@ def process_volume(
     if cfg.nb_worker > 1:
         logger.debug(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
         with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
-            futures = [ex.submit(process_one, t.chapter_id, t.src, cfg) for t in tasks]
+            futures = {
+                ex.submit(process_one, t.chapter_id, t.src, cfg): (idx, t)
+                for idx, t in enumerate(tasks, 1)
+            }
             for fut in concurrent.futures.as_completed(futures):
+                idx, t = futures[fut]
+                logger.info(
+                    f"{dry_prefix}[{idx}/{total_tasks}] Extracting chapter"
+                    f" {t.chapter_id} — {Path(t.src).name}"
+                )
                 try:
                     result = fut.result()
                     moved_files.append(
@@ -174,10 +188,13 @@ def process_volume(
                     )
                 except Exception as e:
                     logger.error(f"{e}")
-                    return ProcessVolumeResult(6, available_files)
+                    return ProcessVolumeResult(PROCESSING_ERROR, available_files)
     else:
-        for t in tasks:
-            logger.debug(f"[info] processing chapter {t.chapter_id}")
+        for idx, t in enumerate(tasks, 1):
+            logger.info(
+                f"{dry_prefix}[{idx}/{total_tasks}] Extracting chapter"
+                f" {t.chapter_id} — {Path(t.src).name}"
+            )
             try:
                 result = process_one(t.chapter_id, t.src, cfg)
                 moved_files.append(
@@ -188,7 +205,7 @@ def process_volume(
                 logger.debug(f"Processed: {(result.chapter_id, result.dest_archive)}")
             except Exception as e:
                 logger.error(f"{e}")
-                return ProcessVolumeResult(6, available_files)
+                return ProcessVolumeResult(PROCESSING_ERROR, available_files)
 
     # Remove moved files from available_files (non-dry-run)
     if not cfg.dry_run:
@@ -199,4 +216,4 @@ def process_volume(
                     if Path(orig).name == basename:
                         available_files.remove(orig)
                         break
-    return ProcessVolumeResult(0, available_files)
+    return ProcessVolumeResult(SUCCESS, available_files)

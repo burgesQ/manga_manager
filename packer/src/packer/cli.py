@@ -6,8 +6,10 @@ import argparse
 import logging
 import os
 import re
+import time
 from typing import List, Optional
 
+from .exit_codes import CLI_ERROR, SUCCESS
 from .core import (
     NAMED_PATTERNS,
     find_cbz_files,
@@ -25,7 +27,7 @@ def setup_logging(
     loglevel: Optional[str] = None,
     force_color: Optional[bool] = None,
 ):
-    """Configure root logger with a compact, colored formatter and emoji.
+    """Configure root logger with a compact, coloured formatter and emoji.
 
     - verbose -> DEBUG level, otherwise INFO
     - loglevel: explicit string level to override verbose
@@ -46,7 +48,7 @@ def setup_logging(
 
     handler = logging.StreamHandler()
 
-    # Decide whether to use color based on the handler stream TTY or caller override
+    # Decide whether to use colour based on the handler stream TTY or caller override
     stream = handler.stream
     if force_color is True:
         use_color = True
@@ -285,7 +287,7 @@ def main(argv=None) -> int:
         path_config = load_config_from_path(args.path)
     except ValueError as e:
         logger.error(str(e))
-        return 2
+        return CLI_ERROR
 
     # apply config defaults only when CLI didn't provide a non-default value
     if path_config:
@@ -311,7 +313,7 @@ def main(argv=None) -> int:
     # Validate args
     if args.batch and (args.volume or args.chapter_range):
         logger.error("--batch cannot be combined with --volume/--chapter-range")
-        return 2
+        return CLI_ERROR
     if not (args.batch or args.batch_file) and (
         args.volume is None or args.chapter_range is None
     ):
@@ -323,12 +325,12 @@ def main(argv=None) -> int:
             logger.error(
                 "either --batch or both --volume and --chapter-range must be provided"
             )
-            return 2
+            return CLI_ERROR
 
     # Validate that a serie name is available either via CLI or config
     if args.serie is None:
         logger.error("either --serie or a `serie` key in packer.json must be provided")
-        return 2
+        return CLI_ERROR
 
     # compile patterns
     chapter_pat = None
@@ -345,7 +347,7 @@ def main(argv=None) -> int:
 
     except re.error as e:
         logger.error(f"Invalid regex: {e}")
-        return 2
+        return CLI_ERROR
 
     cbz_files = find_cbz_files(args.path)
 
@@ -371,16 +373,24 @@ def main(argv=None) -> int:
             batch_specs = parse_batch_spec(args.batch)
         except Exception as e:
             logger.error(e)
-            return 2
+            return CLI_ERROR
     elif args.batch_file:
         try:
             batch_specs = parse_batch_file(args.batch_file)
         except Exception as e:
             logger.error(e)
-            return 2
+            return CLI_ERROR
     else:
         # single volume mode (cfg.chapter_range already set)
         batch_specs = [(cfg.volume, cfg.chapter_range)]
+
+    total_volumes = len(batch_specs)
+    total_chapters = sum(len(ranges) for _, ranges in batch_specs)
+    start_time = time.monotonic()
+    dry_prefix = "[DRY RUN] " if cfg.dry_run else ""
+    logger.info(
+        f"{dry_prefix}📦 Processing {total_chapters} chapters → {total_volumes} volume(s)"
+    )
 
     available_files = cbz_files.copy()
     for vol_num, ranges in batch_specs:
@@ -390,5 +400,8 @@ def main(argv=None) -> int:
         if rc != 0:
             return rc
 
-    logger.info("Done")
-    return 0
+    elapsed = time.monotonic() - start_time
+    logger.info(
+        f"✅ Done — {total_chapters} chapters in {total_volumes} volume(s) ({elapsed:.1f}s)"
+    )
+    return SUCCESS

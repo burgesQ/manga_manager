@@ -1,0 +1,7 @@
+"""Exit code constants for the packer CLI."""
+
+SUCCESS = 0
+CLI_ERROR = 2
+MISSING_CHAPTER = 3
+DUPLICATE_CHAPTER = 4
+PROCESSING_ERROR = 6
