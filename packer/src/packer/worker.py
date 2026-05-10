@@ -160,6 +160,21 @@ def process_volume(
     volume_dir = Path(format_volume_dir(cfg.dest, cfg.serie, volume))
     _ensure_dir(volume_dir, cfg.dry_run)
 
+    if cfg.covers:
+        for cm in cfg.covers:
+            if cm.volume == volume:
+                src = Path(cm.cover_path)
+                if not src.exists():
+                    logger.warning(f"cover not found, skipping: {src}")
+                    break
+                cover_dest = volume_dir / "cover.webp"
+                if cfg.dry_run:
+                    logger.info(f"[DRY RUN] would copy cover {src} → {cover_dest}")
+                else:
+                    shutil.copy2(str(src), str(cover_dest))
+                    logger.info(f"📷 Copied cover → {cover_dest}")
+                break
+
     moved_files: List[str] = []
 
     # Execute tasks (threaded as before)

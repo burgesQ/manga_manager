@@ -26,6 +26,8 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **P10** Merge / consolidate volume-level `ComicInfo.xml`
 - [x] **P11** Better logging / progress reporting UI
 - [ ] **P12** Additional archive formats and chapter identifier styles (A..Z, chapter 0, etc.)
+- [ ] **P13** Support for optional volume's cover.
+              Sometime volume doesn't have cover. User may download one (as `.webp` ?) And attach it to the vols.cvs (work like that ?)
 
 ---
 
@@ -46,8 +48,9 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **C2** Parallelize workers for multi-volume conversions
 - [ ] **C3** Parametrise KCC settings via CLI flags / `packer.json` (profile, cropping, hq)
 - [ ] **C4** Integrate conversion into packer via `--convert` flag or `auto_convert` in `packer.json`
+             Note: isn't that the /editor purpose ?
 - [x] **C5** Remove dead code: commented-out `runpy` block and unused imports in `kcc_adapter.py`
-- [ ] **C6** Inject cover if none?
+- [x] **C6** Inject cover — packer copies `cover.webp` to volume dir; convertor creates `Chapter 000/` before KCC, cleans up after
 
 ---
 

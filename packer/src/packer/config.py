@@ -4,12 +4,14 @@ import re
 from dataclasses import dataclass
 from typing import List, Optional
 
+from .types_ import CoverMapping
+
 
 @dataclass
 class Config:
     """Runtime configuration for a packer invocation.
 
-    This dataclass centralizes CLI options and compiled regex patterns used by
+    This dataclass centralises CLI options and compiled regex patterns used by
     worker code.
     """
 
@@ -24,6 +26,7 @@ class Config:
     force: bool = False
     chapter_pat: Optional[re.Pattern] = None
     extra_pat: Optional[re.Pattern] = None
+    covers: Optional[List[CoverMapping]] = None
 
     # convenience helper for worker module
     def has_comicinfo(self, path: str) -> bool:

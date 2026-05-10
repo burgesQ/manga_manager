@@ -14,11 +14,38 @@ from __future__ import annotations
 
 import logging
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 from typing import List, NamedTuple
 
 logger = logging.getLogger(__name__)
+
+COVER_FILENAME = "cover.webp"
+COVER_CHAPTER_DIR = "Chapter 000"
+
+
+def _inject_cover(volume_dir: Path, dry_run: bool) -> bool:
+    """Copy cover.webp into Chapter 000/ so KCC treats it as the first page."""
+    cover_src = volume_dir / COVER_FILENAME
+    if not cover_src.exists():
+        return False
+    chapter_dir = volume_dir / COVER_CHAPTER_DIR
+    if dry_run:
+        logger.info(f"[DRY RUN] would create {chapter_dir} with cover")
+        return True
+    chapter_dir.mkdir(exist_ok=True)
+    shutil.copy2(str(cover_src), str(chapter_dir / COVER_FILENAME))
+    logger.info(f"📷 Cover injected: {chapter_dir / COVER_FILENAME}")
+    return True
+
+
+def _cleanup_cover_chapter(volume_dir: Path) -> None:
+    """Remove the temporary Chapter 000/ dir created for cover injection."""
+    chapter_dir = volume_dir / COVER_CHAPTER_DIR
+    if chapter_dir.exists():
+        shutil.rmtree(str(chapter_dir))
+        logger.debug(f"Cleaned up temp cover dir: {chapter_dir}")
 
 
 class KCCInvocation(NamedTuple):
@@ -94,12 +121,20 @@ def convert_volume(volume_dir: Path, out_path: Path, dry_run: bool = False) -> P
     This function uses :class:`KCCAdapter` internally. The public API purposely
     does not accept an `options` parameter — arguments passed to KCC are fixed
     to match the UI defaults.
+
+    If a ``cover.webp`` file exists at the root of *volume_dir*, it is injected
+    as ``Chapter 000/cover.webp`` before the KCC call so KCC renders it as the
+    first page. The temporary directory is removed in the finally block.
     """
     adapter = KCCAdapter()
-    args = adapter.build_invocation(volume_dir, out_path)
-    logger.debug(f"kcc CLI args invocation: {args}")
-
-    rc = adapter.run_module(args, dry_run=dry_run)
-    if rc != 0:
-        raise RuntimeError(f"kcc module returned non-zero exit code {rc}")
+    cover_injected = _inject_cover(volume_dir, dry_run)
+    try:
+        args = adapter.build_invocation(volume_dir, out_path)
+        logger.debug(f"kcc CLI args invocation: {args}")
+        rc = adapter.run_module(args, dry_run=dry_run)
+        if rc != 0:
+            raise RuntimeError(f"kcc module returned non-zero exit code {rc}")
+    finally:
+        if cover_injected and not dry_run:
+            _cleanup_cover_chapter(volume_dir)
     return out_path

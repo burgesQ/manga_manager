@@ -39,5 +39,12 @@ class ProcessVolumeResult(NamedTuple):
     remaining_files: List[str]
 
 
+class CoverMapping(NamedTuple):
+    """Represents cover image mapping: volume number -> cover file path."""
+
+    volume: int
+    cover_path: str
+
+
 # Type alias for simplified mapping used in worker
 ChapterToFilesMapping: TypeAlias = Dict[int, Dict[str, List[Tuple[Optional[str], str]]]]

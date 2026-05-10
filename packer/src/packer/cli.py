@@ -16,6 +16,7 @@ from .core import (
     parse_range,
 )
 from .worker import process_volume
+from .types_ import CoverMapping
 
 logger = logging.getLogger(__name__)
 
@@ -310,6 +311,28 @@ def main(argv=None) -> int:
         if args.serie is None and "serie" in path_config:
             args.serie = path_config["serie"]
 
+    # Parse covers from packer.json if present
+    covers = None
+    if path_config and "covers" in path_config:
+        covers_dict = path_config["covers"]
+        if not isinstance(covers_dict, dict):
+            logger.warning("covers in packer.json must be a dict, skipping")
+        else:
+            try:
+                covers = [
+                    CoverMapping(volume=int(vol), cover_path=path)
+                    for vol, path in covers_dict.items()
+                ]
+                logger.debug(f"loaded {len(covers)} cover mapping(s) from packer.json")
+            except (ValueError, TypeError) as e:
+                logger.warning(f"invalid covers config in packer.json: {e}, skipping")
+
+    # Warn early if declared cover paths don't exist on disc
+    if covers:
+        for cm in covers:
+            if not os.path.exists(cm.cover_path):
+                logger.warning(f"cover declared for volume {cm.volume} not found: {cm.cover_path}")
+
     # Validate args
     if args.batch and (args.volume or args.chapter_range):
         logger.error("--batch cannot be combined with --volume/--chapter-range")
@@ -363,6 +386,7 @@ def main(argv=None) -> int:
         force=args.force,
         chapter_pat=chapter_pat,
         extra_pat=extra_pat,
+        covers=covers,
     )
 
     # Parse batch specs
