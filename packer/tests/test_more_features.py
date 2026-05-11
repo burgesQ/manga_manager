@@ -44,7 +44,7 @@ def test_extras_without_main_ok(tmp_path: Path, make_cbz, run_packer):
             "--chapter-range",
             "4",
             "--pattern",
-            "fma",
+            "mangafire",
         ],
     )
     assert res.returncode == 0, f"stderr={res.stderr}"
@@ -81,7 +81,7 @@ def test_planned_tasks_order_with_workers(tmp_path: Path, make_cbz, run_packer):
             "--chapter-range",
             "16",
             "--pattern",
-            "fma",
+            "mangafire",
             "--nb-worker",
             "4",
         ],

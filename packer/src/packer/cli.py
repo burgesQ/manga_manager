@@ -236,10 +236,11 @@ def main(argv=None) -> int:
 
     p.add_argument(
         "--pattern",
-        choices=["default", "mashle", "fma", "animeSama"],
+        choices=["default", "mangadex", "mangafire", "animeSama"],
         default="default",
-        help='named pattern (e.g., "mashle" expects "Ch.013" / "Ch.013.5"; '
-        '"fma" supports "Chap 13" and extras "Chap 13.5" ; "animeSama" is for French scans)',
+        help='named pattern: "mangadex" expects "Ch.013" / "Ch.013.5" (MangaDex/Tachiyomi); '
+        '"mangafire" expects "Chap 13" / "Chap 13.5" (MangaFire); '
+        '"animeSama" expects "Chapitre 13" (French; animesama.fr)',
     )
     p.add_argument(
         "--chapter-regex",

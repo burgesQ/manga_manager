@@ -170,25 +170,39 @@ uv run packer \
 
 ### Named filename patterns
 
-Packer ships with pre-configured regex patterns for common download sources:
+Packer ships with pre-configured regex patterns for common download sources.
+Pass `--pattern <name>` to select one:
 
-| Pattern | Example filename | Use with |
+| Flag | Matches | Extras | Source |
+|---|---|---|---|
+| `default` | `Chapter 001`, `Ch.001`, `Ch 1` | `Chapter 001.5` | "read dot net" sites (e.g. `readberserk.net`, generic) |
+| `mangadex` | `Ch.013`, `Ch 013`, `Chapter 013` | `Ch.013.5` | MangaDex, Tachiyomi downloads |
+| `mangafire` | `Chap 013`, `Chap.013` | `Chap 013.5` | MangaFire |
+| `animeSama` | `Chapitre 013`, `Chap 013` | `Chapitre 013.5` | animesama.fr (French scans) |
+
+**Regex details:**
+
+| Flag | Chapter regex | Extra regex |
 |---|---|---|
-| `default` | `Chapter 001.cbz`, `Ch.1.cbz` | Most sources |
-| `mashle` | `Mashle - Chapter 001.cbz` | Tachiyomi/MangaDex |
-| `fma` | `Chap 016.cbz`, `Chap 016.1.cbz` | FMA-style sources |
-| `animeSama` | Custom pattern | animesama.fr |
+| `default` | `(?i)chapter[\s._-]*0*(\d+)` or `(?i)ch[\s._-]*0*(\d+)` | same with `\.(\d+)` suffix |
+| `mangadex` | `(?i)ch(?:\.\|apter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
+| `mangafire` | `(?i)chap(?:\.\|ter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
+| `animeSama` | `(?i)chap(?:\.\|itre)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
 
 ```console
-# Use the mashle pattern
+# MangaDex download: "Ch.001 Title.cbz", "Ch.001.5.cbz"
 uv run packer --path ./Mashle --serie "Mashle" --volume 1 \
-  --chapter-range "1..8" --pattern mashle
+  --chapter-range "1..8" --pattern mangadex
 
-# Override with a custom regex
+# MangaFire download: "Chap 016.cbz", "Chap 016.1.cbz"
+uv run packer --path ./FMA --serie "FMA" --volume 4 \
+  --chapter-range "16" --pattern mangafire
+
+# Override with a fully custom regex
 uv run packer --path ./Series --serie "Series" --volume 1 \
   --chapter-range "1..10" \
-  --chapter-regex "Chapter (\d+)" \
-  --extra-regex "Chapter (\d+\.\d+)"
+  --chapter-regex "Episode ([0-9]+)" \
+  --extra-regex "Episode ([0-9]+)\.([0-9]+)"
 ```
 
 ### Extras (e.g. chapter 16.1, 16.2)
@@ -198,7 +212,7 @@ Extra chapters are automatically associated with their parent chapter number and
 ```console
 # Processes Chapter 16, then 16.1, then 16.2 in order
 uv run packer --path ./FMA --serie "FMA" --volume 4 \
-  --chapter-range "16" --pattern fma
+  --chapter-range "16" --pattern mangafire
 ```
 
 ### Batch mode — multiple volumes at once
@@ -221,7 +235,7 @@ Place a `packer.json` in the source directory to set defaults. CLI arguments alw
 ```json
 {
   "serie": "Berserk",
-  "pattern": "mashle",
+  "pattern": "mangadex",
   "nb_worker": 2
 }
 ```
@@ -238,7 +252,7 @@ Place a `cover.webp` in the volume directory before running `convertor`. It will
 --volume N               volume number
 --chapter-range RANGE    chapter range: "1..12", "1,3,5..8"
 --dest PATH              output root (default: same as --path)
---pattern NAME           named pattern: mashle | fma | animeSama
+--pattern NAME           named pattern: mangadex | mangafire | animeSama
 --chapter-regex REGEX    custom regex for main chapters
 --extra-regex REGEX      custom regex for extra chapters
 --batch SPEC             inline batch: "v01:1..3-v02:4..6"
