@@ -158,9 +158,9 @@ uv run convertor ./volumes [--force-regen] [--dry-run]
 
 ## Roadmap / TODOs
 
-See `packer/TODOs.txt` for the authoritative task list. Key open items:
+See `ROADMAP.md` for the full task list. Key open items:
 
-- **packer:** secure extraction (path traversal), `ComicInfo.xml` robustness, `--flatten`/`--keep-structure`, exit-code constants
-- **editor:** language parametrization from YAML (currently hardcoded `en-US`), Calibre tag/ID injection
+- **packer:** `ComicInfo.xml` robustness, `--flatten`/`--keep-structure`, rework concurrency, `--skip-missing`/`--continue-on-error`
+- **editor:** Calibre tag/ID injection, Kobo library collection support
 - **convertor:** parallelize workers, parametrize KCC settings
-- **CI:** make mypy strict, multi-Python matrix, reviewdog PR annotations
+- **CI:** multi-Python matrix (3.10–3.12), reviewdog PR annotations, optional KCC integration job

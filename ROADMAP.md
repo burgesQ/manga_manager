@@ -26,8 +26,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **P10** Merge / consolidate volume-level `ComicInfo.xml`
 - [x] **P11** Better logging / progress reporting UI
 - [ ] **P12** Additional archive formats and chapter identifier styles (A..Z, chapter 0, etc.)
-- [ ] **P13** Support for optional volume's cover.
-              Sometime volume doesn't have cover. User may download one (as `.webp` ?) And attach it to the vols.cvs (work like that ?)
+- [x] **P13** Support for optional volume cover — place `cover.webp` in the volume dir; see **C6** for implementation
 
 ---
 
