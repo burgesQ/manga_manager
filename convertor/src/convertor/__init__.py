@@ -7,10 +7,18 @@ This package prefers invoking KCC as an importable module (runpy.run_module) and
 to invoking the `kcc` CLI via subprocess when import-based execution is not available.
 """
 from pathlib import Path
-from .kcc_adapter import convert_volume as _convert_volume
+from .kcc_adapter import KCCSettings, convert_volume as _convert_volume
+
+__all__ = ["convert_volume", "KCCSettings"]
 
 
-def convert_volume(volume_dir: Path, out_path: Path | None = None, *, dry_run: bool = False):
+def convert_volume(
+    volume_dir: Path,
+    out_path: Path | None = None,
+    *,
+    dry_run: bool = False,
+    settings: KCCSettings = KCCSettings(),
+):
     """Convert a volume directory into a kepub.epub file using KCC.
 
     Args:
@@ -25,4 +33,4 @@ def convert_volume(volume_dir: Path, out_path: Path | None = None, *, dry_run: b
     # default output: sibling file next to the volume dir with a predictable name
     if out_path is None:
         out_path = volume_dir.parent / (volume_dir.name + '.kepub.epub')
-    return _convert_volume(volume_dir, Path(out_path), dry_run=dry_run)
+    return _convert_volume(volume_dir, Path(out_path), dry_run=dry_run, settings=settings)
