@@ -13,7 +13,7 @@ from pathlib import Path
 from packer.cli import setup_logging
 
 # from .worker import convert_volumes_parallel, print_summary
-from convertor.kcc_adapter import convert_volume
+from convertor.kcc_adapter import KCCSettings, convert_volume
 
 logger = logging.getLogger("convertor")
 
@@ -55,9 +55,58 @@ def main(argv=None) -> int:
         "--nb-worker", "-w", type=int, default=1, help="number of workers (default 1)"
     )
 
+    # KCC conversion settings — all defaults match the original hardcoded behaviour
+    kcc = p.add_argument_group("KCC settings")
+    kcc.add_argument(
+        "--profile",
+        default="KoLC",
+        help="KCC device profile (default: KoLC = Kobo Libra Colour)",
+    )
+    kcc.add_argument(
+        "--manga-style",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="manga reading direction, right-to-left (default: on)",
+    )
+    kcc.add_argument(
+        "--hq",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="high-quality mode (default: on)",
+    )
+    kcc.add_argument(
+        "--forcecolor",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="force colour output (default: on)",
+    )
+    kcc.add_argument(
+        "--rotation",
+        type=int,
+        default=2,
+        choices=[0, 1, 2, 3],
+        help="page rotation mode: 0=none, 1=90CW, 2=90CCW, 3=180 (default: 2)",
+    )
+    kcc.add_argument(
+        "--cropping",
+        type=int,
+        default=2,
+        choices=[0, 1, 2],
+        help="cropping mode: 0=off, 1=safe, 2=aggressive (default: 2)",
+    )
+
     args = p.parse_args(argv)
 
     setup_logging(args.verbose, loglevel=args.loglevel)
+
+    settings = KCCSettings(
+        profile=args.profile,
+        hq=args.hq,
+        rotation=args.rotation,
+        manga_style=args.manga_style,
+        forcecolor=args.forcecolor,
+        cropping=args.cropping,
+    )
 
     root = Path(args.root)
     if not root.exists():
@@ -95,7 +144,7 @@ def main(argv=None) -> int:
         logger.info("%s -> %s", vol, out_path)
 
         try:
-            convert_volume(vol, out_path, dry_run=args.dry_run)
+            convert_volume(vol, out_path, dry_run=args.dry_run, settings=settings)
             logger.info("generated: %s", out_path)
         except Exception as e:
             logger.error("conversion failed for %s: %s", vol, e)

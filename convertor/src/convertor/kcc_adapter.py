@@ -58,25 +58,48 @@ class KCCInvocation(NamedTuple):
     args: List[str]
 
 
+class KCCSettings(NamedTuple):
+    """KCC conversion settings.
+
+    All defaults preserve the original hardcoded behaviour so existing callers
+    that omit this argument are unaffected.
+    """
+
+    profile: str = "KoLC"
+    hq: bool = True
+    rotation: int = 2
+    manga_style: bool = True
+    forcecolor: bool = True
+    cropping: int = 2
+
+
 class KCCAdapter:
     """Builds arguments and runs the KCC module.
 
     This class is intentionally small to make it easy to unit-test and mock.
     """
 
-    def build_invocation(self, input_dir: Path, out_path: Path) -> KCCInvocation:
+    def build_invocation(
+        self,
+        input_dir: Path,
+        out_path: Path,
+        settings: KCCSettings = KCCSettings(),
+    ) -> KCCInvocation:
         """Build a `KCCInvocation` representing the argv to pass to the module.
 
         The returned invocation is a NamedTuple (no anonymous tuples used).
         """
         args: list[str] = []
         args.extend(["-o", str(out_path)])
-        args.extend(["--profile", "KoLC"])  # device/profile preference
-        args.append("--hq")
-        args.extend(["-r", "2"])  # double-page parsing mode
-        args.append("--manga-style")
-        args.append("--forcecolor")
-        args.extend(["--cropping", "2"])  # cropping mode
+        args.extend(["--profile", settings.profile])
+        if settings.hq:
+            args.append("--hq")
+        args.extend(["-r", str(settings.rotation)])
+        if settings.manga_style:
+            args.append("--manga-style")
+        if settings.forcecolor:
+            args.append("--forcecolor")
+        args.extend(["--cropping", str(settings.cropping)])
         args.append(str(input_dir))
 
         return KCCInvocation(args)
@@ -115,7 +138,12 @@ class KCCAdapter:
         return res.returncode
 
 
-def convert_volume(volume_dir: Path, out_path: Path, dry_run: bool = False) -> Path:
+def convert_volume(
+    volume_dir: Path,
+    out_path: Path,
+    dry_run: bool = False,
+    settings: KCCSettings = KCCSettings(),
+) -> Path:
     """Convert a volume folder into an EPUB/Kepub using KCC (module-only).
 
     This function uses :class:`KCCAdapter` internally. The public API purposely
@@ -129,7 +157,7 @@ def convert_volume(volume_dir: Path, out_path: Path, dry_run: bool = False) -> P
     adapter = KCCAdapter()
     cover_injected = _inject_cover(volume_dir, dry_run)
     try:
-        args = adapter.build_invocation(volume_dir, out_path)
+        args = adapter.build_invocation(volume_dir, out_path, settings)
         logger.debug(f"kcc CLI args invocation: {args}")
         rc = adapter.run_module(args, dry_run=dry_run)
         if rc != 0:
