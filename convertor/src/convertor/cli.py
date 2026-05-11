@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import subprocess
 import sys
 from pathlib import Path
 
@@ -86,7 +87,7 @@ def main(argv=None) -> int:
             if args.force_regen:
                 try:
                     out_path.unlink()
-                except Exception:
+                except OSError:
                     logger.warning("could not remove existing output: %s", out_path)
             else:
                 logger.info("skipping existing output: %s", out_path)
@@ -97,7 +98,7 @@ def main(argv=None) -> int:
         try:
             convert_volume(vol, out_path, dry_run=args.dry_run)
             logger.info("generated: %s", out_path)
-        except Exception as e:
+        except (RuntimeError, subprocess.CalledProcessError, OSError) as e:
             logger.error("conversion failed for %s: %s", vol, e)
 
     return 0

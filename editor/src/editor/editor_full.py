@@ -17,6 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+import zipfile
+
 import yaml
 
 logger = logging.getLogger("editor")
@@ -43,8 +45,8 @@ class EPUBMetadata:
         """Load EPUB file."""
         try:
             self.book = epub.read_epub(str(self.filepath))
-        except Exception as e:
-            raise ValueError(f"Failed to load EPUB {self.filepath}: {e}")
+        except (OSError, KeyError, zipfile.BadZipFile) as e:
+            raise ValueError(f"Failed to load EPUB {self.filepath}: {e}") from e
 
     def has_metadata(self) -> bool:
         """Check if EPUB already has metadata set."""
@@ -253,13 +255,13 @@ class EPUBMetadata:
                             candidate = f"nav{counter[0]}"
                         try:
                             items.uid = candidate
-                        except Exception:
+                        except (AttributeError, TypeError):
                             # Some item types may not allow setting uid; ignore
                             pass
                     counter[0] += 1
 
             _walk(self.book.toc, [0])
-        except Exception:
+        except Exception:  # TOC structure is unpredictable; best-effort, keep broad
             logger.exception("Error ensuring TOC uids")
 
     def save(self):
@@ -441,7 +443,7 @@ def inject_metadata(
 
             success_count += 1
 
-        except Exception:
+        except Exception:  # per-file loop guard: continue processing remaining files
             logger.exception(f"  ✗ Error processing {epub_file.name}:")
             error_count += 1
 
@@ -515,7 +517,7 @@ def dump_metadata(path: Path, output_path: Path | None = None):
 
             volumes.append(vol_data)
 
-        except Exception as e:
+        except Exception as e:  # per-file loop guard: continue dumping remaining files
             logger.error(f"Error reading {epub_file.name}: {e}")
 
     # Build YAML structure
@@ -629,7 +631,7 @@ def clear_metadata(path: Path, dry_run: bool = False) -> int:
             logger.info(f"  ✓ Cleared metadata from {epub_file.name}")
             success_count += 1
 
-        except Exception as e:
+        except Exception as e:  # per-file loop guard: continue clearing remaining files
             logger.error(f"  ✗ Error processing {epub_file.name}: {e}")
             error_count += 1
 
