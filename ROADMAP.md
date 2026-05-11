@@ -78,3 +78,15 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 ## Web UI
 
 - [x] **W1** Ship with Calibre web? (idea)
+
+---
+
+## Code Quality / Cleanup
+
+Global refactor pass across all three packages to improve readability and maintainability.
+
+- [ ] **Q1** Replace anonymous tuples with `NamedTuple` everywhere — no bare `tuple[x, y]` return types
+- [ ] **Q2** Eliminate if-forests — flatten nested conditionals with early returns and guard clauses
+- [ ] **Q3** Break up long functions — enforce single-responsibility; extract helpers when a function exceeds ~30 lines
+- [ ] **Q4** Remove anonymous lambdas — replace inline `lambda` with named functions or `operator` helpers where intent is non-obvious
+- [ ] **Q5** Split large modules into sub-files — e.g. `editor_full.py`, `cli.py` (packer) are good candidates for further decomposition
