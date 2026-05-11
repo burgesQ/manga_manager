@@ -47,7 +47,8 @@ Berserk v01.kepub.epub  →  Kobo
 
 - **Python 3.12+** — check with `python3 --version`
 - **[uv](https://docs.astral.sh/uv/getting-started/installation/)** — fast Python package manager
-- **[KindleComicConverter](https://github.com/ciromattia/kcc)** — required by `convertor` only; the `kcc-c2e` CLI must be on your `PATH`
+
+`kindlecomicconverter` (KCC) is a declared Python dependency and is installed automatically by `uv sync` — no separate installation needed.
 
 ---
 
@@ -408,15 +409,6 @@ Berserk v01/
 ├── Berserk - Ch.001.cbz
 ├── Chapter 001/
 └── ...
-```
-
-### KCC execution
-
-Convertor invokes `kcc-c2e` (the CLI installed by `kindlecomicconverter`). Make sure it is on your `PATH`:
-
-```console
-which kcc-c2e     # should return a path
-kcc-c2e --help
 ```
 
 ---
