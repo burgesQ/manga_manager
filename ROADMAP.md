@@ -27,6 +27,9 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [x] **P11** Better logging / progress reporting UI
 - [ ] **P12** Additional archive formats and chapter identifier styles (A..Z, chapter 0, etc.)
 - [x] **P13** Support for optional volume cover — place `cover.webp` in the volume dir; see **C6** for implementation
+              Sometime volume doesn't have cover. User may download one (as `.webp` ?) And attach it to the vols.cvs (work like that ?)
+- [x] **P14** Rename named regex patterns from series names (`fma`, `mashle`, `animeSama`) to download-source names (`mangadex`, `weebcentral`, etc.) — patterns describe filename conventions from a given source, not a specific series
+
 
 ---
 
@@ -74,4 +77,4 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 
 ## Web UI
 
-- [ ] **W1** Ship with Calibre web? (idea)
+- [x] **W1** Ship with Calibre web? (idea)
