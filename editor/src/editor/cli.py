@@ -28,6 +28,18 @@ from packer.cli import setup_logging
 logger = logging.getLogger("editor")
 
 
+def _add_logging_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--verbose", action="store_true", help="Verbose logging")
+    p.add_argument(
+        "--loglevel",
+        "-l",
+        type=str,
+        default=None,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
+        help="explicit log level (overrides --verbose)",
+    )
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="EPUB files metadata manager",
@@ -59,15 +71,7 @@ def main(argv=None) -> int:
     inject_parser.add_argument(
         "--dry-run", action="store_true", help="Simulate without making changes"
     )
-    inject_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
-    inject_parser.add_argument(
-        "--loglevel",
-        "-l",
-        type=str,
-        default=None,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
-        help="explicit log level (overrides --verbose)",
-    )
+    _add_logging_args(inject_parser)
 
     # Dump command
     dump_parser = subparsers.add_parser("dump", help="Dump metadata from EPUBs")
@@ -77,15 +81,7 @@ def main(argv=None) -> int:
     dump_parser.add_argument(
         "--output", "-o", type=Path, help="Output YAML file (default: print to stdout)"
     )
-    dump_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
-    dump_parser.add_argument(
-        "--loglevel",
-        "-l",
-        type=str,
-        default=None,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
-        help="explicit log level (overrides --verbose)",
-    )
+    _add_logging_args(dump_parser)
 
     # Clear command
     clear_parser = subparsers.add_parser("clear", help="Clear metadata from EPUBs")
@@ -95,15 +91,7 @@ def main(argv=None) -> int:
     clear_parser.add_argument(
         "--dry-run", action="store_true", help="Simulate without making changes"
     )
-    clear_parser.add_argument("--verbose", action="store_true", help="Verbose logging")
-    clear_parser.add_argument(
-        "--loglevel",
-        "-l",
-        type=str,
-        default=None,
-        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
-        help="explicit log level (overrides --verbose)",
-    )
+    _add_logging_args(clear_parser)
 
     args = parser.parse_args(argv)
 
