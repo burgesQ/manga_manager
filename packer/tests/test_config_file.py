@@ -7,7 +7,7 @@ def test_config_json_applies_defaults(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
     # put a packer.json config with pattern fma and a batch file
-    cfg = {"pattern": "fma"}
+    cfg = {"pattern": "mangafire"}
     (src / "packer.json").write_text(json.dumps(cfg))
 
     # create Chapter 16 and extras

@@ -233,11 +233,11 @@ def format_chapter_dir(base: int | str, extra: str | None = None) -> str:
 
 # Named patterns for convenience (used by CLI when --pattern is set)
 NAMED_PATTERNS = {
-    "mashle": (
+    "mangadex": (
         re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)"),
         re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
     ),
-    "fma": (
+    "mangafire": (
         re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)"),
         re.compile(r"(?i)chap(?:\.|ter)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
     ),

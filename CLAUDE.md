@@ -45,7 +45,7 @@ Test helpers (`run_packer`, `make_cbz`) live in both `packer/tests/conftest.py` 
 Key behaviors:
 - Every `.cbz` **must** contain `ComicInfo.xml` or the script errors and exits
 - Chapter ranges: `1..12`, `1,3,5..8` (non-contiguous)
-- Named patterns: `--pattern mashle|fma|animeSama` for different filename conventions
+- Named patterns: `--pattern mangadex|mangafire|animeSama` for different filename conventions
 - Extras: `16.1`, `16.2` are associated with chapter 16, processed in numeric order
 - Batch mode: `--batch "v01:1..3-v02:4..6"` or `--batch-file path` or auto-discovered `.batch` file
 - Per-path config: `packer.json` in `--path` dir (CLI args always override)
@@ -145,7 +145,7 @@ uv run convertor ./volumes [--force-regen] [--dry-run]
 - **NamedTuples** for structured return types: `ChapterMatch`, `Task`, `ProcessResult`, `ProcessVolumeResult`, `KCCInvocation`
 - **Config dataclass** in `packer/config.py` — pass `Config` instead of loose kwargs through the call stack
 - **`pathlib.Path`** for all filesystem operations (not `os.path`)
-- **Named regex patterns** centralized in `core.py` (`CHAPTER_PATTERNS` dict) — `mashle`, `fma`, `animeSama`
+- **Named regex patterns** centralized in `core.py` (`NAMED_PATTERNS` dict) — `mangadex`, `mangafire`, `animeSama`
 - **Logging** with `ColorFormatter` and emoji prefixes; always use `getLogger(__name__)`, never `print()`
 - **`--loglevel`** (`DEBUG`/`INFO`/`WARNING`/`ERROR`/`CRITICAL`) + `--verbose` as `DEBUG` shorthand
 - **`--dry-run`** must be supported in all write operations — log intent, touch nothing

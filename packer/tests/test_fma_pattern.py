@@ -23,7 +23,7 @@ def test_fma_extras_ordering(tmp_path: Path, make_cbz, run_packer):
             "--chapter-range",
             "16",
             "--pattern",
-            "fma",
+            "mangafire",
             "--verbose",
             "--nb-worker",
             "1",

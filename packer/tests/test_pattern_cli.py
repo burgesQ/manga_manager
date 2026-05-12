@@ -2,7 +2,7 @@ from pathlib import Path
 
 
 
-def test_named_pattern_mashle(tmp_path: Path, make_cbz, run_packer):
+def test_named_pattern_mangadex(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 
@@ -21,7 +21,7 @@ def test_named_pattern_mashle(tmp_path: Path, make_cbz, run_packer):
             "--chapter-range",
             "13",
             "--pattern",
-            "mashle",
+            "mangadex",
         ],
     )
     assert res.returncode == 0, (
