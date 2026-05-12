@@ -13,11 +13,9 @@ FIXME: ISBN is a calibre id
 import logging
 import re
 import sys
-from datetime import datetime
+import zipfile
 from pathlib import Path
 from typing import Any
-
-import zipfile
 
 import yaml
 
@@ -45,7 +43,7 @@ class EPUBMetadata:
         """Load EPUB file."""
         try:
             self.book = epub.read_epub(str(self.filepath))
-        except (OSError, KeyError, zipfile.BadZipFile) as e:
+        except (OSError, KeyError, zipfile.BadZipFile, epub.EpubException) as e:
             raise ValueError(f"Failed to load EPUB {self.filepath}: {e}") from e
 
     def has_metadata(self) -> bool:
@@ -367,15 +365,10 @@ def inject_metadata(
             # Check if has metadata
             if epub_meta.has_metadata() and not force:
                 logger.info(
-                    f"  Skipping (already has metadata, use --force to overwrite)"
+                    "  Skipping (already has metadata, use --force to overwrite)"
                 )
                 skip_count += 1
                 continue
-
-            # if dry_run:
-            #    logger.info(f"  [DRY RUN] Would inject metadata for volume {vol_num}")
-            #    success_count += 1
-            #    continue
 
             # Prepare metadata
             title = vol_data.get("title")
@@ -394,17 +387,6 @@ def inject_metadata(
             # Use English publisher if available
             publisher = publisher_data.get("english")
 
-            # if dry_run:
-            #     logger.info(
-            #         f"  [DRY RUN] Would inject metadata for volume {float(vol_num)}"
-            #     )
-            #     logger.info(f"  [DRY RUN] Title {title}")
-            #     logger.info(f"  [DRY RUN] Release date {release_date}")
-            #     logger.info(f"  [DRY RUN] ISBN {isbn}")
-
-            #     success_count += 1
-            #     continue
-
             # Inject metadata
             if dry_run:
                 logger.info(
@@ -422,19 +404,10 @@ def inject_metadata(
                     language=language,
                 )
 
-                # # Debug: log TOC items before saving to help diagnose None uid
-                # try:
-                #     logger.debug(f"  TOC: {epub_meta.book.toc!r}")
-                #     for it in epub_meta.book.toc:
-                #         uid = getattr(it, "uid", None)
-                #         logger.debug(f"  TOC item: type={type(it)} uid={uid} repr={it!r}")
-                # except Exception:
-                #     logger.exception("  Error while logging TOC")
-
                 # Save
                 epub_meta.save()
 
-            logger.info(f"  ✓ Injected metadata:")
+            logger.info("  ✓ Injected metadata:")
             logger.info(f"    Title: {title}")
             logger.info(f"    Series: {series_name} #{vol_num}")
             logger.info(f"    Author: {author}")
