@@ -1,8 +1,9 @@
-import pytest
-from pathlib import Path
 import subprocess
 import sys
 import zipfile
+from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

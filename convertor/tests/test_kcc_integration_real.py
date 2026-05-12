@@ -1,12 +1,10 @@
-import os
-import shutil
 import importlib.util
-import sys
+import shutil
 from pathlib import Path
+
 import pytest
 
 import convertor
-
 
 CANDIDATE_MODULES = ("kcc", "kcc.__main__", "kcc.kcc", "kindlecomicconverter")
 
@@ -57,11 +55,13 @@ def test_real_kcc_conversion(tmp_path: Path):
 
     # Run the convertor; this will use the adapter which prefers module execution
     try:
-        res = convertor.convert_volume(vol, out_path, dry_run=False)
+        convertor.convert_volume(vol, out_path, dry_run=False)
     except Exception as exc:
         # If KCC is present but fails on this minimal input, skip the test with a
         # helpful message noting the detected module/executable and the error.
-        pytest.skip(f"KCC present but failed on sample conversion (module={module_name!r} exe={exe!r}): {exc}")
+        pytest.skip(
+            f"KCC present but failed on sample conversion (module={module_name!r} exe={exe!r}): {exc}"
+        )
 
     assert out_path.exists(), f"output file not created: {out_path}"
     assert out_path.stat().st_size > 0, "output file is empty"

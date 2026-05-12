@@ -1,7 +1,6 @@
 from pathlib import Path
 
 
-
 def test_fma_extras_ordering(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
@@ -29,9 +28,9 @@ def test_fma_extras_ordering(tmp_path: Path, make_cbz, run_packer):
             "1",
         ],
     )
-    assert res.returncode == 0, (
-        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
-    )
+    assert (
+        res.returncode == 0
+    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
 
     vol = src / "FMA v01"
     assert vol.exists()

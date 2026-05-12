@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 
-
 def test_config_json_applies_defaults(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()

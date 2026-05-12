@@ -7,20 +7,19 @@ import logging
 import os
 import re
 import time
-from typing import List, Optional
+from typing import Optional
 
-from .exit_codes import CLI_ERROR, SUCCESS
 from .core import (
     NAMED_PATTERNS,
     find_cbz_files,
     parse_range,
 )
-from .worker import process_volume
+from .exit_codes import CLI_ERROR, SUCCESS
 from .types_ import CoverMapping
+from .config import Config
+from .worker import process_volume
 
 logger = logging.getLogger(__name__)
-
-from .config import Config
 
 
 def setup_logging(
@@ -332,7 +331,9 @@ def main(argv=None) -> int:
     if covers:
         for cm in covers:
             if not os.path.exists(cm.cover_path):
-                logger.warning(f"cover declared for volume {cm.volume} not found: {cm.cover_path}")
+                logger.warning(
+                    f"cover declared for volume {cm.volume} not found: {cm.cover_path}"
+                )
 
     # Validate args
     if args.batch and (args.volume or args.chapter_range):

@@ -2,7 +2,6 @@ import zipfile
 from pathlib import Path
 
 
-
 def test_invalid_regex_returns_2(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
@@ -123,4 +122,7 @@ def test_path_traversal_detected(tmp_path: Path, make_cbz, run_packer):
         ],
     )
     assert res.returncode == 6
-    assert "Path traversal detected" in res.stderr or "Path traversal detected" in res.stdout
+    assert (
+        "Path traversal detected" in res.stderr
+        or "Path traversal detected" in res.stdout
+    )

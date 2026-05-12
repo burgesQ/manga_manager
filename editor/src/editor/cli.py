@@ -22,7 +22,7 @@ import logging
 import sys
 from pathlib import Path
 
-from editor.editor_full import dump_metadata, inject_metadata, clear_metadata
+from editor.editor_full import clear_metadata, dump_metadata, inject_metadata
 from packer.cli import setup_logging
 
 logger = logging.getLogger("editor")

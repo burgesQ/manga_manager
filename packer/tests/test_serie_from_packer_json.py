@@ -2,7 +2,6 @@ import json
 from pathlib import Path
 
 
-
 def test_serie_can_be_provided_via_packer_json(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()

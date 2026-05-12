@@ -11,10 +11,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from packer.cli import setup_logging
-
 # from .worker import convert_volumes_parallel, print_summary
 from convertor.kcc_adapter import KCCSettings, convert_volume
+from packer.cli import setup_logging
 
 logger = logging.getLogger("convertor")
 
@@ -118,15 +117,6 @@ def main(argv=None) -> int:
     if not vols:
         logger.warning("no volume directories found under %s", root)
         return 0
-
-    # each vol can be assign to a worker.
-    # Worker mode. KCC doesn't seems freendly with it ..
-    # res= convert_volumes_parallel(
-    #     vols,
-    #     force_regen=args.force_regen,
-    #     dry_run=args.dry_run,
-    #     max_workers=args.nb_worker)
-    # print_summary(res)
 
     for vol in vols:
         # default output path: sibling file named <volume_dir_name>.kepub.epub

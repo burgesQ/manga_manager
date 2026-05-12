@@ -1,7 +1,5 @@
-import sys
 import os
 from pathlib import Path
-import pytest
 
 from convertor.kcc_adapter import KCCAdapter
 
