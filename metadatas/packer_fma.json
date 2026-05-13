@@ -1,4 +1,34 @@
 {
   "serie": "Fullmetal Alchemist",
-  "pattern": "fma"
+  "pattern": "mangafire",
+  "batch_file": "/home/master/Shelf/EN/FmA/vols.csv",
+  "covers": {
+    "1": "/home/master/Shelf/EN/FmA/covers/FMA_1.webp",
+    "2": "/home/master/Shelf/EN/FmA/covers/FMA_2.webp",
+    "3": "/home/master/Shelf/EN/FmA/covers/FMA_3.webp",
+    "4": "/home/master/Shelf/EN/FmA/covers/FMA_4.webp",
+    "5": "/home/master/Shelf/EN/FmA/covers/FMA_5.webp",
+    "6": "/home/master/Shelf/EN/FmA/covers/FMA_6.webp",
+    "7": "/home/master/Shelf/EN/FmA/covers/FMA_7.webp",
+    "8": "/home/master/Shelf/EN/FmA/covers/FMA_8.webp",
+    "9": "/home/master/Shelf/EN/FmA/covers/FMA_9.webp",
+    "10": "/home/master/Shelf/EN/FmA/covers/FMA_10.webp",
+    "11": "/home/master/Shelf/EN/FmA/covers/FMA_11.webp",
+    "12": "/home/master/Shelf/EN/FmA/covers/FMA_12.webp",
+    "13": "/home/master/Shelf/EN/FmA/covers/FMA_13.webp",
+    "14": "/home/master/Shelf/EN/FmA/covers/FMA_14.webp",
+    "15": "/home/master/Shelf/EN/FmA/covers/FMA_15.webp",
+    "16": "/home/master/Shelf/EN/FmA/covers/FMA_16.webp",
+    "17": "/home/master/Shelf/EN/FmA/covers/FMA_17.webp",
+    "18": "/home/master/Shelf/EN/FmA/covers/FMA_18.webp",
+    "19": "/home/master/Shelf/EN/FmA/covers/FMA_19.webp",
+    "20": "/home/master/Shelf/EN/FmA/covers/FMA_20.webp",
+    "21": "/home/master/Shelf/EN/FmA/covers/FMA_21.webp",
+    "22": "/home/master/Shelf/EN/FmA/covers/FMA_22.webp",
+    "23": "/home/master/Shelf/EN/FmA/covers/FMA_23.webp",
+    "24": "/home/master/Shelf/EN/FmA/covers/FMA_24.webp",
+    "25": "/home/master/Shelf/EN/FmA/covers/FMA_25.webp",
+    "26": "/home/master/Shelf/EN/FmA/covers/FMA_26.webp",
+    "27": "/home/master/Shelf/EN/FmA/covers/FMA_27.webp"
+  }
 }
