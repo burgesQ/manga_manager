@@ -110,7 +110,15 @@ Result:
     ...
 ```
 
-### Step 2 — Create a metadata file
+### Step 2 — Convert to Kobo format
+
+```console
+uv run convertor ~/Downloads/Berserk
+```
+
+Output: `~/Downloads/Berserk/Berserk v01.kepub.epub` — ready to copy to your Kobo.
+
+### Step 3 — Create a metadata file
 
 ```yaml
 # berserk.yaml
@@ -126,19 +134,12 @@ volumes:
     date: "2003-08-19"
 ```
 
-### Step 3 — Inject metadata into the EPUB
+### Step 4 — Inject metadata into the EPUB
 
 ```console
 uv run editor inject ~/Downloads/Berserk berserk.yaml
 ```
 
-### Step 4 — Convert to Kobo format
-
-```console
-uv run convertor ~/Downloads/Berserk
-```
-
-Output: `~/Downloads/Berserk/Berserk v01.kepub.epub` — ready to copy to your Kobo.
 
 ---
 
