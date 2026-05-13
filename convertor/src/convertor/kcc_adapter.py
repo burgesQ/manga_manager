@@ -71,6 +71,8 @@ class KCCSettings(NamedTuple):
     manga_style: bool = True
     forcecolor: bool = True
     cropping: int = 2
+    upscale: bool = True
+    blackborders: bool = False
 
 
 class KCCAdapter:
@@ -100,6 +102,10 @@ class KCCAdapter:
         if settings.forcecolor:
             args.append("--forcecolor")
         args.extend(["--cropping", str(settings.cropping)])
+        if settings.upscale:
+            args.append("--upscale")
+        if settings.blackborders:
+            args.append("--blackborders")
         args.append(str(input_dir))
 
         return KCCInvocation(args)

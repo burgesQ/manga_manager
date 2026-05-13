@@ -51,9 +51,6 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
         help="explicit log level (overrides --verbose)",
     )
-    p.add_argument(
-        "--nb-worker", "-w", type=int, default=1, help="number of workers (default 1)"
-    )
 
     kcc = p.add_argument_group("KCC settings")
     kcc.add_argument(
@@ -93,6 +90,18 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=[0, 1, 2],
         help="cropping mode: 0=off, 1=safe, 2=aggressive (default: 2)",
     )
+    kcc.add_argument(
+        "--upscale",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="upscale images smaller than device resolution (default: on)",
+    )
+    kcc.add_argument(
+        "--blackborders",
+        default=False,
+        action=argparse.BooleanOptionalAction,
+        help="fill remaining border bands with black instead of white (default: off)",
+    )
     return p
 
 
@@ -104,7 +113,37 @@ def _build_settings(args: argparse.Namespace) -> KCCSettings:
         manga_style=args.manga_style,
         forcecolor=args.forcecolor,
         cropping=args.cropping,
+        upscale=args.upscale,
+        blackborders=args.blackborders,
     )
+
+
+def _convert_one(
+    vol: Path,
+    settings: KCCSettings,
+    *,
+    force_regen: bool,
+    dry_run: bool,
+) -> None:
+    out_path = vol.parent / (vol.name + ".kepub.epub")
+
+    if out_path.exists():
+        if force_regen:
+            try:
+                out_path.unlink()
+            except OSError:
+                logger.warning("could not remove existing output: %s", out_path)
+        else:
+            logger.info("skipping existing output: %s", out_path)
+            return
+
+    logger.info("%s -> %s", vol, out_path)
+
+    try:
+        convert_volume(vol, out_path, dry_run=dry_run, settings=settings)
+        logger.info("generated: %s", out_path)
+    except (RuntimeError, subprocess.CalledProcessError, OSError) as e:
+        logger.error("conversion failed for %s: %s", vol, e)
 
 
 def _process_volumes(
@@ -115,26 +154,7 @@ def _process_volumes(
     dry_run: bool,
 ) -> int:
     for vol in vols:
-        out_path = vol.parent / (vol.name + ".kepub.epub")
-
-        if out_path.exists():
-            if force_regen:
-                try:
-                    out_path.unlink()
-                except OSError:
-                    logger.warning("could not remove existing output: %s", out_path)
-            else:
-                logger.info("skipping existing output: %s", out_path)
-                continue
-
-        logger.info("%s -> %s", vol, out_path)
-
-        try:
-            convert_volume(vol, out_path, dry_run=dry_run, settings=settings)
-            logger.info("generated: %s", out_path)
-        except (RuntimeError, subprocess.CalledProcessError, OSError) as e:
-            logger.error("conversion failed for %s: %s", vol, e)
-
+        _convert_one(vol, settings, force_regen=force_regen, dry_run=dry_run)
     return SUCCESS
 
 
