@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+from packer.config import Config
+
 
 @pytest.fixture
 def run_packer():
@@ -28,3 +30,28 @@ def make_cbz():
         return p
 
     return _make_cbz
+
+
+@pytest.fixture
+def make_config():
+    def _make_config(
+        src: Path,
+        dest: Path | None = None,
+        *,
+        serie: str = "Manga",
+        volume: int = 1,
+        chapter_range: list[int] | None = None,
+        nb_worker: int = 1,
+        **kwargs,
+    ) -> Config:
+        return Config(
+            path=str(src),
+            dest=str(dest or src),
+            serie=serie,
+            volume=volume,
+            chapter_range=chapter_range or [1],
+            nb_worker=nb_worker,
+            **kwargs,
+        )
+
+    return _make_config
