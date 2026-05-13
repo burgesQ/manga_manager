@@ -162,8 +162,8 @@ def parse_batch_file(file_path: str) -> list[tuple[int, list[int]]]:
 def load_config_from_path(path: str):
     """Load an optional JSON config file (`packer.json`) from `path`.
 
-    Supported keys (optional): `pattern`, `chapter_regex`, `extra_regex`,
-    `nb_worker`, `batch_file`.
+    Supported keys (optional): `serie`, `pattern`, `chapter_regex`, `extra_regex`,
+    `nb_worker`, `batch_file` (alias: `batch`), `covers`.
 
     Raises:
         ValueError: if a `packer.json` file is present but cannot be parsed as
@@ -287,11 +287,12 @@ def _apply_path_config(args: argparse.Namespace) -> list[CoverMapping] | None:
             args.extra_regex = path_config["extra_regex"]
         if args.nb_worker == 1 and "nb_worker" in path_config:
             args.nb_worker = int(path_config["nb_worker"])
-        if args.batch_file is None and "batch_file" in path_config:
+        _batch_file_val = path_config.get("batch_file") or path_config.get("batch")
+        if args.batch_file is None and _batch_file_val:
             args.batch_file = (
-                os.path.join(args.path, path_config["batch_file"])
-                if not os.path.isabs(path_config["batch_file"])
-                else path_config["batch_file"]
+                os.path.join(args.path, _batch_file_val)
+                if not os.path.isabs(_batch_file_val)
+                else _batch_file_val
             )
         if args.serie is None and "serie" in path_config:
             args.serie = path_config["serie"]
@@ -358,7 +359,14 @@ def _compile_patterns(
             chapter_pat = re.compile(args.chapter_regex)
         if args.extra_regex:
             extra_pat = re.compile(args.extra_regex)
-        if args.pattern in NAMED_PATTERNS and not (chapter_pat or extra_pat):
+        if args.pattern not in ("default", *NAMED_PATTERNS) and not (
+            chapter_pat or extra_pat
+        ):
+            logger.warning(
+                f"unknown pattern '{args.pattern}' (not in {list(NAMED_PATTERNS)})"
+                " — falling back to default regex"
+            )
+        elif args.pattern in NAMED_PATTERNS and not (chapter_pat or extra_pat):
             chapter_pat, extra_pat = NAMED_PATTERNS[args.pattern]
             logger.debug(f"using named regex pattern: {args.pattern}")
     except re.error as e:

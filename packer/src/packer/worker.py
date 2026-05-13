@@ -93,9 +93,7 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
     return ProcessResult(chapter_id, str(dest_archive))
 
 
-def _plan_tasks(
-    mapping: ChapterToFilesMapping, chapter_range: List[int]
-) -> List[Task]:
+def _plan_tasks(mapping: ChapterToFilesMapping, chapter_range: List[int]) -> List[Task]:
     """Build ordered task list from the chapter mapping."""
     tasks: List[Task] = []
     for c in chapter_range:

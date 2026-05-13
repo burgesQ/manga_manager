@@ -128,6 +128,17 @@ def test_packer_json_provides_batch_file(tmp_path: Path, make_cbz):
     assert rc == SUCCESS
 
 
+def test_packer_json_batch_alias(tmp_path: Path, make_cbz):
+    src = tmp_path / "src"
+    src.mkdir()
+    make_cbz(src, "Ch.001.cbz")
+    batch = src / "my.batch"
+    batch.write_text("v01,1\n")
+    (src / "packer.json").write_text(json.dumps({"serie": "M", "batch": "my.batch"}))
+    rc = main(["--path", str(src)])
+    assert rc == SUCCESS
+
+
 def test_cli_serie_overrides_packer_json(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()

@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 import convertor.cli
 
-
 # ---------------------------------------------------------------------------
 # lines 113-114: root does not exist → return 2
 # ---------------------------------------------------------------------------
@@ -106,7 +105,9 @@ def test_runtime_error_from_conversion_is_logged(tmp_path: Path, make_vol, capsy
     assert "conversion failed" in capsys.readouterr().err
 
 
-def test_called_process_error_from_conversion_is_logged(tmp_path: Path, make_vol, capsys):
+def test_called_process_error_from_conversion_is_logged(
+    tmp_path: Path, make_vol, capsys
+):
     root = tmp_path / "root"
     root.mkdir()
     make_vol(root)
@@ -138,7 +139,9 @@ def test_oserror_from_conversion_is_logged(tmp_path: Path, make_vol, capsys):
 # ---------------------------------------------------------------------------
 
 
-def test_existing_output_without_force_regen_is_skipped(tmp_path: Path, make_vol, capsys):
+def test_existing_output_without_force_regen_is_skipped(
+    tmp_path: Path, make_vol, capsys
+):
     root = tmp_path / "root"
     root.mkdir()
     vol = make_vol(root)
