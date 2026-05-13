@@ -17,6 +17,8 @@ from typing import Any
 
 import yaml
 
+from .exit_codes import ERROR, SUCCESS
+
 logger = logging.getLogger("editor")
 
 try:
@@ -356,12 +358,12 @@ def inject_metadata(
     """
     if not yaml_path.exists():
         logger.error(f"Metadata file not found: {yaml_path}")
-        return 1
+        return ERROR
 
     epub_files = _get_epub_files(path)
     if not epub_files:
         logger.error(f"No EPUB files found in {path}")
-        return 1
+        return ERROR
 
     metadata = load_yaml_metadata(yaml_path)
     series_name = metadata.get("series")
@@ -418,7 +420,7 @@ def inject_metadata(
     logger.info(f"✗ Errors:        {error_count}")
     logger.info("=" * 60)
 
-    return 1 if error_count > 0 else 0
+    return ERROR if error_count > 0 else SUCCESS
 
 
 def dump_metadata(path: Path, output_path: Path | None = None):
@@ -435,7 +437,7 @@ def dump_metadata(path: Path, output_path: Path | None = None):
     epub_files = _get_epub_files(path)
     if not epub_files:
         logger.error(f"No EPUB files found in {path}")
-        return 1
+        return ERROR
 
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
 
@@ -515,7 +517,7 @@ def dump_metadata(path: Path, output_path: Path | None = None):
         )
         print("=" * 60)
 
-    return 0
+    return SUCCESS
 
 
 def _get_epub_files(path: Path) -> list[Path]:
@@ -604,4 +606,4 @@ def clear_metadata(path: Path, dry_run: bool = False) -> int:
     logger.info(f"✗ Errors:        {error_count}")
     logger.info("=" * 60)
 
-    return 1 if error_count > 0 else 0
+    return ERROR if error_count > 0 else SUCCESS
