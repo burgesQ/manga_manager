@@ -1,0 +1,306 @@
+series: Vagabond
+author: Takehiko Inoue
+genre:
+- Seinen
+- Historical
+publisher:
+  english: Viz Media
+  japanese: Kodansha
+doc: Used to inject metadata within volumes and chapters.
+volumes:
+- number: 1
+  cover: vol_1.webp
+  japanese:
+    release_date: "1999-03-23"
+    isbn: 4-06-328619-3
+  english:
+    release_date: "2002-04-05"
+    isbn: 978-1-59116-034-2
+- number: 2
+  cover: vol_2.webp
+  japanese:
+    release_date: "1999-03-23"
+    isbn: 4-06-328620-7
+  english:
+    release_date: "2002-07-06"
+    isbn: 978-1-59116-035-9
+- number: 3
+  cover: vol_3.webp
+  japanese:
+    release_date: "1999-07-22"
+    isbn: 4-06-328644-4
+  english:
+    release_date: "2002-10-06"
+    isbn: 978-1-59116-049-6
+- number: 4
+  cover: vol_4.webp
+  japanese:
+    release_date: "1999-10-22"
+    isbn: 4-06-328658-4
+  english:
+    release_date: "2003-01"
+    isbn: 978-1-56931-854-6
+- number: 5
+  cover: vol_5.webp
+  japanese:
+    release_date: "2000-01-21"
+    isbn: 4-06-328672-X
+  english:
+    release_date: "2003-03"
+    isbn: 978-1-56931-893-5
+- number: 6
+  cover: vol_6.webp
+  japanese:
+    release_date: "2000-04-21"
+    isbn: 4-06-328685-1
+  english:
+    release_date: "2003-07"
+    isbn: 978-1-56931-894-2
+- number: 7
+  cover: vol_7.webp
+  japanese:
+    release_date: "2000-07-21"
+    isbn: 4-06-328702-5
+  english:
+    release_date: "2003-10-15"
+    isbn: 978-1-59116-073-1
+- number: 8
+  cover: vol_8.webp
+  japanese:
+    release_date: "2000-10-23"
+    isbn: 4-06-328720-3
+  english:
+    release_date: "2003-12-31"
+    isbn: 978-1-59116-119-6
+- number: 9
+  cover: vol_9.webp
+  japanese:
+    release_date: "2001-02-21"
+    isbn: 4-06-328736-X
+  english:
+    release_date: "2004-03-31"
+    isbn: 978-1-59116-256-8
+- number: 10
+  cover: vol_10.webp
+  japanese:
+    release_date: "2001-05-23"
+    isbn: 4-06-328755-6
+  english:
+    release_date: "2004-05-05"
+    isbn: 978-1-59116-340-4
+- number: 11
+  cover: vol_11.webp
+  japanese:
+    release_date: "2001-08-20"
+    isbn: 4-06-328763-7
+  english:
+    release_date: "2004-06-16"
+    isbn: 978-1-59116-396-1
+- number: 12
+  cover: vol_12.webp
+  japanese:
+    release_date: "2001-11-22"
+    isbn: 4-06-328779-3
+  english:
+    release_date: "2004-07-07"
+    isbn: 978-1-59116-434-0
+- number: 13
+  cover: vol_13.webp
+  japanese:
+    release_date: "2002-03-22"
+    isbn: 4-06-328804-8
+  english:
+    release_date: "2004-08-10"
+    isbn: 978-1-59116-451-7
+- number: 14
+  cover: vol_14.webp
+  japanese:
+    release_date: "2002-06-21"
+    isbn: 4-06-328823-4
+  english:
+    release_date: "2004-09-07"
+    isbn: 978-1-59116-452-4
+- number: 15
+  cover: vol_15.webp
+  japanese:
+    release_date: "2002-10-23"
+    isbn: 4-06-328850-1
+  english:
+    release_date: "2004-10-12"
+    isbn: 978-1-59116-453-1
+- number: 16
+  cover: vol_16.webp
+  japanese:
+    release_date: "2003-02-21"
+    isbn: 4-06-328871-4
+  english:
+    release_date: "2004-11-10"
+    isbn: 978-1-59116-454-8
+- number: 17
+  cover: vol_17.webp
+  japanese:
+    release_date: "2003-06-23"
+    isbn: 4-06-328891-9
+  english:
+    release_date: "2004-12-14"
+    isbn: 978-1-59116-455-5
+- number: 18
+  cover: vol_18.webp
+  japanese:
+    release_date: "2003-11-20"
+    isbn: 4-06-328916-8
+  english:
+    release_date: "2005-01-11"
+    isbn: 978-1-59116-642-9
+- number: 19
+  cover: vol_19.webp
+  japanese:
+    release_date: "2004-03-23"
+    isbn: 4-06-328945-1
+  english:
+    release_date: "2005-02-15"
+    isbn: 978-1-59116-643-6
+- number: 20
+  cover: vol_20.webp
+  japanese:
+    release_date: "2004-07-23"
+    isbn: 4-06-328970-2
+  english:
+    release_date: "2005-03-15"
+    isbn: 978-1-59116-583-5
+- number: 21
+  cover: vol_21.webp
+  japanese:
+    release_date: "2005-09-21"
+    isbn: 4-06-372464-6
+  english:
+    release_date: "2006-06-20"
+    isbn: 978-1-4215-0741-5
+- number: 22
+  cover: vol_22.webp
+  japanese:
+    release_date: "2006-02-23"
+    isbn: 4-06-372497-2
+  english:
+    release_date: "2006-08-15"
+    isbn: 978-1-4215-0818-4
+- number: 23
+  cover: vol_23.webp
+  japanese:
+    release_date: "2006-06-23"
+    isbn: 4-06-372526-X
+  english:
+    release_date: "2006-10-17"
+    isbn: 978-1-4215-0826-9
+- number: 24
+  cover: vol_24.webp
+  japanese:
+    release_date: "2006-10-23"
+    isbn: 4-06-372553-7
+  english:
+    release_date: "2007-02-20"
+    isbn: 978-1-4215-0827-6
+- number: 25
+  cover: vol_25.webp
+  japanese:
+    release_date: "2007-03-23"
+    isbn: 978-4-06-372582-7
+  english:
+    release_date: "2007-05-15"
+    isbn: 978-1-4215-0975-4
+- number: 26
+  cover: vol_26.webp
+  japanese:
+    release_date: "2007-07-23"
+    isbn: 978-4-06-372612-1
+  english:
+    release_date: "2007-10-23"
+    isbn: 978-1-4215-1983-8
+- number: 27
+  cover: vol_27.webp
+  japanese:
+    release_date: "2007-11-29"
+    isbn: 978-4-06-372640-4
+  english:
+    release_date: "2008-03-18"
+    isbn: 978-1-4215-2008-7
+- number: 28
+  cover: vol_28.webp
+  japanese:
+    release_date: "2008-05-23"
+    isbn: 978-4-06-372685-5
+  english:
+    release_date: "2008-10-21"
+    isbn: 978-1-4215-2708-6
+- number: 29
+  cover: vol_29.webp
+  japanese:
+    release_date: "2008-11-28"
+    isbn: 978-4-06-372750-0
+  english:
+    release_date: "2009-05-19"
+    isbn: 978-1-4215-3148-9
+- number: 30
+  cover: vol_30.webp
+  japanese:
+    release_date: "2009-05-28"
+    isbn: 978-4-06-372795-1
+  english:
+    release_date: "2009-11-17"
+    isbn: 978-1-4215-3438-1
+- number: 31
+  cover: vol_31.webp
+  japanese:
+    release_date: "2009-09-03"
+    isbn: 978-4-06-372827-9
+  english:
+    release_date: "2010-01-19"
+    isbn: 978-1-4215-3631-6
+- number: 32
+  cover: vol_32.webp
+  japanese:
+    release_date: "2010-01-15"
+    isbn: 978-4-06-372866-8
+  english:
+    release_date: "2010-08-17"
+    isbn: 978-1-4215-3813-6
+- number: 33
+  cover: vol_33.webp
+  japanese:
+    release_date: "2010-05-27"
+    isbn: 978-4-06-372903-0
+  english:
+    release_date: "2010-10-19"
+    isbn: 978-1-4215-3814-3
+- number: 34
+  cover: vol_34.webp
+  japanese:
+    release_date: "2012-10-23"
+    isbn: 978-4-06-372947-4
+  english:
+    release_date: "2013-03-19"
+    isbn: 978-1-4215-4930-9
+- number: 35
+  cover: vol_35.webp
+  japanese:
+    release_date: "2013-04-23"
+    isbn: 978-4-06-387195-1
+  english:
+    release_date: "2014-03-18"
+    isbn: 978-1-4215-6445-6
+- number: 36
+  cover: vol_36.webp
+  japanese:
+    release_date: "2013-10-23"
+    isbn: 978-4-06-387261-3
+  english:
+    release_date: "2014-10-21"
+    isbn: null
+- number: 37
+  cover: vol_37.webp
+  japanese:
+    release_date: "2014-07-23"
+    isbn: 978-4-06-388340-4
+  english:
+    release_date: "2015-04-21"
+    isbn: null
