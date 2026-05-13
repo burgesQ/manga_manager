@@ -1,8 +1,12 @@
 series: Mashle
 author: Hajime Kōmoto
+genre:
+  - Manga
+  - Shonen
+  - Fantasy
 publisher:
   japanese: Shueisha
-  english: Viz Media
+  english: VIZ Media LLC
 source_url: https://en.wikipedia.org/wiki/List_of_Mashle_chapters
 
 volumes:
