@@ -8,10 +8,7 @@ Verify that:
 
 from pathlib import Path
 
-import pytest
-
 from convertor.kcc_adapter import KCCAdapter, KCCInvocation, KCCSettings
-
 
 _DEFAULT = KCCSettings()
 
@@ -19,7 +16,9 @@ _DEFAULT = KCCSettings()
 def _build(tmp_path: Path, **overrides) -> list[str]:
     adapter = KCCAdapter()
     settings = _DEFAULT._replace(**overrides) if overrides else _DEFAULT
-    inv = adapter.build_invocation(tmp_path / "vol", tmp_path / "out.kepub.epub", settings)
+    inv = adapter.build_invocation(
+        tmp_path / "vol", tmp_path / "out.kepub.epub", settings
+    )
     assert isinstance(inv, KCCInvocation)
     return inv.args
 
@@ -80,8 +79,9 @@ class TestCLIFlags:
 
     def _run_main_dry(self, tmp_path: Path, extra_args: list[str]) -> list[str]:
         """Run the CLI in dry-run mode and capture the KCC invocation args."""
-        import convertor.cli  # ensure module is imported before patching
         from unittest.mock import patch
+
+        import convertor.cli  # ensure module is imported before patching
 
         vol = tmp_path / "Serie v01"
         vol.mkdir()

@@ -1,7 +1,6 @@
 from pathlib import Path
 
 
-
 def test_extra_chapter_assigned_to_base(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
@@ -23,9 +22,9 @@ def test_extra_chapter_assigned_to_base(tmp_path: Path, make_cbz, run_packer):
             "13",
         ],
     )
-    assert res.returncode == 0, (
-        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
-    )
+    assert (
+        res.returncode == 0
+    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
 
     volume_dir = src / "Mashle v01"
     assert volume_dir.exists()

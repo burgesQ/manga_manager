@@ -1,7 +1,6 @@
 from pathlib import Path
 
 
-
 def test_batch_file_parsing(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()

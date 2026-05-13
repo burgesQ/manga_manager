@@ -1,7 +1,7 @@
-import shutil
-from pathlib import Path
-import pytest
 import importlib.util
+from pathlib import Path
+
+import pytest
 
 from convertor.kcc_adapter import convert_volume
 
@@ -23,7 +23,9 @@ def test_convert_volume_dry_run(tmp_path: Path):
     assert not out.exists()
 
 
-@pytest.mark.skipif(importlib.util.find_spec("kcc") is None, reason="kcc module not importable")
+@pytest.mark.skipif(
+    importlib.util.find_spec("kcc") is None, reason="kcc module not importable"
+)
 def test_convert_volume_integration(tmp_path: Path):
     # If `kcc` is installed as an executable, we attempt the module invocation
     # (this will also work when kcc is importable as a module). If not present, skip.

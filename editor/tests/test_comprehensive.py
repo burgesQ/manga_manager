@@ -18,9 +18,7 @@ Covers the gaps identified in the gap analysis:
 
 from __future__ import annotations
 
-import io
 from pathlib import Path
-from unittest import mock
 
 import pytest
 import yaml
@@ -38,7 +36,6 @@ from editor.editor_full import (
     parse_volume_number,
 )
 
-
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
@@ -55,9 +52,7 @@ def _make_minimal_epub(
     book.set_title(title)
     if author:
         book.add_author(author)
-    c1 = epub.EpubHtml(
-        title="Intro", file_name="intro.xhtml", content="<h1>Hi</h1>"
-    )
+    c1 = epub.EpubHtml(title="Intro", file_name="intro.xhtml", content="<h1>Hi</h1>")
     book.add_item(c1)
     book.toc = (epub.Link("intro.xhtml", "Intro", "intro"),)
     book.add_item(epub.EpubNcx())
@@ -186,9 +181,7 @@ class TestInjectMetadataErrors:
         epub_dir = tmp_path / "empty"
         epub_dir.mkdir()
         yaml_path = tmp_path / "meta.yaml"
-        yaml_path.write_text(
-            yaml.dump({"series": "S", "author": "A", "volumes": []})
-        )
+        yaml_path.write_text(yaml.dump({"series": "S", "author": "A", "volumes": []}))
         rc = inject_metadata(epub_dir, yaml_path)
         assert rc == 1
 
@@ -233,24 +226,28 @@ class TestInjectMultipleVolumes:
         epub_dir = tmp_path / "epubs"
         epub_dir.mkdir()
         for i in (1, 2):
-            _make_minimal_epub(
-                epub_dir / f"MySeries v{i:02d}.epub", author=None
-            )
+            _make_minimal_epub(epub_dir / f"MySeries v{i:02d}.epub", author=None)
 
         yaml_path = self._make_yaml(
             tmp_path,
             [
-                {"number": 1, "title": "Vol One", "english": {"release_date": "2025-01-01"}},
-                {"number": 2, "title": "Vol Two", "english": {"release_date": "2025-06-01"}},
+                {
+                    "number": 1,
+                    "title": "Vol One",
+                    "english": {"release_date": "2025-01-01"},
+                },
+                {
+                    "number": 2,
+                    "title": "Vol Two",
+                    "english": {"release_date": "2025-06-01"},
+                },
             ],
         )
         rc = inject_metadata(epub_dir, yaml_path)
         assert rc == 0
 
         for i, expected_title in ((1, "Vol One"), (2, "Vol Two")):
-            meta = EPUBMetadata(
-                epub_dir / f"MySeries v{i:02d}.epub"
-            ).get_metadata()
+            meta = EPUBMetadata(epub_dir / f"MySeries v{i:02d}.epub").get_metadata()
             assert meta.get("title") == expected_title
             assert meta.get("series_index") == float(i)
 
@@ -352,7 +349,11 @@ class TestInjectForceFlag:
             "series": "Series",
             "author": "New Author",
             "volumes": [
-                {"number": 1, "title": "New Title", "english": {"release_date": "2025-01-01"}}
+                {
+                    "number": 1,
+                    "title": "New Title",
+                    "english": {"release_date": "2025-01-01"},
+                }
             ],
         }
         yaml_path.write_text(yaml.dump(data))
@@ -474,9 +475,7 @@ class TestDumpToStdout:
     def test_dump_stdout_contains_series(self, tmp_path: Path, capsys):
         epub_dir = tmp_path / "epubs"
         epub_dir.mkdir()
-        _make_minimal_epub(
-            epub_dir / "StdoutSeries v01.epub", title="StdoutSeries v01"
-        )
+        _make_minimal_epub(epub_dir / "StdoutSeries v01.epub", title="StdoutSeries v01")
 
         rc = dump_metadata(epub_dir, output_path=None)
         assert rc == 0
@@ -505,7 +504,11 @@ class TestTwoVolumeLanguage:
             "author": "Author",
             "language": "en-US",
             "volumes": [
-                {"number": 1, "language": "fr", "english": {"release_date": "2025-01-01"}},
+                {
+                    "number": 1,
+                    "language": "fr",
+                    "english": {"release_date": "2025-01-01"},
+                },
                 {"number": 2, "english": {"release_date": "2025-06-01"}},
             ],
         }
@@ -541,7 +544,10 @@ class TestISBNFormatHandling:
             "volumes": [
                 {
                     "number": 1,
-                    "english": {"release_date": "2025-01-01", "isbn": "978-2-34-400780-9"},
+                    "english": {
+                        "release_date": "2025-01-01",
+                        "isbn": "978-2-34-400780-9",
+                    },
                 }
             ],
         }

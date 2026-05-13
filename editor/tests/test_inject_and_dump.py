@@ -1,12 +1,12 @@
-import yaml
-import sys
 from pathlib import Path
+
 import pytest
+import yaml
 
 pytest.importorskip("ebooklib")
 from ebooklib import epub
 
-from editor.editor_full import inject_metadata, dump_metadata, EPUBMetadata
+from editor.editor_full import EPUBMetadata, dump_metadata, inject_metadata
 
 
 def _make_minimal_epub(path: Path, title: str = "Title", author: str | None = "Author"):
@@ -50,13 +50,20 @@ def test_inject_metadata_real(tmp_path: Path):
     epub_dir = tmp_path / "epubs"
     epub_dir.mkdir()
     book_file = epub_dir / "Series v01.epub"
-    _make_minimal_epub(book_file, title="Series v01", author=None)  # start with no author
+    _make_minimal_epub(
+        book_file, title="Series v01", author=None
+    )  # start with no author
 
     yaml_path = tmp_path / "meta.yaml"
     data = {
         "series": "Series",
         "author": "Injected Author",
-        "volumes": [{"number": 1, "english": {"release_date": "2026-02-01", "isbn": "1234567890"}}],
+        "volumes": [
+            {
+                "number": 1,
+                "english": {"release_date": "2026-02-01", "isbn": "1234567890"},
+            }
+        ],
     }
     yaml_path.write_text(yaml.dump(data))
 

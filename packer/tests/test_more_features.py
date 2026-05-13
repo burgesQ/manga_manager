@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 
 
-
 def test_warn_loglevel_suppresses_info(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()

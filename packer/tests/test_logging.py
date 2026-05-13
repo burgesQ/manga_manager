@@ -63,8 +63,8 @@ def test_cli_loglevel_debug_shows_processing(tmp_path):
         "DEBUG",
     ]
     res = subprocess.run(cmd, capture_output=True, text=True)
-    assert res.returncode == 0, (
-        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
-    )
+    assert (
+        res.returncode == 0
+    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
     assert "🔧 DEBUG:" in res.stderr
     assert "Extracting chapter 1" in res.stderr

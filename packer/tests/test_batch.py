@@ -1,7 +1,6 @@
 from pathlib import Path
 
 
-
 def test_batch_multiple_volumes(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
@@ -26,9 +25,9 @@ def test_batch_multiple_volumes(tmp_path: Path, make_cbz, run_packer):
             "3",
         ],
     )
-    assert res.returncode == 0, (
-        f"packer failed: stdout={res.stdout} stderr={res.stderr}"
-    )
+    assert (
+        res.returncode == 0
+    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
 
     vol1 = src / "BatchSerie v01"
     vol2 = src / "BatchSerie v02"

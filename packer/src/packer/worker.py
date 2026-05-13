@@ -7,9 +7,9 @@ import logging
 import shutil
 import zipfile
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, TypeAlias
+from typing import List, Optional
 
-from .core import extract_chapter_number, format_volume_dir, format_chapter_dir
+from .core import extract_chapter_number, format_chapter_dir, format_volume_dir
 from .exit_codes import DUPLICATE_CHAPTER, MISSING_CHAPTER, PROCESSING_ERROR, SUCCESS
 from .types_ import ChapterToFilesMapping, ProcessResult, ProcessVolumeResult, Task
 
@@ -110,7 +110,7 @@ def process_volume(
     pathlib internally for clarity.
     """
     # Build mapping using the provided patterns
-    mapping: ChapterToFilesMapping = {}  # type: ignore[assignment]
+    mapping: ChapterToFilesMapping = {}
     for pth in list(available_files):
         matches = extract_chapter_number(
             pth, chapter_pat=cfg.chapter_pat, extra_pat=cfg.extra_pat

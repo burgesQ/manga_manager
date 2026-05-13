@@ -2,9 +2,7 @@ import os
 import stat
 import subprocess
 from pathlib import Path
-import runpy
-import shlex
-import sys
+
 import pytest
 
 from convertor.kcc_adapter import KCCAdapter

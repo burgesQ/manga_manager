@@ -1,7 +1,7 @@
 import os
-import sys
 import stat
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -15,12 +15,20 @@ def _make_executable(path: Path, exit_code: int = 0):
     path.chmod(st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
 
-def run_convertor_subprocess(root: Path, extra_env: dict | None = None, args: list[str] | None = None):
+def run_convertor_subprocess(
+    root: Path, extra_env: dict | None = None, args: list[str] | None = None
+):
     repo_root = str(Path(__file__).resolve().parents[2])
     cmd = [sys.executable, "-m", "convertor.cli"] + (args or []) + [str(root)]
     env = os.environ.copy()
     # Ensure package src and packer src are on PYTHONPATH so -m convertor.cli works
-    env["PYTHONPATH"] = repo_root + os.pathsep + os.path.join(repo_root, "convertor", "src") + os.pathsep + os.path.join(repo_root, "packer", "src")
+    env["PYTHONPATH"] = (
+        repo_root
+        + os.pathsep
+        + os.path.join(repo_root, "convertor", "src")
+        + os.pathsep
+        + os.path.join(repo_root, "packer", "src")
+    )
     if extra_env:
         env.update(extra_env)
     return subprocess.run(cmd, capture_output=True, text=True, env=env)
@@ -48,9 +56,14 @@ def test_cli_fallback_to_external_executable_end_to_end(tmp_path: Path):
     _make_executable(exe, exit_code=0)
 
     # Run the CLI with PYTHONPATH including our package and PATH pointing to bin dir
-    extra_env = {"PYTHONPATH": str(pkg_parent) + os.pathsep + os.environ.get("PYTHONPATH", ""), "PATH": str(bin_dir) + os.pathsep + os.environ.get("PATH", "")}
+    extra_env = {
+        "PYTHONPATH": str(pkg_parent) + os.pathsep + os.environ.get("PYTHONPATH", ""),
+        "PATH": str(bin_dir) + os.pathsep + os.environ.get("PATH", ""),
+    }
 
-    res = run_convertor_subprocess(root, extra_env=extra_env, args=["--loglevel", "DEBUG"])
+    res = run_convertor_subprocess(
+        root, extra_env=extra_env, args=["--loglevel", "DEBUG"]
+    )
     print("stdout:", res.stdout)
     print("stderr:", res.stderr)
     assert res.returncode == 0

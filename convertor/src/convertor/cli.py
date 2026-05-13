@@ -11,10 +11,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-from packer.cli import setup_logging
-
-# from .worker import convert_volumes_parallel, print_summary
 from convertor.kcc_adapter import KCCSettings, convert_volume
+from packer.cli import setup_logging
 
 logger = logging.getLogger("convertor")
 
@@ -28,7 +26,7 @@ def find_volume_dirs(root: Path) -> list[Path]:
     return [p for p in sorted(root.iterdir()) if p.is_dir()]
 
 
-def main(argv=None) -> int:
+def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Convert volume directories under a root to kepub.epub using KCC"
     )
@@ -56,7 +54,6 @@ def main(argv=None) -> int:
         "--nb-worker", "-w", type=int, default=1, help="number of workers (default 1)"
     )
 
-    # KCC conversion settings — all defaults match the original hardcoded behaviour
     kcc = p.add_argument_group("KCC settings")
     kcc.add_argument(
         "--profile",
@@ -95,12 +92,11 @@ def main(argv=None) -> int:
         choices=[0, 1, 2],
         help="cropping mode: 0=off, 1=safe, 2=aggressive (default: 2)",
     )
+    return p
 
-    args = p.parse_args(argv)
 
-    setup_logging(args.verbose, loglevel=args.loglevel)
-
-    settings = KCCSettings(
+def _build_settings(args: argparse.Namespace) -> KCCSettings:
+    return KCCSettings(
         profile=args.profile,
         hq=args.hq,
         rotation=args.rotation,
@@ -109,31 +105,19 @@ def main(argv=None) -> int:
         cropping=args.cropping,
     )
 
-    root = Path(args.root)
-    if not root.exists():
-        logger.error("root path does not exist: %s", root)
-        return 2
 
-    vols = find_volume_dirs(root)
-    if not vols:
-        logger.warning("no volume directories found under %s", root)
-        return 0
-
-    # each vol can be assign to a worker.
-    # Worker mode. KCC doesn't seems freendly with it ..
-    # res= convert_volumes_parallel(
-    #     vols,
-    #     force_regen=args.force_regen,
-    #     dry_run=args.dry_run,
-    #     max_workers=args.nb_worker)
-    # print_summary(res)
-
+def _process_volumes(
+    vols: list[Path],
+    settings: KCCSettings,
+    *,
+    force_regen: bool,
+    dry_run: bool,
+) -> int:
     for vol in vols:
-        # default output path: sibling file named <volume_dir_name>.kepub.epub
         out_path = vol.parent / (vol.name + ".kepub.epub")
 
         if out_path.exists():
-            if args.force_regen:
+            if force_regen:
                 try:
                     out_path.unlink()
                 except OSError:
@@ -145,12 +129,34 @@ def main(argv=None) -> int:
         logger.info("%s -> %s", vol, out_path)
 
         try:
-            convert_volume(vol, out_path, dry_run=args.dry_run, settings=settings)
+            convert_volume(vol, out_path, dry_run=dry_run, settings=settings)
             logger.info("generated: %s", out_path)
         except (RuntimeError, subprocess.CalledProcessError, OSError) as e:
             logger.error("conversion failed for %s: %s", vol, e)
 
     return 0
+
+
+def main(argv=None) -> int:
+    args = _build_parser().parse_args(argv)
+    setup_logging(args.verbose, loglevel=args.loglevel)
+
+    root = Path(args.root)
+    if not root.exists():
+        logger.error("root path does not exist: %s", root)
+        return 2
+
+    vols = find_volume_dirs(root)
+    if not vols:
+        logger.warning("no volume directories found under %s", root)
+        return 0
+
+    return _process_volumes(
+        vols,
+        _build_settings(args),
+        force_regen=args.force_regen,
+        dry_run=args.dry_run,
+    )
 
 
 if __name__ == "__main__":

@@ -2,9 +2,10 @@
 
 These convenience functions are intended for use by the test suite only.
 """
-from pathlib import Path
+
 import subprocess
 import sys
+from pathlib import Path
 
 
 def run_packer(tmp_path: Path, args):

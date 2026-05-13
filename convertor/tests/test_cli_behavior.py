@@ -1,21 +1,23 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
-import textwrap
-import os
 
 
 def run_convertor(tmp_path: Path, args):
     # Run the package CLI via `-m` and ensure the repository root is on PYTHONPATH
     repo_root = str(Path(__file__).resolve().parents[2])
-    cmd = [sys.executable, '-m', 'convertor.cli'] + args
+    cmd = [sys.executable, "-m", "convertor.cli"] + args
     env = os.environ.copy()
     # Ensure the package source dir is on PYTHONPATH so `-m convertor.cli` works
-    env['PYTHONPATH'] = repo_root + os.pathsep + os.path.join(repo_root, 'convertor', 'src') + os.pathsep + os.path.join(repo_root, 'packer', 'src')
-    res = subprocess.run(cmd,
-                         capture_output=True,
-                         text=True,
-                         env=env)
+    env["PYTHONPATH"] = (
+        repo_root
+        + os.pathsep
+        + os.path.join(repo_root, "convertor", "src")
+        + os.pathsep
+        + os.path.join(repo_root, "packer", "src")
+    )
+    res = subprocess.run(cmd, capture_output=True, text=True, env=env)
     return res
 
 
@@ -23,30 +25,33 @@ def make_vol(tmp_path: Path, name: str):
     vol = tmp_path / name
     vol.mkdir()
     # add an image file to make it non-empty
-    (vol / '001.jpg').write_text('img')
+    (vol / "001.jpg").write_text("img")
     return vol
 
+
 def test_skips_existing_output(tmp_path: Path, monkeypatch):
-    root = tmp_path / 'root'
+    root = tmp_path / "root"
     root.mkdir()
-    vol = make_vol(root, 'Series v01')
-    out = vol.with_suffix(vol.suffix + '.kepub.epub')
-    out.write_text('existing')
+    vol = make_vol(root, "Series v01")
+    out = vol.with_suffix(vol.suffix + ".kepub.epub")
+    out.write_text("existing")
 
     res = run_convertor(tmp_path, [str(root)])
     assert res.returncode == 0
-    assert 'skipping existing output' in (res.stdout + res.stderr)
+    assert "skipping existing output" in (res.stdout + res.stderr)
+
 
 def test_dry_run_shows_actions(tmp_path: Path):
-    root = tmp_path / 'root'
+    root = tmp_path / "root"
     root.mkdir()
-    vol = make_vol(root, 'Series v01')
-    res = run_convertor(tmp_path, [str(root), '--dry-run'])
+    make_vol(root, "Series v01")
+    res = run_convertor(tmp_path, [str(root), "--dry-run"])
     assert res.returncode == 0
     print(f"stdout: {res.stdout}")
     print(f"stderr: {res.stderr}")
-    assert 'generated' in res.stderr
-    assert 'Series v01.kepub.epub' in res.stderr
+    assert "generated" in res.stderr
+    assert "Series v01.kepub.epub" in res.stderr
+
 
 # def test_works(tmp_path: Path, monkeypatch):
 #     root = tmp_path / 'root'
@@ -71,7 +76,7 @@ def test_dry_run_shows_actions(tmp_path: Path):
 
 #     def fake_convert_volume(volume_dir, out_path, options=None):
 #         called['args'] = (str(volume_dir), str(out_path), options)
-#         # touch output file to emulate behavior
+#         # touch output file to emulate behaviour
 #         Path(out_path).write_text('generated')
 #         return out_path
 

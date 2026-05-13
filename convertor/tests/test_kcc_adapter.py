@@ -1,7 +1,7 @@
-from pathlib import Path
-import sys
 import os
 import subprocess
+from pathlib import Path
+
 import pytest
 
 from convertor.kcc_adapter import KCCAdapter, KCCInvocation
