@@ -1,133 +1,74 @@
-## editor
+# editor
 
-Small helper to manage EPUB files metadata with three main operations: inject, dump, and clear.
+Injects, dumps, and clears EPUB metadata from YAML files. Supports a single `.epub` file or a directory of EPUBs.
 
-### Usage (from repository root)
+See the [root README](../README.md) for the full metadata YAML format and field reference.
 
-#### Inject metadata into EPUBs
+---
 
-```console
-# From a YAML metadata file
-$ uv run editor inject <path> <metadata.yaml> [--force] [--dry-run]
+## Subcommands
 
-# Examples
-$ uv run editor inject ./volumes metadata.yaml
-$ uv run editor inject ./volumes/Berserk v01.epub metadata.yaml --force
-$ uv run editor inject ./volumes metadata.yaml --dry-run --verbose
-```
-
-#### Dump metadata from EPUBs
+### `inject` — write metadata into EPUBs
 
 ```console
-# Extract metadata to a YAML file (or stdout)
-$ uv run editor dump <path> [--output output.yaml] [--verbose]
+uv run editor inject <path> <metadata.yaml> [--force] [--dry-run]
 
 # Examples
-$ uv run editor dump ./volumes
-$ uv run editor dump ./volumes/Berserk v01.epub --output meta.yaml
-$ uv run editor dump ./volumes --output current_metadata.yaml --verbose
+uv run editor inject ./Berserk berserk.yaml
+uv run editor inject "./Berserk v01.epub" berserk.yaml --force
+uv run editor inject ./Berserk berserk.yaml --dry-run --verbose
 ```
 
-#### Clear metadata from EPUBs
+| Option | Description |
+|---|---|
+| `--force` | Overwrite metadata if it already exists |
+| `--dry-run` | Simulate without writing |
+
+### `dump` — extract metadata to YAML
 
 ```console
-# Remove all custom metadata from EPUBs
-$ uv run editor clear <path> [--dry-run] [--verbose]
+uv run editor dump <path> [--output file.yaml]
 
-# Examples
-$ uv run editor clear ./volumes
-$ uv run editor clear ./volumes/Series v01.epub --dry-run
-$ uv run editor clear ./volumes --verbose
+uv run editor dump ./Berserk                            # print to stdout
+uv run editor dump ./Berserk --output current.yaml     # save to file
 ```
 
-### File or Directory Support
+### `clear` — remove all custom metadata
 
-All three subcommands (`inject`, `dump`, `clear`) support:
-- **Single EPUB file**: `path/to/file.epub`
-- **Directory**: `path/to/directory/` (processes all `.epub` files within)
+```console
+uv run editor clear <path> [--dry-run]
+```
 
-### CLI Options
+---
 
-**Common options (all subcommands)**:
-- `--verbose`: Enable verbose logging
-- `-l, --loglevel`: Set explicit log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-
-**inject-specific**:
-- `--force`: Overwrite existing metadata
-- `--dry-run`: Simulate without making changes
-
-**dump-specific**:
-- `-o, --output`: Output YAML file (default: print to stdout)
-
-**clear-specific**:
-- `--dry-run`: Simulate without making changes
-
-### Supported Metadata
-
-#### ✅ Standard Dublin Core
-
-- `dc:title` → Title
-- `dc:creator` → Author(s)
-- `dc:identifier` (with id="isbn") → ISBN
-- `dc:publisher` → Publisher
-- `dc:language` → Language
-- `dc:date` → Publication date
-- `dc:description` → Description/Summary
-
-#### ✅ Calibre Custom Metadata
-
-- `calibre:series` → Series name
-- `calibre:series_index` → Position in series
-- `calibre:rating` → Rating
-- `calibre:tags` → Tags
-
-### YAML Metadata Format Example
+## Metadata YAML format
 
 ```yaml
 series: "Berserk"
 author: "Kentaro Miura"
-title: "Berserk v01"
-isbn: "978-1-56931-900-0"
 publisher: "Dark Horse Comics"
-language: "en"
-date: "2003-08-19"
-description: "The dark fantasy manga classic"
-tags:
-  - manga
-  - dark-fantasy
-  - seinen
-```
-
-#### `language` (optional)
-
-The top-level `language` key sets the EPUB language tag for every volume in the
-series. It can be any BCP 47 / Dublin Core language code (e.g. `"en-US"`,
-`"fr"`, `"ja"`). When omitted, the inject command falls back to `"en-US"`.
-
-A volume entry may also carry its own `language` key, which overrides the
-series-level value for that volume only.
-
-```yaml
-series: "Boruto"
-author: "Masashi Kishimoto"
-language: "en-US"          # applies to every volume by default
+language: "en"          # BCP 47; default "en-US" if omitted
 
 volumes:
   - number: 1
+    title: "Black Swordsman"
     english:
-      release_date: "2017-04-04"
-      isbn: "9781421592114"
+      isbn: "978-1-56931-900-0"
+      release_date: "2003-08-19"
   - number: 2
-    language: "ja"          # this volume overrides the series-level language
-    japanese:
-      release_date: "2017-05-02"
-      isbn: "9784088810454"
+    title: "The Shadow"
+    language: "fr"      # per-volume override
+    english:
+      isbn: "978-1-56931-980-2"
+      release_date: "2004-01-01"
 ```
 
-### Test Suite
+See `metadatas/` for real-world examples.
 
-Run tests from repository root:
+---
+
+## Tests
 
 ```console
-$ uv run pytest editor -q
+uv run pytest editor -q
 ```

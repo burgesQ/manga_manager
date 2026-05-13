@@ -23,6 +23,7 @@ import sys
 from pathlib import Path
 
 from editor.editor_full import clear_metadata, dump_metadata, inject_metadata
+from editor.exit_codes import ERROR
 from packer.cli import setup_logging
 
 logger = logging.getLogger("editor")
@@ -97,7 +98,7 @@ def main(argv=None) -> int:
 
     if not args.command:
         parser.print_help()
-        return 1
+        return ERROR
 
     setup_logging(args.verbose, loglevel=args.loglevel)
 

@@ -3,24 +3,10 @@
 from __future__ import annotations
 
 import json
-import zipfile
 from pathlib import Path
 
 from packer.cli import main
 from packer.exit_codes import CLI_ERROR, SUCCESS
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _make_cbz(path: Path, name: str, *, with_comicinfo: bool = True) -> Path:
-    p = path / name
-    with zipfile.ZipFile(p, "w") as z:
-        if with_comicinfo:
-            z.writestr("ComicInfo.xml", "<ComicInfo></ComicInfo>")
-        z.writestr("001.jpg", "img")
-    return p
 
 
 def _args(
@@ -95,11 +81,11 @@ def test_batch_file_nonexistent(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_auto_discover_batch_file(tmp_path: Path):
+def test_auto_discover_batch_file(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
-    _make_cbz(src, "Ch.002.cbz")
+    make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.002.cbz")
     (src / ".batch").write_text("v01,1..2\n")
     rc = main(["--path", str(src), "--serie", "Manga"])
     assert rc == SUCCESS
@@ -110,29 +96,29 @@ def test_auto_discover_batch_file(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_packer_json_provides_serie(tmp_path: Path):
+def test_packer_json_provides_serie(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     (src / "packer.json").write_text(json.dumps({"serie": "JsonManga"}))
     rc = main(["--path", str(src), "--volume", "1", "--chapter-range", "1"])
     assert rc == SUCCESS
     assert (src / "JsonManga v01").exists()
 
 
-def test_packer_json_provides_pattern(tmp_path: Path):
+def test_packer_json_provides_pattern(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     (src / "packer.json").write_text(json.dumps({"pattern": "mangadex"}))
     rc = main(_args(src, ["--volume", "1", "--chapter-range", "1"]))
     assert rc == SUCCESS
 
 
-def test_packer_json_provides_batch_file(tmp_path: Path):
+def test_packer_json_provides_batch_file(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     batch = src / "my.batch"
     batch.write_text("v01,1\n")
     (src / "packer.json").write_text(
@@ -142,10 +128,10 @@ def test_packer_json_provides_batch_file(tmp_path: Path):
     assert rc == SUCCESS
 
 
-def test_cli_serie_overrides_packer_json(tmp_path: Path):
+def test_cli_serie_overrides_packer_json(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     (src / "packer.json").write_text(json.dumps({"serie": "FromJson"}))
     rc = main(
         [
@@ -164,10 +150,10 @@ def test_cli_serie_overrides_packer_json(tmp_path: Path):
     assert not (src / "FromJson v01").exists()
 
 
-def test_packer_json_provides_nb_worker(tmp_path: Path):
+def test_packer_json_provides_nb_worker(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     (src / "packer.json").write_text(json.dumps({"nb_worker": 2}))
     rc = main(_args(src, ["--volume", "1", "--chapter-range", "1"]))
     assert rc == SUCCESS
@@ -178,11 +164,11 @@ def test_packer_json_provides_nb_worker(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_batch_spec_two_volumes(tmp_path: Path):
+def test_batch_spec_two_volumes(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
-    _make_cbz(src, "Ch.002.cbz")
+    make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.002.cbz")
     rc = main(_args(src, ["--batch", "v01:1-v02:2"]))
     assert rc == SUCCESS
     assert (src / "Manga v01").exists()
@@ -194,11 +180,11 @@ def test_batch_spec_two_volumes(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_batch_file_valid(tmp_path: Path):
+def test_batch_file_valid(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
-    _make_cbz(src, "Ch.002.cbz")
+    make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.002.cbz")
     batch = tmp_path / "my.batch"
     batch.write_text("v01,1\nv02,2\n")
     rc = main(_args(src, ["--batch-file", str(batch)]))
@@ -212,20 +198,20 @@ def test_batch_file_valid(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_pattern_mangafire(tmp_path: Path):
+def test_pattern_mangafire(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Chap 1.cbz")
+    make_cbz(src, "Chap 1.cbz")
     rc = main(
         _args(src, ["--volume", "1", "--chapter-range", "1", "--pattern", "mangafire"])
     )
     assert rc == SUCCESS
 
 
-def test_pattern_animeSama(tmp_path: Path):
+def test_pattern_animeSama(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Chapitre 1.cbz")
+    make_cbz(src, "Chapitre 1.cbz")
     rc = main(
         _args(src, ["--volume", "1", "--chapter-range", "1", "--pattern", "animeSama"])
     )
@@ -237,10 +223,10 @@ def test_pattern_animeSama(tmp_path: Path):
 # ---------------------------------------------------------------------------
 
 
-def test_packer_json_covers_missing_path_warns(tmp_path: Path, capsys):
+def test_packer_json_covers_missing_path_warns(tmp_path: Path, make_cbz, capsys):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     config = {"serie": "Manga", "covers": {"1": "/nonexistent/cover.webp"}}
     (src / "packer.json").write_text(json.dumps(config))
     rc = main(["--path", str(src), "--volume", "1", "--chapter-range", "1"])
@@ -248,10 +234,10 @@ def test_packer_json_covers_missing_path_warns(tmp_path: Path, capsys):
     assert "not found" in capsys.readouterr().err
 
 
-def test_packer_json_covers_invalid_type_skipped(tmp_path: Path):
+def test_packer_json_covers_invalid_type_skipped(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
-    _make_cbz(src, "Ch.001.cbz")
+    make_cbz(src, "Ch.001.cbz")
     config = {"serie": "Manga", "covers": "not-a-dict"}
     (src / "packer.json").write_text(json.dumps(config))
     rc = main(["--path", str(src), "--volume", "1", "--chapter-range", "1"])

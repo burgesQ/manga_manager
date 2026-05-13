@@ -11,6 +11,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from convertor.exit_codes import CLI_ERROR, SUCCESS
 from convertor.kcc_adapter import KCCSettings, convert_volume
 from packer.cli import setup_logging
 
@@ -134,7 +135,7 @@ def _process_volumes(
         except (RuntimeError, subprocess.CalledProcessError, OSError) as e:
             logger.error("conversion failed for %s: %s", vol, e)
 
-    return 0
+    return SUCCESS
 
 
 def main(argv=None) -> int:
@@ -144,12 +145,12 @@ def main(argv=None) -> int:
     root = Path(args.root)
     if not root.exists():
         logger.error("root path does not exist: %s", root)
-        return 2
+        return CLI_ERROR
 
     vols = find_volume_dirs(root)
     if not vols:
         logger.warning("no volume directories found under %s", root)
-        return 0
+        return SUCCESS
 
     return _process_volumes(
         vols,
