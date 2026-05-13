@@ -1,255 +1,23 @@
-#!/usr/bin/env python3
-"""EPUB Metadata Manager
+"""EPUB Metadata Manager — high-level operations (inject / dump / clear).
 
 TODO: inject calibre' tags (Manga, Seinen, Shonen, Horror, Fiction, Mystery, Fantasy...)
 TODO: inject calibre ids (isbn, kobo)
 TODO: kobo library collection (Manga, Thriller)
 FIXME: ISBN is a calibre id
-
 """
+
+from __future__ import annotations
 
 import logging
 import re
-import sys
-import zipfile
 from pathlib import Path
-from typing import Any
 
 import yaml
 
+from .epub_metadata import EPUBMetadata  # noqa: F401 — re-exported for callers
 from .exit_codes import ERROR, SUCCESS
 
-logger = logging.getLogger("editor")
-
-try:
-    from ebooklib import epub
-except ImportError:
-    print("Error: ebooklib not installed. Install with: pip install ebooklib")
-    sys.exit(1)
-
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
-def _dc_scalar(dc: dict, field: str) -> str | None:
-    """Return the first scalar value for a Dublin Core field, or None.
-
-    ebooklib stores DC entries as a list of ``(value, attrs)`` tuples or bare
-    strings; this helper normalises both forms.
-    """
-    entries = dc.get(field)
-    if not entries:
-        return None
-    entry = entries[0]
-    return entry[0] if isinstance(entry, tuple) else entry
-
-
-class EPUBMetadata:
-    """Container for EPUB metadata."""
-
-    def __init__(self, filepath: Path):
-        self.filepath = filepath
-        self.book = None
-        self._load()
-
-    def _load(self):
-        """Load EPUB file."""
-        try:
-            self.book = epub.read_epub(str(self.filepath))
-        except (OSError, KeyError, zipfile.BadZipFile, epub.EpubException) as e:
-            raise ValueError(f"Failed to load EPUB {self.filepath}: {e}") from e
-
-    def has_metadata(self) -> bool:
-        """Check if EPUB already has metadata set."""
-        # Check if series metadata exists (Calibre format)
-        meta = self.book.metadata.get("http://www.idpf.org/2007/opf", {})
-
-        # Look for series metadata
-        for item in meta.get("meta", []):
-            if isinstance(item, tuple) and len(item) >= 2:
-                attrs = item[1] if len(item) > 1 else {}
-                if isinstance(attrs, dict):
-                    if attrs.get("name") == "calibre:series":
-                        return True
-
-        # Also check if it has basic metadata
-        dc_meta = self.book.metadata.get("http://purl.org/dc/elements/1.1/", {})
-        has_title = bool(dc_meta.get("title"))
-        has_creator = bool(dc_meta.get("creator"))
-
-        return has_title and has_creator
-
-    def get_metadata(self) -> dict[str, Any]:
-        """Extract current metadata from EPUB."""
-        meta = {}
-
-        # Dublin Core metadata
-        dc = self.book.metadata.get("http://purl.org/dc/elements/1.1/", {})
-        logger.debug(f"meta: {dc}")
-
-        for field in ("title", "publisher", "date", "language"):
-            val = _dc_scalar(dc, field)
-            if val:
-                meta[field] = val
-
-        # Creator/Author — may have multiple entries
-        if dc.get("creator"):
-            creators = [c[0] if isinstance(c, tuple) else c for c in dc["creator"]]
-            meta["author"] = creators[0] if len(creators) == 1 else creators
-
-        # ISBN — identifier with id="isbn"
-        for identifier in dc.get("identifier", []):
-            id_value = identifier[0] if isinstance(identifier, tuple) else identifier
-            attrs = (
-                identifier[1]
-                if isinstance(identifier, tuple) and len(identifier) > 1
-                else {}
-            )
-            if isinstance(attrs, dict) and attrs.get("id") == "isbn":
-                meta["isbn"] = id_value
-                break
-
-        # Calibre-specific metadata
-        opf_meta = self.book.metadata.get("http://www.idpf.org/2007/opf", {})
-        logger.debug(f"opf meta: {opf_meta}")
-
-        for item in opf_meta.get("meta", []):
-            if isinstance(item, tuple) and len(item) >= 2:
-                content = item[0]
-                attrs = item[1] if len(item) > 1 else {}
-                if isinstance(attrs, dict):
-                    name = attrs.get("name", "")
-                    if name == "calibre:series":
-                        meta["series"] = content
-                    elif name == "calibre:series_index":
-                        try:
-                            meta["series_index"] = float(content)
-                        except (ValueError, TypeError):
-                            pass
-
-        return meta
-
-    def set_metadata(
-        self,
-        title: str | None = None,
-        author: str | list[str] | None = None,
-        series: str | None = None,
-        series_index: float | None = None,
-        date: str | None = None,
-        isbn: str | None = None,
-        publisher: str | None = None,
-        language: str = "en-US",
-    ):
-        """Set metadata in EPUB file.
-
-        TODO: set calibre tags (genre & other)
-        """
-
-        # Set title — clear existing entries first so inject replaces rather than appends
-        if title:
-            dc_ns = "http://purl.org/dc/elements/1.1/"
-            if dc_ns in self.book.metadata and "title" in self.book.metadata[dc_ns]:
-                self.book.metadata[dc_ns]["title"] = []
-            self.book.set_title(title)
-
-        # Set author(s)
-        if author is not None:
-            # Clear existing authors
-            dc_ns = "http://purl.org/dc/elements/1.1/"
-            if dc_ns not in self.book.metadata:
-                self.book.metadata[dc_ns] = {}
-            # Always clear first
-            self.book.metadata[dc_ns]["creator"] = []
-
-            # Add new ones if author is truthy
-            if author:
-                authors = [author] if isinstance(author, str) else author
-                for auth in authors:
-                    self.book.add_author(auth)
-
-        # Set publisher
-        if publisher:
-            self.book.add_metadata("DC", "publisher", publisher)
-
-        # Set date
-        if date:
-            self.book.add_metadata("DC", "date", date)
-
-        # Set language.
-        if language:
-            self.book.add_metadata("DC", "language", language)
-            self.book.set_language(language)
-
-        # Set ISBN
-        if isbn:
-            # Clean ISBN
-            clean_isbn = isbn.replace("-", "").replace(" ", "")
-
-            # Format 1: identifier avec scheme opf (préféré par Calibre)
-            # On utilise 'isbn' comme scheme dans la valeur
-            self.book.add_metadata(
-                "DC", "identifier", f"isbn:{clean_isbn}", {"id": "isbn"}
-            )
-
-            # Format 2: aussi ajouter comme identifiant pur pour compatibilité
-            # Certains readers cherchent un identifier sans préfixe
-            self.book.add_metadata(
-                "DC", "identifier", clean_isbn, {"opf:scheme": "ISBN"}
-            )
-
-        # Set series (Calibre format)
-        if series:
-            self.book.add_metadata(
-                None, "meta", series, {"name": "calibre:series", "content": series}
-            )
-
-        # Set series index
-        if series_index is not None:
-            self.book.add_metadata(
-                None,
-                "meta",
-                str(series_index),
-                {"name": "calibre:series_index", "content": str(series_index)},
-            )
-
-    def _ensure_toc_uids(self):
-        """Ensure all TOC items have a UID to satisfy EPUB writer requirements."""
-        try:
-
-            def _walk(items, counter=[0]):
-                if isinstance(items, (list, tuple)):
-                    for it in items:
-                        _walk(it, counter)
-                else:
-                    uid = getattr(items, "uid", None)
-                    if not uid:
-                        candidate = (
-                            getattr(items, "href", None)
-                            or getattr(items, "file_name", None)
-                            or getattr(items, "title", None)
-                        )
-                        candidate = candidate or f"nav{counter[0]}"
-                        # sanitise candidate
-                        candidate = re.sub(r"[^A-Za-z0-9_-]", "_", str(candidate))
-                        if not candidate:
-                            candidate = f"nav{counter[0]}"
-                        try:
-                            items.uid = candidate
-                        except (AttributeError, TypeError):
-                            # Some item types may not allow setting uid; ignore
-                            pass
-                    counter[0] += 1
-
-            _walk(self.book.toc, [0])
-        except Exception:  # TOC structure is unpredictable; best-effort, keep broad
-            logger.exception("Error ensuring TOC uids")
-
-    def save(self):
-        """Save EPUB with updated metadata."""
-        # Ensure TOC entries have valid uids to avoid lxml TypeError
-        self._ensure_toc_uids()
-        epub.write_epub(str(self.filepath), self.book)
-        logger.info(f"Saved: {self.filepath.name}")
 
 
 def parse_volume_number(filename: str) -> int | None:
@@ -455,7 +223,6 @@ def dump_metadata(path: Path, output_path: Path | None = None):
             epub_meta = EPUBMetadata(epub_file)
             meta = epub_meta.get_metadata()
 
-            # Extract common info
             if not series_name and meta.get("series"):
                 series_name = meta["series"]
             if not author and meta.get("author"):
@@ -463,7 +230,6 @@ def dump_metadata(path: Path, output_path: Path | None = None):
             if not publisher and meta.get("publisher"):
                 publisher = meta["publisher"]
 
-            # Volume data
             vol_data = {
                 "number": vol_num if vol_num else len(volumes) + 1,
             }
@@ -483,7 +249,6 @@ def dump_metadata(path: Path, output_path: Path | None = None):
         except Exception as e:  # per-file loop guard: continue dumping remaining files
             logger.error(f"Error reading {epub_file.name}: {e}")
 
-    # Build YAML structure
     output_data = {
         "series": series_name or "Unknown Series",
         "author": author or "Unknown Author",
@@ -494,7 +259,6 @@ def dump_metadata(path: Path, output_path: Path | None = None):
 
     output_data["volumes"] = sorted(volumes, key=lambda v: v["number"])
 
-    # Output
     if output_path:
         with output_path.open("w", encoding="utf-8") as f:
             yaml.dump(
@@ -521,14 +285,7 @@ def dump_metadata(path: Path, output_path: Path | None = None):
 
 
 def _get_epub_files(path: Path) -> list[Path]:
-    """Get EPUB files from either a single file or a directory.
-
-    Args:
-        path: Either a single EPUB file or a directory containing EPUB files.
-
-    Returns:
-        A list of EPUB file paths.
-    """
+    """Get EPUB files from either a single file or a directory."""
     if path.is_file():
         if path.suffix.lower() in (".epub", ".kepub"):
             return [path]
@@ -538,7 +295,6 @@ def _get_epub_files(path: Path) -> list[Path]:
     elif path.is_dir():
         epub_files = sorted(path.glob("*.epub"))
         epub_files += sorted(path.glob("*.kepub.epub"))
-        # Remove duplicates
         return list(dict.fromkeys(epub_files))
     else:
         logger.error(f"Path does not exist: {path}")
@@ -559,7 +315,7 @@ def clear_metadata(path: Path, dry_run: bool = False) -> int:
 
     if not epub_files:
         logger.warning(f"No EPUB files found in {path}")
-        return 0
+        return SUCCESS
 
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
 
@@ -575,21 +331,16 @@ def clear_metadata(path: Path, dry_run: bool = False) -> int:
                 success_count += 1
                 continue
 
-            # Load EPUB
             epub_meta = EPUBMetadata(epub_file)
-
-            # Clear major metadata fields by setting them to empty values
             epub_meta.set_metadata(
                 title="",
-                author=[],  # empty list triggers author clearing
+                author=[],
                 series="",
                 series_index=None,
                 date="",
                 isbn="",
                 publisher="",
             )
-
-            # Save changes
             epub_meta.save()
             logger.info(f"  ✓ Cleared metadata from {epub_file.name}")
             success_count += 1
