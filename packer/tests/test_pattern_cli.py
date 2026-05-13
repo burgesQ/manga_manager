@@ -55,7 +55,9 @@ def test_named_pattern_weebcentral(tmp_path: Path, make_cbz, run_packer):
             "weebcentral",
         ],
     )
-    assert res.returncode == 0, f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+    assert (
+        res.returncode == 0
+    ), f"packer failed: stdout={res.stdout} stderr={res.stderr}"
 
     vol = src / "Vagabond v01"
     assert vol.exists()
