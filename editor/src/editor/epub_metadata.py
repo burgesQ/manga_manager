@@ -75,6 +75,9 @@ class EPUBMetadata:
             if val:
                 meta[field] = val
 
+        if dc.get("subject"):
+            meta["tags"] = [s[0] if isinstance(s, tuple) else s for s in dc["subject"]]
+
         if dc.get("creator"):
             creators = [c[0] if isinstance(c, tuple) else c for c in dc["creator"]]
             meta["author"] = creators[0] if len(creators) == 1 else creators
@@ -119,11 +122,9 @@ class EPUBMetadata:
         isbn: str | None = None,
         publisher: str | None = None,
         language: str = "en-US",
+        tags: list[str] | None = None,
     ):
-        """Set metadata in EPUB file.
-
-        TODO: set calibre tags (genre & other)
-        """
+        """Set metadata in EPUB file."""
 
         if title:
             dc_ns = "http://purl.org/dc/elements/1.1/"
@@ -173,6 +174,10 @@ class EPUBMetadata:
                 str(series_index),
                 {"name": "calibre:series_index", "content": str(series_index)},
             )
+
+        if tags:
+            for tag in tags:
+                self.book.add_metadata("DC", "subject", tag)
 
     def _ensure_toc_uids(self):
         """Ensure all TOC items have a UID to satisfy EPUB writer requirements."""

@@ -72,6 +72,12 @@ def main(argv=None) -> int:
     inject_parser.add_argument(
         "--dry-run", action="store_true", help="Simulate without making changes"
     )
+    inject_parser.add_argument(
+        "--locale",
+        choices=["english", "japanese", "french"],
+        default="english",
+        help="which locale block to use for publisher, ISBN, and release date (default: english)",
+    )
     _add_logging_args(inject_parser)
 
     # Dump command
@@ -112,6 +118,7 @@ def main(argv=None) -> int:
             args.metadata,
             force=args.force,
             dry_run=args.dry_run,
+            locale=args.locale,
         )
     elif args.command == "dump":
         logger.debug("running dump command")

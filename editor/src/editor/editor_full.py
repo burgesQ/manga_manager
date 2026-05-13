@@ -1,10 +1,4 @@
-"""EPUB Metadata Manager — high-level operations (inject / dump / clear).
-
-TODO: inject calibre' tags (Manga, Seinen, Shonen, Horror, Fiction, Mystery, Fantasy...)
-TODO: inject calibre ids (isbn, kobo)
-TODO: kobo library collection (Manga, Thriller)
-FIXME: ISBN is a calibre id
-"""
+"""EPUB Metadata Manager — high-level operations (inject / dump / clear)."""
 
 from __future__ import annotations
 
@@ -56,7 +50,9 @@ def _inject_single(
     series_name: str | None,
     author: str | None,
     publisher: str | None,
-    series_language: str,
+    language: str,
+    tags: list[str] | None,
+    locale: str,
     force: bool,
     dry_run: bool,
 ) -> str:
@@ -72,8 +68,8 @@ def _inject_single(
             return "skip"
 
         title = vol_data.get("title") or f"{series_name} v{vol_num:02d}"
-        language = vol_data.get("language", series_language)
-        locale_data = vol_data.get("english", {})
+        vol_language = vol_data.get("language", language)
+        locale_data = vol_data.get(locale, {}) or {}
         release_date = locale_data.get("release_date")
         isbn = locale_data.get("isbn")
 
@@ -90,7 +86,8 @@ def _inject_single(
                 date=release_date,
                 isbn=isbn,
                 publisher=publisher,
-                language=language,
+                language=vol_language,
+                tags=tags,
             )
             epub_meta.save()
 
@@ -100,6 +97,7 @@ def _inject_single(
         logger.info(f"    Author: {author}")
         logger.info(f"    Date: {release_date}")
         logger.info(f"    ISBN: {isbn}")
+        logger.info(f"    Tags: {tags}")
         return "ok"
 
     except Exception:  # per-file guard: continue processing remaining files
@@ -107,11 +105,19 @@ def _inject_single(
         return "err"
 
 
+_LOCALE_LANGUAGE: dict[str, str] = {
+    "english": "en-US",
+    "japanese": "ja",
+    "french": "fr-FR",
+}
+
+
 def inject_metadata(
     path: Path,
     yaml_path: Path,
     force: bool = False,
     dry_run: bool = False,
+    locale: str = "english",
 ):
     """Inject metadata into EPUB files from YAML configuration.
 
@@ -136,14 +142,21 @@ def inject_metadata(
     metadata = load_yaml_metadata(yaml_path)
     series_name = metadata.get("series")
     author = metadata.get("author")
-    publisher_data = metadata.get("publisher", {})
-    series_language = metadata.get("language", "en-US")
+    publisher_data = metadata.get("publisher") or {}
+    tags: list[str] | None = metadata.get("genre") or None
+    language = metadata.get("language") or _LOCALE_LANGUAGE.get(locale, "en-US")
     volumes_data = {v["number"]: v for v in metadata.get("volumes", [])}
+    publisher = (
+        publisher_data.get(locale)
+        if isinstance(publisher_data, dict)
+        else publisher_data
+    )
 
     logger.info(f"Found {len(epub_files)} EPUB file(s)")
     logger.info(f"Series: {series_name}")
     logger.info(f"Author: {author}")
-    logger.info(f"Publisher: {publisher_data}")
+    logger.info(f"Locale: {locale} → publisher={publisher}, language={language}")
+    logger.info(f"Tags: {tags}")
 
     success_count = 0
     skip_count = 0
@@ -167,8 +180,10 @@ def inject_metadata(
             vol_data,
             series_name=series_name,
             author=author,
-            publisher=publisher_data.get("english"),
-            series_language=series_language,
+            publisher=publisher,
+            language=language,
+            tags=tags,
+            locale=locale,
             force=force,
             dry_run=dry_run,
         )

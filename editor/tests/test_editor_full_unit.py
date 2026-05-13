@@ -233,3 +233,72 @@ def test_clear_corrupted_epub_error_counted(tmp_path: Path):
     (epub_dir / "Series v02.epub").write_bytes(b"not a zip")
     rc = clear_metadata(epub_dir)
     assert rc == 1
+
+
+# ---------------------------------------------------------------------------
+# Tags — injected as dc:subject, readable back via get_metadata
+# ---------------------------------------------------------------------------
+
+
+def test_tags_injected_and_readable(tmp_path: Path):
+    epub_path = tmp_path / "Series v01.epub"
+    _make_epub(epub_path)
+    meta = EPUBMetadata(epub_path)
+    meta.set_metadata(tags=["Seinen", "Historical"])
+    meta.save()
+
+    result = EPUBMetadata(epub_path).get_metadata()
+    assert result.get("tags") == ["Seinen", "Historical"]
+
+
+# ---------------------------------------------------------------------------
+# --locale selects the right locale block for isbn / release_date / publisher
+# ---------------------------------------------------------------------------
+
+
+def test_inject_locale_japanese(tmp_path: Path):
+    epub_path = tmp_path / "Series v01.epub"
+    _make_epub(epub_path)
+    yaml_path = tmp_path / "meta.yaml"
+    _make_yaml(
+        yaml_path,
+        {
+            "series": "Vagabond",
+            "author": "Takehiko Inoue",
+            "publisher": {"english": "Viz Media", "japanese": "Kodansha"},
+            "volumes": [
+                {
+                    "number": 1,
+                    "japanese": {"release_date": "1999-03-23", "isbn": "4-06-328619-3"},
+                    "english": {
+                        "release_date": "2002-04-05",
+                        "isbn": "978-1-59116-034-2",
+                    },
+                }
+            ],
+        },
+    )
+    rc = inject_metadata(tmp_path, yaml_path, force=True, locale="japanese")
+    assert rc == 0
+    result = EPUBMetadata(epub_path).get_metadata()
+    assert result.get("publisher") == "Kodansha"
+    assert result.get("date") == "1999-03-23"
+
+
+def test_inject_locale_tags(tmp_path: Path):
+    epub_path = tmp_path / "Series v01.epub"
+    _make_epub(epub_path)
+    yaml_path = tmp_path / "meta.yaml"
+    _make_yaml(
+        yaml_path,
+        {
+            "series": "Vagabond",
+            "author": "Takehiko Inoue",
+            "genre": ["Seinen", "Historical"],
+            "volumes": [{"number": 1, "english": {"release_date": "2002-04-05"}}],
+        },
+    )
+    rc = inject_metadata(tmp_path, yaml_path, force=True)
+    assert rc == 0
+    result = EPUBMetadata(epub_path).get_metadata()
+    assert result.get("tags") == ["Seinen", "Historical"]

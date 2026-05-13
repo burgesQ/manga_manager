@@ -35,7 +35,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 
 ## Editor
 
-- [ ] **E1** Inject Calibre tags: Manga, Seinen, Shonen, Horror, Fiction, Fantasy, etc.
+- [x] **E1** Inject Calibre tags: read `genre` list from YAML, inject as `dc:subject`
 - [ ] **E2** Inject Calibre IDs: ISBN (currently mis-filed as DC id) and Kobo
 - [ ] **E3** Kobo library collection support (Manga, Thriller)
 - [x] **E4** Refactor `editor_full.py` — split into `epub_metadata.py` (EPUBMetadata class) + `editor_full.py` (operations); `_inject_single` extracted from inject loop; `_dc_scalar` helper added
