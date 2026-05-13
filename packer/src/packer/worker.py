@@ -39,15 +39,11 @@ def _ensure_dir(path: Path, dry_run: bool) -> None:
 
 
 def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
-    """Process a single chapter archive: validate, move and extract it.
-
-    Public API unchanged; internals use pathlib and helper utilities.
-    """
+    """Process a single chapter archive: validate, move and extract it."""
     logger.debug(f"[worker] start chapter={chapter_id} file={src_file}")
 
     src_path = Path(src_file)
 
-    # Validate comicinfo
     logger.debug(f"[worker] verifying ComicInfo.xml in {src_path}")
     if not cfg.has_comicinfo(str(src_path)):
         raise RuntimeError(f"Missing ComicInfo.xml in {src_path}")
@@ -55,7 +51,6 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
     volume_dir = Path(format_volume_dir(cfg.dest, cfg.serie, cfg.volume))
     _ensure_dir(volume_dir, cfg.dry_run)
 
-    # Move archive
     dest_archive = volume_dir / src_path.name
     if cfg.dry_run:
         logger.debug(f"[dry-run] mv {src_path} -> {dest_archive}")
@@ -63,7 +58,6 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
         logger.debug(f"[worker] moving archive to {dest_archive}")
         shutil.move(str(src_path), str(dest_archive))
 
-    # Determine chapter dir name (use canonical helper from core)
     if "." in chapter_id:
         base_part, extra_part = chapter_id.split(".", 1)
         chapter_dir_name = format_chapter_dir(base_part, extra_part)
@@ -82,9 +76,7 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
     else:
         _ensure_dir(chapter_dir, cfg.dry_run)
 
-    # Safe extraction (prevent path traversal). In dry-run, inspect the original
-    # src file but do not extract or depend on the moved `dest_archive` which
-    # doesn't exist in dry-run mode.
+    # In dry-run, inspect the original src file — dest_archive doesn't exist yet.
     try:
         archive_for_inspection = src_path if cfg.dry_run else dest_archive
         with zipfile.ZipFile(str(archive_for_inspection), "r") as z:
@@ -101,83 +93,51 @@ def process_one(chapter_id: str, src_file: str, cfg) -> ProcessResult:
     return ProcessResult(chapter_id, str(dest_archive))
 
 
-def process_volume(
-    volume: int, chapter_range: List[int], available_files: List[str], cfg
-) -> ProcessVolumeResult:
-    """Process a single volume: map files to chapters then execute tasks.
-
-    This function keeps the original behaviour while using Task NamedTuple and
-    pathlib internally for clarity.
-    """
-    # Build mapping using the provided patterns
-    mapping: ChapterToFilesMapping = {}
-    for pth in list(available_files):
-        matches = extract_chapter_number(
-            pth, chapter_pat=cfg.chapter_pat, extra_pat=cfg.extra_pat
-        )
-        for base, extra in matches:
-            entry = mapping.setdefault(base, {"mains": [], "extras": []})
-            if extra is None:
-                entry["mains"].append((None, pth))
-            else:
-                entry["extras"].append((extra, pth))
-
-    # Validate presence & uniqueness for this volume's chapters
-    for c in chapter_range:
-        ch_entry: Optional[dict[str, list]] = mapping.get(c)
-        if not ch_entry or (not ch_entry.get("mains") and not ch_entry.get("extras")):
-            logger.error(f"missing chapter {c}")
-            return ProcessVolumeResult(MISSING_CHAPTER, available_files)
-        if len(ch_entry.get("mains", [])) > 1:
-            mains = [p for (_, p) in ch_entry["mains"]]
-            logger.error(f"multiple archives match chapter {c}: {mains}")
-            return ProcessVolumeResult(DUPLICATE_CHAPTER, available_files)
-
-    # Prepare tasks: include main archive for each requested chapter and any
-    # extras found
+def _plan_tasks(
+    mapping: ChapterToFilesMapping, chapter_range: List[int]
+) -> List[Task]:
+    """Build ordered task list from the chapter mapping."""
     tasks: List[Task] = []
     for c in chapter_range:
         entry = mapping.get(c, {"mains": [], "extras": []})
         if entry.get("mains"):
             _, main_file = entry["mains"][0]
             tasks.append(Task(str(c), main_file))
-        # Sort extras by numeric suffix (e.g., 16.1 before 16.2)
         extras = sorted(
             entry.get("extras", []),
             key=lambda pair: int(pair[0]) if pair[0] is not None else 0,
         )
         for extra_suffix, extra_file in extras:
             tasks.append(Task(f"{c}.{extra_suffix}", extra_file))
+    return tasks
 
-    # Planned tasks are important summary info for the user
+
+def _copy_cover(volume_dir: Path, volume: int, cfg) -> None:
+    """Copy the configured cover image into the volume directory."""
+    if not cfg.covers:
+        return
+    for cm in cfg.covers:
+        if cm.volume != volume:
+            continue
+        src = Path(cm.cover_path)
+        if not src.exists():
+            logger.warning(f"cover not found, skipping: {src}")
+            break
+        cover_dest = volume_dir / "cover.webp"
+        if cfg.dry_run:
+            logger.info(f"[DRY RUN] would copy cover {src} → {cover_dest}")
+        else:
+            shutil.copy2(str(src), str(cover_dest))
+            logger.info(f"📷 Copied cover → {cover_dest}")
+        break
+
+
+def _run_tasks(tasks: List[Task], cfg) -> Optional[List[str]]:
+    """Execute tasks sequentially or threaded; return moved-file list or None on error."""
     total_tasks = len(tasks)
     dry_prefix = "[DRY RUN] " if cfg.dry_run else ""
-    logger.info(f"[info] planned tasks for volume {volume}:")
-    for t in tasks:
-        logger.info(f"[info]  chapter {t.chapter_id} -> {t.src}")
-
-    # Ensure volume dir exists (main thread creates it to avoid races)
-    volume_dir = Path(format_volume_dir(cfg.dest, cfg.serie, volume))
-    _ensure_dir(volume_dir, cfg.dry_run)
-
-    if cfg.covers:
-        for cm in cfg.covers:
-            if cm.volume == volume:
-                src = Path(cm.cover_path)
-                if not src.exists():
-                    logger.warning(f"cover not found, skipping: {src}")
-                    break
-                cover_dest = volume_dir / "cover.webp"
-                if cfg.dry_run:
-                    logger.info(f"[DRY RUN] would copy cover {src} → {cover_dest}")
-                else:
-                    shutil.copy2(str(src), str(cover_dest))
-                    logger.info(f"📷 Copied cover → {cover_dest}")
-                break
-
     moved_files: List[str] = []
 
-    # Execute tasks (threaded as before)
     if cfg.nb_worker > 1:
         logger.debug(f"[info] Using ThreadPoolExecutor with {cfg.nb_worker} workers")
         with concurrent.futures.ThreadPoolExecutor(max_workers=cfg.nb_worker) as ex:
@@ -203,7 +163,7 @@ def process_volume(
                     )
                 except Exception as e:
                     logger.error(f"{e}")
-                    return ProcessVolumeResult(PROCESSING_ERROR, available_files)
+                    return None
     else:
         for idx, t in enumerate(tasks, 1):
             logger.info(
@@ -220,9 +180,51 @@ def process_volume(
                 logger.debug(f"Processed: {(result.chapter_id, result.dest_archive)}")
             except Exception as e:
                 logger.error(f"{e}")
-                return ProcessVolumeResult(PROCESSING_ERROR, available_files)
+                return None
 
-    # Remove moved files from available_files (non-dry-run)
+    return moved_files
+
+
+def process_volume(
+    volume: int, chapter_range: List[int], available_files: List[str], cfg
+) -> ProcessVolumeResult:
+    """Process a single volume: map files to chapters then execute tasks."""
+    mapping: ChapterToFilesMapping = {}
+    for pth in list(available_files):
+        matches = extract_chapter_number(
+            pth, chapter_pat=cfg.chapter_pat, extra_pat=cfg.extra_pat
+        )
+        for base, extra in matches:
+            entry = mapping.setdefault(base, {"mains": [], "extras": []})
+            if extra is None:
+                entry["mains"].append((None, pth))
+            else:
+                entry["extras"].append((extra, pth))
+
+    for c in chapter_range:
+        ch_entry: Optional[dict[str, list]] = mapping.get(c)
+        if not ch_entry or (not ch_entry.get("mains") and not ch_entry.get("extras")):
+            logger.error(f"missing chapter {c}")
+            return ProcessVolumeResult(MISSING_CHAPTER, available_files)
+        if len(ch_entry.get("mains", [])) > 1:
+            mains = [p for (_, p) in ch_entry["mains"]]
+            logger.error(f"multiple archives match chapter {c}: {mains}")
+            return ProcessVolumeResult(DUPLICATE_CHAPTER, available_files)
+
+    tasks = _plan_tasks(mapping, chapter_range)
+
+    logger.info(f"[info] planned tasks for volume {volume}:")
+    for t in tasks:
+        logger.info(f"[info]  chapter {t.chapter_id} -> {t.src}")
+
+    volume_dir = Path(format_volume_dir(cfg.dest, cfg.serie, volume))
+    _ensure_dir(volume_dir, cfg.dry_run)
+    _copy_cover(volume_dir, volume, cfg)
+
+    moved_files = _run_tasks(tasks, cfg)
+    if moved_files is None:
+        return ProcessVolumeResult(PROCESSING_ERROR, available_files)
+
     if not cfg.dry_run:
         for dest in moved_files:
             if dest and Path(dest).exists():
@@ -231,4 +233,5 @@ def process_volume(
                     if Path(orig).name == basename:
                         available_files.remove(orig)
                         break
+
     return ProcessVolumeResult(SUCCESS, available_files)
