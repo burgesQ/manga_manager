@@ -38,7 +38,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **E1** Inject Calibre tags: Manga, Seinen, Shonen, Horror, Fiction, Fantasy, etc.
 - [ ] **E2** Inject Calibre IDs: ISBN (currently mis-filed as DC id) and Kobo
 - [ ] **E3** Kobo library collection support (Manga, Thriller)
-- [ ] **E4** Refactor `editor_full.py` — extract helpers, clean up module structure
+- [x] **E4** Refactor `editor_full.py` — split into `epub_metadata.py` (EPUBMetadata class) + `editor_full.py` (operations); `_inject_single` extracted from inject loop; `_dc_scalar` helper added
 - [x] **E5** Add tests (comprehensive coverage for inject/dump/clear)
 - [x] **E6** Remove legacy `editor.py` (done)
 
@@ -85,8 +85,15 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 
 Global refactor pass across all three packages to improve readability and maintainability.
 
-- [ ] **Q1** Replace anonymous tuples with `NamedTuple` everywhere — no bare `tuple[x, y]` return types
-- [ ] **Q2** Eliminate if-forests — flatten nested conditionals with early returns and guard clauses; follow the Go happy-path principle (error/edge cases exit early, the success path runs unindented at the bottom)
-- [ ] **Q3** Break up long functions — enforce single-responsibility; extract helpers when a function exceeds ~30 lines
+- [x] **Q1** Replace anonymous tuples with `NamedTuple` / `TypeAlias` everywhere — `BatchSpecs` TypeAlias added to `packer/types_.py`; all 4 raw `list[tuple[int, list[int]]]` annotations replaced
+- [x] **Q2** Eliminate if-forests — packer `cli.py` refactored to use `_CLIError` private exception + early-exit guard clauses; all helpers follow happy-path principle
+- [x] **Q3** Break up long functions — `packer/cli.py` main() extracted into 6 focused helpers; `packer/worker.py` process_volume() extracted into `_plan_tasks`, `_copy_cover`, `_run_tasks`; `editor/cli.py` extracted `_add_logging_args`; `convertor/cli.py` extracted `_build_parser`, `_build_settings`, `_process_volumes`
 - [ ] **Q4** Remove anonymous lambdas — replace inline `lambda` with named functions or `operator` helpers where intent is non-obvious
-- [ ] **Q5** Split large modules into sub-files — e.g. `editor_full.py`, `cli.py` (packer) are good candidates for further decomposition
+- [x] **Q5** Split large modules — `editor/editor_full.py` (607 lines) split into `epub_metadata.py` (EPUBMetadata class + `_dc_scalar`, low-level EPUB I/O) and `editor_full.py` (operations: inject / dump / clear)
+
+### Additional cleanup completed (PRs #13–#14)
+
+- [x] **Q6** Add `exit_codes.py` + `py.typed` to `editor` and `convertor` — named constants (`SUCCESS`, `ERROR`, `CLI_ERROR`) replace bare literals across all three packages
+- [x] **Q7** Deduplicate test fixtures — `make_config` in packer conftest; `make_epub`/`make_yaml` in editor conftest; `make_vol`/`run_convertor` fixtures in convertor conftest; local helpers removed from test files
+- [x] **Q8** Test coverage — editor: 0% → 99%; packer cli.py: 29% → high; convertor error paths covered; all tests call `main()` directly (not subprocess) for accurate instrumentation
+- [x] **Q9** Rewrite package-level READMEs (`packer`, `editor`, `convertor`) — replace stale design notes with clean, current documentation
