@@ -180,6 +180,7 @@ Pass `--pattern <name>` to select one:
 | `mangafox` | `Ch.013`, `Ch 013`, `Chapter 013` | `Ch.013.5` | MangaFox, Tachiyomi downloads |
 | `mangafire` | `Chap 013`, `Chap.013` | `Chap 013.5` | MangaFire |
 | `animeSama` | `Chapitre 013`, `Chap 013` | `Chapitre 013.5` | animesama.fr (French scans) |
+| `weebcentral` | `Unknown_# 327_<hash>` | `Unknown_# 327.1_<hash>` | WeebCentral |
 
 **Regex details:**
 
@@ -189,6 +190,7 @@ Pass `--pattern <name>` to select one:
 | `mangafox` | `(?i)ch(?:\.\|apter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
 | `mangafire` | `(?i)chap(?:\.\|ter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
 | `animeSama` | `(?i)chap(?:\.\|itre)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
+| `weebcentral` | `#\s*0*(\d+)` | `…\.(\d+)` |
 
 ```console
 # MangaFox download: "Ch.001 Title.cbz", "Ch.001.5.cbz"
@@ -253,7 +255,7 @@ Place a `cover.webp` in the volume directory before running `convertor`. It will
 --volume N               volume number
 --chapter-range RANGE    chapter range: "1..12", "1,3,5..8"
 --dest PATH              output root (default: same as --path)
---pattern NAME           named pattern: mangafox | mangafire | animeSama
+--pattern NAME           named pattern: mangafox | mangafire | animeSama | weebcentral
 --chapter-regex REGEX    custom regex for main chapters
 --extra-regex REGEX      custom regex for extra chapters
 --batch SPEC             inline batch: "v01:1..3-v02:4..6"
