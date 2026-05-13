@@ -110,7 +110,7 @@ def test_packer_json_provides_pattern(tmp_path: Path, make_cbz):
     src = tmp_path / "src"
     src.mkdir()
     make_cbz(src, "Ch.001.cbz")
-    (src / "packer.json").write_text(json.dumps({"pattern": "mangadex"}))
+    (src / "packer.json").write_text(json.dumps({"pattern": "mangafox"}))
     rc = main(_args(src, ["--volume", "1", "--chapter-range", "1"]))
     assert rc == SUCCESS
 

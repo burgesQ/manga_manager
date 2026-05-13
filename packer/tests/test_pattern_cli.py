@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-def test_named_pattern_mangadex(tmp_path: Path, make_cbz, run_packer):
+def test_named_pattern_mangafox(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
 
@@ -20,7 +20,7 @@ def test_named_pattern_mangadex(tmp_path: Path, make_cbz, run_packer):
             "--chapter-range",
             "13",
             "--pattern",
-            "mangadex",
+            "mangafox",
         ],
     )
     assert (

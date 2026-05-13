@@ -176,7 +176,7 @@ Pass `--pattern <name>` to select one:
 | Flag | Matches | Extras | Source |
 |---|---|---|---|
 | `default` | `Chapter 001`, `Ch.001`, `Ch 1` | `Chapter 001.5` | "read dot net" sites (e.g. `readberserk.net`, generic) |
-| `mangadex` | `Ch.013`, `Ch 013`, `Chapter 013` | `Ch.013.5` | MangaDex, Tachiyomi downloads |
+| `mangafox` | `Ch.013`, `Ch 013`, `Chapter 013` | `Ch.013.5` | MangaFox, Tachiyomi downloads |
 | `mangafire` | `Chap 013`, `Chap.013` | `Chap 013.5` | MangaFire |
 | `animeSama` | `Chapitre 013`, `Chap 013` | `Chapitre 013.5` | animesama.fr (French scans) |
 
@@ -185,14 +185,14 @@ Pass `--pattern <name>` to select one:
 | Flag | Chapter regex | Extra regex |
 |---|---|---|
 | `default` | `(?i)chapter[\s._-]*0*(\d+)` or `(?i)ch[\s._-]*0*(\d+)` | same with `\.(\d+)` suffix |
-| `mangadex` | `(?i)ch(?:\.\|apter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
+| `mangafox` | `(?i)ch(?:\.\|apter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
 | `mangafire` | `(?i)chap(?:\.\|ter)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
 | `animeSama` | `(?i)chap(?:\.\|itre)?[\s._-]*0*(\d+)` | `…\.(\d+)` |
 
 ```console
-# MangaDex download: "Ch.001 Title.cbz", "Ch.001.5.cbz"
+# MangaFox download: "Ch.001 Title.cbz", "Ch.001.5.cbz"
 uv run packer --path ./Mashle --serie "Mashle" --volume 1 \
-  --chapter-range "1..8" --pattern mangadex
+  --chapter-range "1..8" --pattern mangafox
 
 # MangaFire download: "Chap 016.cbz", "Chap 016.1.cbz"
 uv run packer --path ./FMA --serie "FMA" --volume 4 \
@@ -235,7 +235,7 @@ Place a `packer.json` in the source directory to set defaults. CLI arguments alw
 ```json
 {
   "serie": "Berserk",
-  "pattern": "mangadex",
+  "pattern": "mangafox",
   "nb_worker": 2
 }
 ```
@@ -252,7 +252,7 @@ Place a `cover.webp` in the volume directory before running `convertor`. It will
 --volume N               volume number
 --chapter-range RANGE    chapter range: "1..12", "1,3,5..8"
 --dest PATH              output root (default: same as --path)
---pattern NAME           named pattern: mangadex | mangafire | animeSama
+--pattern NAME           named pattern: mangafox | mangafire | animeSama
 --chapter-regex REGEX    custom regex for main chapters
 --extra-regex REGEX      custom regex for extra chapters
 --batch SPEC             inline batch: "v01:1..3-v02:4..6"

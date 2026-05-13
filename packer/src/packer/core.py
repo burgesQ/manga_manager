@@ -80,7 +80,7 @@ def extract_chapter_number(
 ) -> List[ChapterMatch]:
     """Extract chapter numbers and optional extra suffixes from a filename.
 
-    Behavior summary:
+    Behaviour summary:
     - If `extra_pat` is provided and matches, the file is treated as an extra.
     - Otherwise, if `chapter_pat` matches, a main chapter is returned.
     - If neither pattern matches, a set of legacy patterns is used as fallback.
@@ -233,7 +233,7 @@ def format_chapter_dir(base: int | str, extra: str | None = None) -> str:
 
 # Named patterns for convenience (used by CLI when --pattern is set)
 NAMED_PATTERNS = {
-    "mangadex": (
+    "mangafox": (
         re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)"),
         re.compile(r"(?i)ch(?:\.|apter)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
     ),

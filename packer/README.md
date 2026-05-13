@@ -38,7 +38,7 @@ Pre-configured regex patterns for common download sources:
 | `--pattern` | Matches | Source |
 |---|---|---|
 | `default` | `Chapter 001`, `Ch.001` | Generic |
-| `mangadex` | `Ch.013`, `Ch.013.5` | MangaDex / Tachiyomi |
+| `mangafox` | `Ch.013`, `Ch.013.5` | MangaFox / Tachiyomi |
 | `mangafire` | `Chap 013`, `Chap 013.5` | MangaFire |
 | `animeSama` | `Chapitre 013` | animesama.fr |
 
@@ -49,7 +49,7 @@ Place in `--path` to set per-directory defaults (CLI flags always override):
 ```json
 {
   "serie": "Berserk",
-  "pattern": "mangadex",
+  "pattern": "mangafox",
   "nb_worker": 2,
   "batch_file": "berserk.batch",
   "covers": { "1": "cover_v01.webp" }
