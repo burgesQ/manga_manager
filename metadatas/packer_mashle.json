@@ -1,0 +1,25 @@
+{
+  "serie": "Mashle",
+  "pattern": "mangafox",
+  "batch_file": "/home/master/Shelf/EN/Mashle/vols.csv",
+  "covers": {
+    "1": "/home/master/Shelf/EN/Mashle/Volume_01_EN.webp",
+    "2": "/home/master/Shelf/EN/Mashle/Volume_02_EN.webp",
+    "3": "/home/master/Shelf/EN/Mashle/Volume_03_EN.webp",
+    "4": "/home/master/Shelf/EN/Mashle/Volume_04_EN.webp",
+    "5": "/home/master/Shelf/EN/Mashle/Volume_05_EN.webp",
+    "6": "/home/master/Shelf/EN/Mashle/Volume_06_EN.webp",
+    "7": "/home/master/Shelf/EN/Mashle/Volume_07_EN.webp",
+    "8": "/home/master/Shelf/EN/Mashle/Volume_08_EN.webp",
+    "9": "/home/master/Shelf/EN/Mashle/Volume_09_EN.webp",
+    "10": "/home/master/Shelf/EN/Mashle/Volume_10_EN.webp",
+    "11": "/home/master/Shelf/EN/Mashle/Volume_11_EN.webp",
+    "12": "/home/master/Shelf/EN/Mashle/Volume_12_EN.webp",
+    "13": "/home/master/Shelf/EN/Mashle/Volume_13_ENG.webp",
+    "14": "/home/master/Shelf/EN/Mashle/Volume_14_ENG.webp",
+    "15": "/home/master/Shelf/EN/Mashle/Volume_15_ENG.webp",
+    "16": "/home/master/Shelf/EN/Mashle/Volume_16_ENG.webp",
+    "17": "/home/master/Shelf/EN/Mashle/Volume_17_ENG.webp",
+    "18": "/home/master/Shelf/EN/Mashle/Volume_18_ENG.webp"
+  }
+}
