@@ -41,6 +41,7 @@ Pre-configured regex patterns for common download sources:
 | `mangafox` | `Ch.013`, `Ch.013.5` | MangaFox / Tachiyomi |
 | `mangafire` | `Chap 013`, `Chap 013.5` | MangaFire |
 | `animeSama` | `Chapitre 013` | animesama.fr |
+| `weebcentral` | `Unknown_# 327_<hash>` | WeebCentral |
 
 ## packer.json
 

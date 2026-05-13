@@ -245,4 +245,8 @@ NAMED_PATTERNS = {
         re.compile(r"(?i)chap(?:\.|itre)?[\s._-]*0*([0-9]+)"),
         re.compile(r"(?i)chap(?:\.|itre)?[\s._-]*0*([0-9]+)\.([0-9]+)"),
     ),
+    "weebcentral": (
+        re.compile(r"#\s*0*([0-9]+)"),
+        re.compile(r"#\s*0*([0-9]+)\.([0-9]+)"),
+    ),
 }

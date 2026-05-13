@@ -224,11 +224,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument(
         "--pattern",
-        choices=["default", "mangafox", "mangafire", "animeSama"],
+        choices=["default", "mangafox", "mangafire", "animeSama", "weebcentral"],
         default="default",
         help='named pattern: "mangafox" expects "Ch.013" / "Ch.013.5" (MangaFox/Tachiyomi); '
         '"mangafire" expects "Chap 13" / "Chap 13.5" (MangaFire); '
-        '"animeSama" expects "Chapitre 13" (French; animesama.fr)',
+        '"animeSama" expects "Chapitre 13" (French; animesama.fr); '
+        '"weebcentral" expects "# 327" (WeebCentral)',
     )
     p.add_argument(
         "--chapter-regex",

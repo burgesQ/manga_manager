@@ -33,6 +33,36 @@ def test_named_pattern_mangafox(tmp_path: Path, make_cbz, run_packer):
     assert (vol / "Ch.013.5.cbz").exists()
 
 
+def test_named_pattern_weebcentral(tmp_path: Path, make_cbz, run_packer):
+    src = tmp_path / "src"
+    src.mkdir()
+
+    make_cbz(src, "Unknown_# 327_1a1c71.cbz")
+    make_cbz(src, "Unknown_# 327.1_abc123.cbz")
+
+    res = run_packer(
+        tmp_path,
+        [
+            "--path",
+            str(src),
+            "--serie",
+            "Vagabond",
+            "--volume",
+            "1",
+            "--chapter-range",
+            "327",
+            "--pattern",
+            "weebcentral",
+        ],
+    )
+    assert res.returncode == 0, f"packer failed: stdout={res.stdout} stderr={res.stderr}"
+
+    vol = src / "Vagabond v01"
+    assert vol.exists()
+    assert (vol / "Unknown_# 327_1a1c71.cbz").exists()
+    assert (vol / "Unknown_# 327.1_abc123.cbz").exists()
+
+
 def test_custom_regex_override(tmp_path: Path, make_cbz, run_packer):
     src = tmp_path / "src"
     src.mkdir()
