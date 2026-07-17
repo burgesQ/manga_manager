@@ -1,0 +1,32 @@
+series: Jujutsu Kaisen Modulo
+author: Gege Akutami
+illustrator: Yuji Iwasaki
+genre:
+  - Shonen
+  - Science Fiction
+  - Action
+  - Supernatural
+publisher:
+  japanese: Shueisha
+  english: Viz Media
+
+doc: Used to inject metadata within volumes and chapters.
+
+chapters_file: .//chapters_jjkm.yaml
+
+volumes:
+- number: 1
+  title: Special Grade Incident
+  japanese:
+    release_date: '2026-01-05'
+    isbn: 978-4088848327
+- number: 2
+  title: Dura Val Bobbidi Mechika
+  japanese:
+    release_date: '2026-03-04'
+    isbn: 978-4088848723
+- number: 3
+  title: A Bright Future
+  japanese:
+    release_date: '2026-05-01'
+    isbn: 978-4088850429

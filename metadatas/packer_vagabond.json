@@ -1,7 +1,7 @@
 {
   "serie": "Vagabond",
   "pattern": "weebcentral",
-  "batch_file": "/home/master/Shelf/EN/Vagabond/vols.csv",
+  "batch_file": "./vols_vagabond.csv",
   "covers": {
     "1": "/home/master/Shelf/EN/Vagabond/covers/Vagabond_-_Volume_1.webp",
     "2": "/home/master/Shelf/EN/Vagabond/covers/Vagabond_-_Volume_2.webp",

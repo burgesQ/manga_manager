@@ -1,0 +1,10 @@
+{
+  "serie": "Jujutsu Kaisen Modulo",
+  "pattern": "mangafox",
+  "batch_file": "./vols_jjkm.csv",
+  "covers": {
+    "1": "/home/master/Shelf/EN/JJKM/covers/Volume_1.webp",
+    "2": "/home/master/Shelf/EN/JJKM/covers/Volume_2.webp",
+    "3": "/home/master/Shelf/EN/JJKM/covers/Volume_3.webp"
+  }
+}

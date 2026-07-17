@@ -1,0 +1,78 @@
+series: Jujutsu Kaisen Modulo
+doc: Chapter titles and volume mapping extracted from the source page.
+chapters:
+- number: 1
+  title: Special Grade Incident
+  volume: 1
+- number: 2
+  title: Deterrence
+  volume: 1
+- number: 3
+  title: Swimming Through the Forest
+  volume: 1
+- number: 4
+  title: The Boy Who Kept Repeating
+  volume: 1
+- number: 5
+  title: Senility
+  volume: 1
+- number: 6
+  title: Berserk
+  volume: 1
+- number: 7
+  title: The Robbed
+  volume: 1
+- number: 8
+  title: Dura Val Bobbidi Mechika, Part 1
+  volume: 2
+- number: 9
+  title: Dura Val Bobbidi Mechika, Part 2
+  volume: 2
+- number: 10
+  title: Majority Vote
+  volume: 2
+- number: 11
+  title: Cultural Exchange
+  volume: 2
+- number: 12
+  title: Inhuman Makyo
+  volume: 2
+- number: 13
+  title: Acceptance
+  volume: 2
+- number: 14
+  title: An Older Brother's Duty
+  volume: 2
+- number: 15
+  title: The Forbidden Technique Unleashed
+  volume: 2
+- number: 16
+  title: Malicious Light
+  volume: 2
+- number: 17
+  title: Chaos and Harmony
+  volume: 3
+- number: 18
+  title: One Who is Capable
+  volume: 3
+- number: 19
+  title: Rapid Strides
+  volume: 3
+- number: 20
+  title: Old Soldiers Never Die
+  volume: 3
+- number: 21
+  title: The Awaited One Arrives
+  volume: 3
+- number: 22
+  title: Pathway of Souls
+  volume: 3
+- number: 23
+  title: Ritual of Harmony
+  volume: 3
+- number: 24
+  title: A Ray of Hope, or...?
+  volume: 3
+- number: 25
+  title: A Bright Future
+  volume: 3

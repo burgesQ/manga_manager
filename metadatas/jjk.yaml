@@ -1,0 +1,260 @@
+series: Jujutsu Kaisen
+author: Gege Akutami
+genre:
+- Shonen
+- Action
+- Dark Fantasy
+- Supernatural
+publisher:
+  japanese: Shueisha
+  english: Viz Media
+doc: Used to inject metadata within volumes and chapters.
+volumes:
+- number: 0
+  title: Blinding Darkness
+  japanese:
+    release_date: '2018-12-04'
+    isbn: 978-4088816722
+  english:
+    release_date: '2021-01-05'
+    isbn: 978-1974720149
+- number: 1
+  title: Ryomen Sukuna
+  japanese:
+    release_date: '2018-07-04'
+    isbn: 978-4088815169
+  english:
+    release_date: '2019-12-03'
+    isbn: 978-1974710027
+- number: 2
+  title: Fearsome Womb
+  japanese:
+    release_date: '2018-09-04'
+    isbn: 978-4088816081
+  english:
+    release_date: '2020-02-04'
+    isbn: 978-1974710034
+- number: 3
+  title: Young Fish and Reverse Punishment
+  japanese:
+    release_date: '2018-12-04'
+    isbn: 978-4088816661
+  english:
+    release_date: '2020-04-07'
+    isbn: 978-1974710041
+- number: 4
+  title: I'm Gonna Kill You!
+  japanese:
+    release_date: '2019-03-04'
+    isbn: 978-4088817569
+  english:
+    release_date: '2020-06-02'
+    isbn: 978-1974714803
+- number: 5
+  title: Kyoto Sister School Goodwill Event
+  japanese:
+    release_date: '2019-05-02'
+    isbn: 978-4088818283
+  english:
+    release_date: '2020-08-04'
+    isbn: 978-1974714810
+- number: 6
+  title: Black Flash
+  japanese:
+    release_date: '2019-07-04'
+    isbn: 978-4088818764
+  english:
+    release_date: '2020-10-06'
+    isbn: 978-1974714827
+- number: 7
+  title: The Origin of Obedience
+  japanese:
+    release_date: '2019-10-04'
+    isbn: 978-4088820767
+  english:
+    release_date: '2020-12-01'
+    isbn: 978-1974717118
+- number: 8
+  title: Hidden Inventory
+  japanese:
+    release_date: '2020-01-04'
+    isbn: 978-4088821689
+  english:
+    release_date: '2021-02-02'
+    isbn: 978-1974718719
+- number: 9
+  title: Premature Death
+  japanese:
+    release_date: '2020-01-04'
+    isbn: 978-4088822181
+  english:
+    release_date: '2021-04-06'
+    isbn: 978-1974718726
+- number: 10
+  title: Evening Festival
+  japanese:
+    release_date: '2020-03-04'
+    isbn: 978-4088822747
+  english:
+    release_date: '2021-06-01'
+    isbn: 978-1974720750
+- number: 11
+  title: The Shibuya Incident ーGate Openー
+  japanese:
+    release_date: '2020-06-04'
+    isbn: 978-4088822969
+  english:
+    release_date: '2021-08-03'
+    isbn: 978-1974722846
+- number: 12
+  title: The Shibuya Incident ーSummonー
+  japanese:
+    release_date: '2020-08-04'
+    isbn: 978-4088823812
+  english:
+    release_date: '2021-10-05'
+    isbn: 978-1974722853
+- number: 13
+  title: The Shibuya Incident ーThunderclapー
+  japanese:
+    release_date: '2020-10-02'
+    isbn: 978-4088824291
+  english:
+    release_date: '2021-12-07'
+    isbn: 978-1974723423
+- number: 14
+  title: The Shibuya Incident ーRight and Wrongー
+  japanese:
+    release_date: '2021-01-04'
+    isbn: 978-4088825342
+  english:
+    release_date: '2022-02-01'
+    isbn: 978-1974725328
+- number: 15
+  title: The Shibuya Incident ーTransformationー
+  japanese:
+    release_date: '2021-03-04'
+    isbn: 978-4088825816
+  english:
+    release_date: '2022-04-05'
+    isbn: 978-1974727100
+- number: 16
+  title: The Shibuya Incident ーGate Closedー
+  japanese:
+    release_date: '2021-06-04'
+    isbn: 978-4088826882
+  english:
+    release_date: '2022-06-21'
+    isbn: 978-1974728985
+- number: 17
+  title: Perfect Preparation
+  japanese:
+    release_date: '2021-10-04'
+    isbn: 978-4088827360
+  english:
+    release_date: '2022-08-16'
+    isbn: 978-1974732333
+- number: 18
+  title: Fever
+  japanese:
+    release_date: '2021-12-25'
+    isbn: 978-4088828480
+  english:
+    release_date: '2022-12-20'
+    isbn: 978-1974734399
+- number: 19
+  title: Tokyo No. 1 Colony ーAngry Manー
+  japanese:
+    release_date: '2022-04-04'
+    isbn: 978-4088830681
+  english:
+    release_date: '2023-03-21'
+    isbn: 978-1974736270
+- number: 20
+  title: 'Sendai Colony: ーThe Height of the Feastー'
+  japanese:
+    release_date: '2022-08-04'
+    isbn: 978-4088832012
+  english:
+    release_date: '2023-08-15'
+    isbn: 978-1974738748
+- number: 21
+  title: Tokyo No. 2 Colony ーIncredible Luckー
+  japanese:
+    release_date: '2022-12-02'
+    isbn: 978-4088833118
+  english:
+    release_date: '2023-11-21'
+    isbn: 978-1974741229
+- number: 22
+  title: Sakurajima Colony ーRebirthー
+  japanese:
+    release_date: '2023-03-03'
+    isbn: 978-4088834344
+  english:
+    release_date: '2024-04-16'
+    isbn: 978-1974743414
+- number: 23
+  title: Stars and Oil
+  japanese:
+    release_date: '2023-07-04'
+    isbn: 978-4088836287
+  english:
+    release_date: '2024-08-20'
+    isbn: 978-1974746293
+- number: 24
+  title: Fearsome Womb ーRecurrenceー
+  japanese:
+    release_date: '2023-10-04'
+    isbn: 978-4088836706
+  english:
+    release_date: '2024-12-10'
+    isbn: 978-1974749485
+- number: 25
+  title: Inhuman Makyo Shinjuku Showdown
+  japanese:
+    release_date: '2024-01-04'
+    isbn: 978-4088837994
+  english:
+    release_date: '2025-03-11'
+    isbn: 978-1974751884
+- number: 26
+  title: Heading South
+  japanese:
+    release_date: '2024-04-04'
+    isbn: 978-4088838847
+  english:
+    release_date: '2025-05-20'
+    isbn: 978-1974754977
+- number: 27
+  title: Foolish Survivor!!
+  japanese:
+    release_date: '2024-07-04'
+    isbn: 978-4088841151
+  english:
+    release_date: '2025-08-19'
+    isbn: 978-1974755592
+- number: 28
+  title: Inhuman Makyo Shinjuku Showdown ーSeimokuー
+  japanese:
+    release_date: '2024-10-04'
+    isbn: 978-4088842110
+  english:
+    release_date: '2025-11-04'
+    isbn: 978-1974758906
+- number: 29
+  title: Inhuman Makyo Shinjuku Showdown ーLife and Deathー
+  japanese:
+    release_date: '2024-12-25'
+    isbn: 978-4088843773
+  english:
+    release_date: '2026-02-17'
+    isbn: 978-1974762019
+- number: 30
+  title: From Now On
+  japanese:
+    release_date: '2024-12-25'
+    isbn: 978-4088843780
+  english:
+    release_date: '2026-05-12'
+    isbn: 978-1974763405

@@ -1,0 +1,681 @@
+series: Zetman
+doc: Chapter titles and volume mapping extracted from the source page.
+chapters:
+- number: 1
+  title: Jin
+  volume: 1
+- number: 2
+  title: Ordinary Life
+  volume: 1
+- number: 3
+  title: A Violent Rescue
+  volume: 1
+- number: 4
+  title: Awaken
+  volume: 1
+- number: 5
+  title: Doctor Kanzaki
+  volume: 1
+- number: 6
+  title: Raw Emotion
+  volume: 1
+- number: 7
+  title: Sweeper
+  volume: 1
+- number: 8
+  title: Warmth
+  volume: 1
+- number: 9
+  title: Christmas Eve
+  volume: 1
+- number: 10
+  title: Disaster
+  volume: 1
+- number: 11
+  title: Despair
+  volume: 1
+- number: 12
+  title: Hope
+  volume: 1
+- number: 13
+  title: Konoha
+  volume: 2
+- number: 14
+  title: From the Sky
+  volume: 2
+- number: 15
+  title: Future Dreams
+  volume: 2
+- number: 16
+  title: Secret Mobilization
+  volume: 2
+- number: 17
+  title: Inside the Crimson Lotus Flower
+  volume: 2
+- number: 18
+  title: Concerning Hell
+  volume: 2
+- number: 19
+  title: Confrontation
+  volume: 2
+- number: 20
+  title: Difference
+  volume: 2
+- number: 21
+  title: Hero
+  volume: 2
+- number: 22
+  title: Light and Dark
+  volume: 2
+- number: 23
+  title: A Good Day
+  volume: 2
+- number: 24
+  title: Incomplete
+  volume: 2
+- number: 25
+  title: Memory Display
+  volume: 2
+- number: 26
+  title: Three Stages
+  volume: 2
+- number: 27
+  title: Silent Anger
+  volume: 3
+- number: 28
+  title: After That
+  volume: 3
+- number: 29
+  title: 99.25%
+  volume: 3
+- number: 30
+  title: New Morning
+  volume: 3
+- number: 31
+  title: Amagi Family
+  volume: 3
+- number: 32
+  title: Kouga
+  volume: 3
+- number: 33
+  title: Brother
+  volume: 3
+- number: 34
+  title: Mood That Won't Improve
+  volume: 3
+- number: 35
+  title: Trial
+  volume: 3
+- number: 36
+  title: Failure
+  volume: 3
+- number: 37
+  title: Same as Humans
+  volume: 3
+- number: 38
+  title: This Time for Sure
+  volume: 3
+- number: 39
+  title: Lonely Heart
+  volume: 3
+- number: 40
+  title: Smile
+  volume: 3
+- number: 41
+  title: Party
+  volume: 4
+- number: 42
+  title: The Next Room
+  volume: 4
+- number: 43
+  title: Shaken Warrior
+  volume: 4
+- number: 44
+  title: Orgy
+  volume: 4
+- number: 45
+  title: Cleanly at the End
+  volume: 4
+- number: 46
+  title: The Prattle of Evil
+  volume: 4
+- number: 47
+  title: Demise
+  volume: 4
+- number: 48
+  title: Transformation
+  volume: 4
+- number: 49
+  title: Heartless Person
+  volume: 4
+- number: 50
+  title: Answer
+  volume: 4
+- number: 51
+  title: Evil's True Face
+  volume: 4
+- number: 52
+  title: N-E-T
+  volume: 5
+- number: 53
+  title: Jirou
+  volume: 5
+- number: 54
+  title: 16 Years of Darkness
+  volume: 5
+- number: 55
+  title: Boundary of Sin
+  volume: 5
+- number: 56
+  title: Superhuman
+  volume: 5
+- number: 57
+  title: Insect Possession
+  volume: 5
+- number: 58
+  title: Escape
+  volume: 5
+- number: 59
+  title: Abyss of Death
+  volume: 5
+- number: 60
+  title: Resuscitation
+  volume: 5
+- number: 61
+  title: The Fallen
+  volume: 6
+- number: 62
+  title: The Start
+  volume: 6
+- number: 63
+  title: Therapy for the Heart
+  volume: 6
+- number: 64
+  title: Problem Child
+  volume: 6
+- number: 65
+  title: Removel
+  volume: 6
+- number: 66
+  title: Unfortunate
+  volume: 6
+- number: 67
+  title: Urgent Situation
+  volume: 6
+- number: 68
+  title: Reason to Live
+  volume: 6
+- number: 69
+  title: Unusual Figures
+  volume: 6
+- number: 70
+  title: Pestilence
+  volume: 6
+- number: 71
+  title: Faint Affection
+  volume: 7
+- number: 72
+  title: Side Effect
+  volume: 7
+- number: 73
+  title: For the Sake of Others
+  volume: 7
+- number: 74
+  title: To the Forbidden Place
+  volume: 7
+- number: 75
+  title: The Light of Hope
+  volume: 7
+- number: 76
+  title: Life with a Mission
+  volume: 7
+- number: 77
+  title: Tears
+  volume: 7
+- number: 78
+  title: Setup
+  volume: 7
+- number: 79
+  title: Sincerity
+  volume: 7
+- number: 80
+  title: The Shattered Future
+  volume: 7
+- number: 81
+  title: Mission
+  volume: 8
+- number: 82
+  title: While Dying
+  volume: 8
+- number: 83
+  title: Long Shot
+  volume: 8
+- number: 84
+  title: The Choice
+  volume: 8
+- number: 85
+  title: Alfazs
+  volume: 8
+- number: 86
+  title: The Only One
+  volume: 8
+- number: 87
+  title: Lost and Found
+  volume: 8
+- number: 88
+  title: Magic Medicine
+  volume: 8
+- number: 89
+  title: That's Just...
+  volume: 8
+- number: 90
+  title: Fighting with Shadows
+  volume: 8
+- number: 91
+  title: Fear
+  volume: 8
+- number: 92
+  title: Hostages
+  volume: 8
+- number: 93
+  title: Opening
+  volume: 9
+- number: 94
+  title: Initiative
+  volume: 9
+- number: 95
+  title: The Third
+  volume: 9
+- number: 96
+  title: Kaleidoscope
+  volume: 9
+- number: 97
+  title: Back to the Wall
+  volume: 9
+- number: 98
+  title: Unbelievable One
+  volume: 9
+- number: 99
+  title: Life Boat
+  volume: 9
+- number: 100
+  title: Payback
+  volume: 9
+- number: 101
+  title: Stake
+  volume: 9
+- number: 102
+  title: Ring of Awakening
+  volume: 9
+- number: 103
+  title: I Will End Your Life
+  volume: 9
+- number: 104
+  title: Gravestone of a Memory
+  volume: 9
+- number: 105
+  title: Administering Justice
+  volume: 9
+- number: 106
+  title: Even So, I Will...
+  volume: 10
+- number: 107
+  title: Intersection
+  volume: 10
+- number: 108
+  title: The Power of Deceit
+  volume: 10
+- number: 109
+  title: Weakpoint
+  volume: 10
+- number: 110
+  title: Final Blow
+  volume: 10
+- number: 111
+  title: Damaged
+  volume: 10
+- number: 112
+  title: A True Hero
+  volume: 10
+- number: 113
+  title: Thank You
+  volume: 10
+- number: 114
+  title: Resolution
+  volume: 10
+- number: 115
+  title: Words of Penitence
+  volume: 10
+- number: 116
+  title: People's Smiling Faces
+  volume: 10
+- number: 117
+  title: A Rainy Night
+  volume: 10
+- number: 118
+  title: Shivering
+  volume: 10
+- number: 119
+  title: The smile that hides the heart
+  volume: 11
+- number: 120
+  title: The road home, A new road
+  volume: 11
+- number: 121
+  title: Freeloader
+  volume: 11
+- number: 122
+  title: A normal Family
+  volume: 11
+- number: 123
+  title: Suspicion
+  volume: 11
+- number: 124
+  title: Air Booster
+  volume: 11
+- number: 125
+  title: Character Designer
+  volume: 11
+- number: 126
+  title: Commission
+  volume: 11
+- number: 127
+  title: Seen
+  volume: 11
+- number: 128
+  title: Impenetrable Darkness
+  volume: 11
+- number: 129
+  title: Dubious Guest
+  volume: 11
+- number: 130
+  title: Error
+  volume: 11
+- number: 131
+  title: Brat
+  volume: 11
+- number: 132
+  title: Repulsive Machine
+  volume: 12
+- number: 133
+  title: Key Item
+  volume: 12
+- number: 134
+  title: Evol, the Organisation
+  volume: 12
+- number: 135
+  title: Location Of The Keepsake
+  volume: 12
+- number: 136
+  title: One Of Me
+  volume: 12
+- number: 137
+  title: Clone Rejection
+  volume: 12
+- number: 138
+  title: Equal Power
+  volume: 12
+- number: 139
+  title: Waiting One
+  volume: 12
+- number: 140
+  title: Links
+  volume: 12
+- number: 141
+  title: Cards
+  volume: 12
+- number: 142
+  title: Tactition
+  volume: 12
+- number: 143
+  title: Vanished Confidence
+  volume: 12
+- number: 144
+  title: Suspect
+  volume: 12
+- number: 145
+  title: After-Effects
+  volume: 13
+- number: 146
+  title: Discord
+  volume: 13
+- number: 147
+  title: Shibaki's Last Will
+  volume: 13
+- number: 148
+  title: It's Not Your Fault
+  volume: 13
+- number: 149
+  title: The Jirou Incident
+  volume: 13
+- number: 150
+  title: The Past is Always...
+  volume: 13
+- number: 151
+  title: What the Hell?
+  volume: 13
+- number: 152
+  title: Bird With a Broken Wing
+  volume: 13
+- number: 153
+  title: Justice Freak
+  volume: 13
+- number: 154
+  title: Kouga & Mayu
+  volume: 13
+- number: 155
+  title: Jin & Hanako
+  volume: 13
+- number: 156
+  title: TV-Jacked
+  volume: 13
+- number: 157
+  title: Declaration of War
+  volume: 13
+- number: 158
+  title: Dumbfounded Audience
+  volume: 13
+- number: 159
+  title: Loss
+  volume: 14
+- number: 160
+  title: Criminal Motive
+  volume: 14
+- number: 161
+  title: New Stage
+  volume: 14
+- number: 162
+  title: Next Generation Evol
+  volume: 14
+- number: 163
+  title: Discarded Memories
+  volume: 14
+- number: 164
+  title: Plan B
+  volume: 14
+- number: 165
+  title: Awakening Gum V2
+  volume: 14
+- number: 166
+  title: Haitani's Message
+  volume: 14
+- number: 167
+  title: Grand Plan
+  volume: 14
+- number: 168
+  title: Bloodlust
+  volume: 14
+- number: 169
+  title: Truth and Lies
+  volume: 14
+- number: 170
+  title: Conductor of Death
+  volume: 14
+- number: 171
+  title: Fatality
+  volume: 15
+- number: 172
+  title: Corpse Rider
+  volume: 15
+- number: 173
+  title: The Ugly One
+  volume: 15
+- number: 174
+  title: Puppet
+  volume: 15
+- number: 175
+  title: Latecomer
+  volume: 15
+- number: 176
+  title: Conspiracy of the Dead
+  volume: 15
+- number: 177
+  title: The Last Piece
+  volume: 15
+- number: 178
+  title: Weakling
+  volume: 16
+- number: 179
+  title: Equal Power
+  volume: 16
+- number: 180
+  title: The Crimson Stake
+  volume: 16
+- number: 181
+  title: Corrosive Darkness
+  volume: 16
+- number: 182
+  title: The Door to Truth
+  volume: 16
+- number: 183
+  title: Why Protect?
+  volume: 16
+- number: 184
+  title: Statue
+  volume: 17
+- number: 185
+  title: The Value of Life
+  volume: 17
+- number: 186
+  title: Questioning Resolve
+  volume: 17
+- number: 187
+  title: Awakening
+  volume: 17
+- number: 188
+  title: The Beast
+  volume: 17
+- number: 189
+  title: Lost Heart
+  volume: 17
+- number: 190
+  title: Uncertainty
+  volume: 17
+- number: 191
+  title: Uncertainty and Conviction
+  volume: 18
+- number: 192
+  title: Degel
+  volume: 18
+- number: 193
+  title: Touching Display
+  volume: 18
+- number: 194
+  title: Anvil
+  volume: 18
+- number: 195
+  title: Neutralizing Powers
+  volume: 18
+- number: 196
+  title: The Limit of Ambition
+  volume: 18
+- number: 197
+  title: Escape
+  volume: 18
+- number: 198
+  title: Devil or Angel?
+  volume: 18
+- number: 199
+  title: Suspicious Suit
+  volume: 18
+- number: 200
+  title: Suspicious Suit 2
+  volume: 18
+- number: 201
+  title: Undeserving
+  volume: 18
+- number: 202
+  title: Talk Time
+  volume: 18
+- number: 203
+  title: Strength in Numbers
+  volume: 18
+- number: 204
+  title: Black or White
+  volume: 18
+- number: 205
+  title: Justice is Here
+  volume: 18
+- number: 206
+  title: Chaos born from Harmony
+  volume: 19
+- number: 207
+  title: The Cruel Truth
+  volume: 19
+- number: 208
+  title: Those who Judge - Those who Save
+  volume: 19
+- number: 209
+  title: Dark World
+  volume: 19
+- number: 210
+  title: You
+  volume: 19
+- number: 211
+  title: A Human Existence
+  volume: 19
+- number: 212
+  title: Throbbing Left Hand
+  volume: 19
+- number: 213
+  title: Birth of a Hero
+  volume: 19
+- number: 214
+  title: Nothingness
+  volume: 19
+- number: 215
+  title: Friendship and Death
+  volume: 19
+- number: 216
+  title: Contract
+  volume: 20
+- number: 217
+  title: Collision
+  volume: 20
+- number: 218
+  title: There is no Kindness There
+  volume: 20
+- number: 219
+  title: Friend
+  volume: 20
+- number: 220
+  title: According to Plan
+  volume: 20
+- number: 221
+  title: The Price of Chaos
+  volume: 20
+- number: 222
+  title: Not Human
+  volume: 20
+- number: 223
+  title: A Dark Soul
+  volume: 20
+- number: 224
+  title: A World Filled with Kindness
+  volume: 20
+- number: 225
+  title: Unconfirmed Threat Counter Action Law
+  volume: 20
+- number: 226
+  title: ZET
+  volume: 20

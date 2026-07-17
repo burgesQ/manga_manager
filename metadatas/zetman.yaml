@@ -1,0 +1,111 @@
+series: Zetman
+author: Masakazu Katsura
+genre:
+- Seinen
+- Action
+- Science Fiction
+- Superhero
+publisher:
+  japanese: Shueisha
+doc: Used to inject metadata within volumes and chapters.
+volumes:
+- number: 1
+  title: null
+  japanese:
+    release_date: '2003-11-19'
+    isbn: 4-08-876529-X
+- number: 2
+  title: null
+  japanese:
+    release_date: '2003-11-19'
+    isbn: 4-08-876530-3
+- number: 3
+  title: null
+  japanese:
+    release_date: '2004-05-19'
+    isbn: 4-08-876610-5
+- number: 4
+  title: null
+  japanese:
+    release_date: '2004-12-17'
+    isbn: 4-08-876720-9
+- number: 5
+  title: null
+  japanese:
+    release_date: '2005-06-17'
+    isbn: 4-08-876808-6
+- number: 6
+  title: null
+  japanese:
+    release_date: '2005-12-19'
+    isbn: 4-08-876893-0
+- number: 7
+  title: null
+  japanese:
+    release_date: '2006-07-19'
+    isbn: 4-08-877114-1
+- number: 8
+  title: null
+  japanese:
+    release_date: '2007-10-19'
+    isbn: 978-4-08-877340-7
+- number: 9
+  title: null
+  japanese:
+    release_date: '2008-04-18'
+    isbn: 978-4-08-877416-9
+- number: 10
+  title: null
+  japanese:
+    release_date: '2008-08-19'
+    isbn: 978-4-08-877493-0
+- number: 11
+  title: null
+  japanese:
+    release_date: '2008-12-19'
+    isbn: 978-4-08-877565-4
+- number: 12
+  title: null
+  japanese:
+    release_date: '2009-05-19'
+    isbn: 978-4-08-877637-8
+- number: 13
+  title: null
+  japanese:
+    release_date: '2009-10-19'
+    isbn: 978-4-08-877718-4
+- number: 14
+  title: null
+  japanese:
+    release_date: '2010-04-19'
+    isbn: 978-4-08-877803-7
+- number: 15
+  title: null
+  japanese:
+    release_date: '2010-12-17'
+    isbn: 978-4-08-879080-0
+- number: 16
+  title: null
+  japanese:
+    release_date: '2011-10-19'
+    isbn: 978-4-08-879186-9
+- number: 17
+  title: null
+  japanese:
+    release_date: '2012-03-29'
+    isbn: 978-4-08-879292-7
+- number: 18
+  title: null
+  japanese:
+    release_date: '2012-11-19'
+    isbn: 978-4-08-879436-5
+- number: 19
+  title: null
+  japanese:
+    release_date: '2013-12-19'
+    isbn: 978-4-08-879810-3
+- number: 20
+  title: null
+  japanese:
+    release_date: '2014-10-17'
+    isbn: 978-4-08-890025-4

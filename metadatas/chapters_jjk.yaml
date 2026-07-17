@@ -1,0 +1,828 @@
+series: Jujutsu Kaisen
+doc: Chapter titles and volume mapping extracted from the source page.
+chapters:
+- number: 0-1
+  title: The Cursed Child
+  volume: 0
+- number: 0-2
+  title: Blacker and Blacker
+  volume: 0
+- number: 0-3
+  title: Punishment for the Weak
+  volume: 0
+- number: 0-4
+  title: Bright Darkness
+  volume: 0
+- number: 1
+  title: Ryomen Sukuna
+  volume: 1
+- number: 2
+  title: Secret Execution
+  volume: 1
+- number: 3
+  title: For Myself
+  volume: 1
+- number: 4
+  title: Girl of Steel
+  volume: 1
+- number: 5
+  title: Start
+  volume: 1
+- number: 6
+  title: Fearsome Womb
+  volume: 1
+- number: 7
+  title: Fearsome Womb, Part 2
+  volume: 1
+- number: 8
+  title: Fearsome Womb, Part 3
+  volume: 2
+- number: 9
+  title: Fearsome Womb, Part 4
+  volume: 2
+- number: 10
+  title: After the Rain
+  volume: 2
+- number: 11
+  title: A Dream
+  volume: 2
+- number: 12
+  title: Pushing Forward
+  volume: 2
+- number: 13
+  title: Watching Movies
+  volume: 2
+- number: 14
+  title: Assault
+  volume: 2
+- number: 15
+  title: Domain
+  volume: 2
+- number: 16
+  title: Affection
+  volume: 2
+- number: 17
+  title: Boring
+  volume: 3
+- number: 18
+  title: Bottom
+  volume: 3
+- number: 19
+  title: Young Fish and Reverse Punishment
+  volume: 3
+- number: 20
+  title: Young Fish and Reverse Punishment, Part 2
+  volume: 3
+- number: 21
+  title: Young Fish and Reverse Punishment, Part 3
+  volume: 3
+- number: 22
+  title: Young Fish and Reverse Punishment, Part 4
+  volume: 3
+- number: 23
+  title: Young Fish and Reverse Punishment, Part 5
+  volume: 3
+- number: 24
+  title: Young Fish and Reverse Punishment, Part 6
+  volume: 3
+- number: 25
+  title: Narrow-Minded
+  volume: 3
+- number: 26
+  title: To You Someday
+  volume: 4
+- number: 27
+  title: What If
+  volume: 4
+- number: 28
+  title: I'm Gonna Kill You!
+  volume: 4
+- number: 29
+  title: Growth
+  volume: 4
+- number: 30
+  title: Selfishness
+  volume: 4
+- number: 31
+  title: Tomorrow
+  volume: 4
+- number: 32
+  title: Introspection
+  volume: 4
+- number: 33
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 0
+  volume: 4
+- number: 34
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 1
+  volume: 4
+- number: 35
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 2
+  volume: 5
+- number: 36
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 3
+  volume: 5
+- number: 37
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 4
+  volume: 5
+- number: 38
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 5
+  volume: 5
+- number: 39
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 6
+  volume: 5
+- number: 40
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 7
+  volume: 5
+- number: 41
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 8
+  volume: 5
+- number: 42
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 9
+  volume: 5
+- number: 43
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 10
+  volume: 5
+- number: 44
+  title: Kyoto Sister School Goodwill Event - Team Battle, Part 11
+  volume: 6
+- number: 45
+  title: Sage
+  volume: 6
+- number: 46
+  title: Time
+  volume: 6
+- number: 47
+  title: Cursed Tools
+  volume: 6
+- number: 48
+  title: Black Flash
+  volume: 6
+- number: 49
+  title: Constrained
+  volume: 6
+- number: 50
+  title: Feeling
+  volume: 6
+- number: 51
+  title: A Flower Offering
+  volume: 6
+- number: 52
+  title: Nonstandard
+  volume: 6
+- number: 53
+  title: Completion
+  volume: 7
+- number: 54
+  title: Jujutsu Koshien
+  volume: 7
+- number: 55
+  title: The Origin of Obedience
+  volume: 7
+- number: 56
+  title: The Origin of Obedience, Part 2
+  volume: 7
+- number: 57
+  title: The Origin of Obedience, Part 3
+  volume: 7
+- number: 58
+  title: The Origin of Obedience, Part 4
+  volume: 7
+- number: 59
+  title: The Origin of Obedience, Part 5
+  volume: 7
+- number: 60
+  title: The Origin of Obedience, Part 6
+  volume: 7
+- number: 61
+  title: The Origin of Obedience, Part 7
+  volume: 7
+- number: 62
+  title: The Origin of Obedience, Part 8
+  volume: 8
+- number: 63
+  title: Accomplices
+  volume: 8
+- number: 64
+  title: It's Like That
+  volume: 8
+- number: 65
+  title: Hidden Inventory
+  volume: 8
+- number: 66
+  title: Hidden Inventory, Part 2
+  volume: 8
+- number: 67
+  title: Hidden Inventory, Part 3
+  volume: 8
+- number: 68
+  title: Hidden Inventory, Part 4
+  volume: 8
+- number: 69
+  title: Hidden Inventory, Part 5
+  volume: 8
+- number: 70
+  title: Hidden Inventory, Part 6
+  volume: 8
+- number: 71
+  title: Hidden Inventory, Part 7
+  volume: 9
+- number: 72
+  title: Hidden Inventory, Part 8
+  volume: 9
+- number: 73
+  title: Hidden Inventory, Part 9
+  volume: 9
+- number: 74
+  title: Hidden Inventory, Part 10
+  volume: 9
+- number: 75
+  title: Hidden Inventory, Part 11
+  volume: 9
+- number: 76
+  title: Premature Death
+  volume: 9
+- number: 77
+  title: Premature Death, Part 2
+  volume: 9
+- number: 78
+  title: Premature Death, Part 3
+  volume: 9
+- number: 79
+  title: A Taste of Things to Come
+  volume: 9
+- number: 80
+  title: Evening Festival
+  volume: 10
+- number: 81
+  title: Evening Festival, Part 2
+  volume: 10
+- number: 82
+  title: Evening Festival, Part 3
+  volume: 10
+- number: 83
+  title: The Shibuya Incident, Part 1
+  volume: 10
+- number: 84
+  title: The Shibuya Incident, Part 2
+  volume: 10
+- number: 85
+  title: The Shibuya Incident, Part 3
+  volume: 10
+- number: 86
+  title: The Shibuya Incident, Part 4
+  volume: 10
+- number: 87
+  title: The Shibuya Incident, Part 5
+  volume: 10
+- number: 88
+  title: The Shibuya Incident, Part 6
+  volume: 10
+- number: 89
+  title: The Shibuya Incident, Part 7
+  volume: 11
+- number: 90
+  title: The Shibuya Incident, Part 8
+  volume: 11
+- number: 91
+  title: The Shibuya Incident, Part 9
+  volume: 11
+- number: 92
+  title: The Shibuya Incident, Part 10
+  volume: 11
+- number: 93
+  title: The Shibuya Incident, Part 11
+  volume: 11
+- number: 94
+  title: The Shibuya Incident, Part 12
+  volume: 11
+- number: 95
+  title: The Shibuya Incident, Part 13
+  volume: 11
+- number: 96
+  title: The Shibuya Incident, Part 14
+  volume: 11
+- number: 97
+  title: The Shibuya Incident, Part 15
+  volume: 11
+- number: 98
+  title: The Shibuya Incident, Part 16
+  volume: 12
+- number: 99
+  title: The Shibuya Incident, Part 17
+  volume: 12
+- number: 100
+  title: The Shibuya Incident, Part 18
+  volume: 12
+- number: 101
+  title: The Shibuya Incident, Part 19
+  volume: 12
+- number: 102
+  title: The Shibuya Incident, Part 20
+  volume: 12
+- number: 103
+  title: The Shibuya Incident, Part 21
+  volume: 12
+- number: 104
+  title: The Shibuya Incident, Part 22
+  volume: 12
+- number: 105
+  title: The Shibuya Incident, Part 23
+  volume: 12
+- number: 106
+  title: The Shibuya Incident, Part 24
+  volume: 12
+- number: 107
+  title: The Shibuya Incident, Part 25
+  volume: 13
+- number: 108
+  title: The Shibuya Incident, Part 26
+  volume: 13
+- number: 109
+  title: The Shibuya Incident, Part 27
+  volume: 13
+- number: 110
+  title: The Shibuya Incident, Part 28
+  volume: 13
+- number: 111
+  title: The Shibuya Incident, Part 29
+  volume: 13
+- number: 112
+  title: The Shibuya Incident, Part 30
+  volume: 13
+- number: 113
+  title: The Shibuya Incident, Part 31
+  volume: 13
+- number: 114
+  title: The Shibuya Incident, Part 32
+  volume: 13
+- number: 115
+  title: The Shibuya Incident, Part 33
+  volume: 13
+- number: 116
+  title: The Shibuya Incident, Part 34
+  volume: 14
+- number: 117
+  title: The Shibuya Incident, Part 35
+  volume: 14
+- number: 118
+  title: The Shibuya Incident, Part 36
+  volume: 14
+- number: 119
+  title: The Shibuya Incident, Part 37
+  volume: 14
+- number: 120
+  title: The Shibuya Incident, Part 38
+  volume: 14
+- number: 121
+  title: The Shibuya Incident, Part 39
+  volume: 14
+- number: 122
+  title: The Shibuya Incident, Part 40
+  volume: 14
+- number: 123
+  title: The Shibuya Incident, Part 41
+  volume: 14
+- number: 124
+  title: The Shibuya Incident, Part 42
+  volume: 14
+- number: 125
+  title: A Story About that Girl
+  volume: 15
+- number: 126
+  title: The Shibuya Incident, Part 43
+  volume: 15
+- number: 127
+  title: The Shibuya Incident, Part 44
+  volume: 15
+- number: 128
+  title: The Shibuya Incident, Part 45
+  volume: 15
+- number: 129
+  title: The Shibuya Incident, Part 46
+  volume: 15
+- number: 130
+  title: The Shibuya Incident, Part 47
+  volume: 15
+- number: 131
+  title: The Shibuya Incident, Part 48
+  volume: 15
+- number: 132
+  title: The Shibuya Incident, Part 49
+  volume: 15
+- number: 133
+  title: The Shibuya Incident, Part 50
+  volume: 15
+- number: 134
+  title: The Shibuya Incident, Part 51
+  volume: 16
+- number: 135
+  title: The Shibuya Incident, Part 52
+  volume: 16
+- number: 136
+  title: The Shibuya Incident, Part 53
+  volume: 16
+- number: 137
+  title: Hard and White
+  volume: 16
+- number: 138
+  title: The Zenin Clan
+  volume: 16
+- number: 139
+  title: Hunter
+  volume: 16
+- number: 140
+  title: Execution
+  volume: 16
+- number: 141
+  title: The Front of The Back
+  volume: 16
+- number: 142
+  title: A Big Brother's Back
+  volume: 16
+- number: 143
+  title: One More Time
+  volume: 17
+- number: 144
+  title: That Place
+  volume: 17
+- number: 145
+  title: The Back
+  volume: 17
+- number: 146
+  title: About the Culling Game
+  volume: 17
+- number: 147
+  title: Even Pandas
+  volume: 17
+- number: 148
+  title: Perfect Preparation
+  volume: 17
+- number: 149
+  title: Perfect Preparation, Part 2
+  volume: 17
+- number: 150
+  title: Perfect Preparation, Part 3
+  volume: 17
+- number: 151
+  title: Perfect Preparation, Part 4
+  volume: 17
+- number: 152
+  title: Perfect Preparation, Epilogue
+  volume: 17
+- number: 153
+  title: Underground Fight Club
+  volume: 18
+- number: 154
+  title: Sneaking In
+  volume: 18
+- number: 155
+  title: Fever
+  volume: 18
+- number: 156
+  title: Twinkling Stars
+  volume: 18
+- number: 157
+  title: Cog
+  volume: 18
+- number: 158
+  title: Kogane
+  volume: 18
+- number: 159
+  title: Judgement
+  volume: 18
+- number: 160
+  title: Colony
+  volume: 18
+- number: 161
+  title: Tokyo No. 1 Colony, Part 1
+  volume: 18
+- number: 162
+  title: Tokyo No. 1 Colony, Part 2
+  volume: 19
+- number: 163
+  title: Tokyo No. 1 Colony, Part 3
+  volume: 19
+- number: 164
+  title: Tokyo No. 1 Colony, Part 4
+  volume: 19
+- number: 165
+  title: Tokyo No. 1 Colony, Part 5
+  volume: 19
+- number: 166
+  title: Tokyo No. 1 Colony, Part 6
+  volume: 19
+- number: 167
+  title: Tokyo No. 1 Colony, Part 7
+  volume: 19
+- number: 168
+  title: Tokyo No. 1 Colony, Part 8
+  volume: 19
+- number: 169
+  title: Tokyo No. 1 Colony, Part 9
+  volume: 19
+- number: 170
+  title: Tokyo No. 1 Colony, Part 10
+  volume: 19
+- number: 171
+  title: Tokyo No. 1 Colony, Part 11
+  volume: 19
+- number: 172
+  title: Tokyo No. 1 Colony, Part 12
+  volume: 20
+- number: 173
+  title: Tokyo No. 1 Colony, Part 13
+  volume: 20
+- number: 174
+  title: Sendai Colony, Part 1
+  volume: 20
+- number: 175
+  title: Sendai Colony, Part 2
+  volume: 20
+- number: 176
+  title: Sendai Colony, Part 3
+  volume: 20
+- number: 177
+  title: Sendai Colony, Part 4
+  volume: 20
+- number: 178
+  title: Sendai Colony, Part 5
+  volume: 20
+- number: 179
+  title: Sendai Colony, Part 6
+  volume: 20
+- number: 180
+  title: Sendai Colony, Part 7
+  volume: 20
+- number: 181
+  title: Tokyo No. 2 Colony, Part 1
+  volume: 21
+- number: 182
+  title: Tokyo No. 2 Colony, Part 2
+  volume: 21
+- number: 183
+  title: Tokyo No. 2 Colony, Part 3
+  volume: 21
+- number: 184
+  title: Tokyo No. 2 Colony, Part 4
+  volume: 21
+- number: 185
+  title: Bye-bye
+  volume: 21
+- number: 186
+  title: Tokyo No. 2 Colony, Part 5
+  volume: 21
+- number: 187
+  title: Tokyo No. 2 Colony, Part 6
+  volume: 21
+- number: 188
+  title: Tokyo No. 2 Colony, Part 7
+  volume: 21
+- number: 189
+  title: Tokyo No. 2 Colony, Part 8
+  volume: 21
+- number: 190
+  title: Tokyo No. 2 Colony, Part 9
+  volume: 21
+- number: 191
+  title: Sakurajima Colony, Part 1
+  volume: 22
+- number: 192
+  title: Sakurajima Colony, Part 2
+  volume: 22
+- number: 193
+  title: Sakurajima Colony, Part 3
+  volume: 22
+- number: 194
+  title: Sakurajima Colony, Part 4
+  volume: 22
+- number: 195
+  title: Sakurajima Colony, Part 5
+  volume: 22
+- number: 196
+  title: Sakurajima Colony, Part 6
+  volume: 22
+- number: 197
+  title: Sakurajima Colony, Part 7
+  volume: 22
+- number: 198
+  title: Sakurajima Colony, Part 8
+  volume: 22
+- number: 199
+  title: Resentful Names
+  volume: 22
+- number: 200
+  title: Direct Talks, Part 1
+  volume: 23
+- number: 201
+  title: Direct Talks, Part 2
+  volume: 23
+- number: 202
+  title: Blood and Oil
+  volume: 23
+- number: 203
+  title: Blood and Oil, Part 2
+  volume: 23
+- number: 204
+  title: Blood and Oil, Part 3
+  volume: 23
+- number: 205
+  title: Stars and Oil
+  volume: 23
+- number: 206
+  title: Stars and Oil, Part 2
+  volume: 23
+- number: 207
+  title: Stars and Oil, Part 3
+  volume: 23
+- number: 208
+  title: Stars and Oil, Part 4
+  volume: 23
+- number: 209
+  title: Offering to the Unknown
+  volume: 24
+- number: 210
+  title: Offering to the Unknown, Part 2
+  volume: 24
+- number: 211
+  title: The Ripening
+  volume: 24
+- number: 212
+  title: The Ripening, Part 2
+  volume: 24
+- number: 213
+  title: Fearsome Womb, Part 5
+  volume: 24
+- number: 214
+  title: Fearsome Womb, Part 6
+  volume: 24
+- number: 215
+  title: Fearsome Womb, Part 7
+  volume: 24
+- number: 216
+  title: Bath
+  volume: 24
+- number: 217
+  title: Bath, Part 2
+  volume: 24
+- number: 218
+  title: Bath, Part 3
+  volume: 25
+- number: 219
+  title: Bath, Part 4
+  volume: 25
+- number: 220
+  title: Self-Purification, Self-Constraint
+  volume: 25
+- number: 221
+  title: Gain and Loss
+  volume: 25
+- number: 222
+  title: Foretokens
+  volume: 25
+- number: 223
+  title: Inhuman Makyo Shinjuku Showdown, Part 1
+  volume: 25
+- number: 224
+  title: Inhuman Makyo Shinjuku Showdown, Part 2
+  volume: 25
+- number: 225
+  title: Inhuman Makyo Shinjuku Showdown, Part 3
+  volume: 25
+- number: 226
+  title: Inhuman Makyo Shinjuku Showdown, Part 4
+  volume: 25
+- number: 227
+  title: Inhuman Makyo Shinjuku Showdown, Part 5
+  volume: 25
+- number: 228
+  title: Inhuman Makyo Shinjuku Showdown, Part 6
+  volume: 26
+- number: 229
+  title: Inhuman Makyo Shinjuku Showdown, Part 7
+  volume: 26
+- number: 230
+  title: Inhuman Makyo Shinjuku Showdown, Part 8
+  volume: 26
+- number: 231
+  title: Inhuman Makyo Shinjuku Showdown, Part 9
+  volume: 26
+- number: 232
+  title: Inhuman Makyo Shinjuku Showdown, Part 10
+  volume: 26
+- number: 233
+  title: Inhuman Makyo Shinjuku Showdown, Part 11
+  volume: 26
+- number: 234
+  title: Inhuman Makyo Shinjuku Showdown, Part 12
+  volume: 26
+- number: 235
+  title: Inhuman Makyo Shinjuku Showdown, Part 13
+  volume: 26
+- number: 236
+  title: Heading South
+  volume: 26
+- number: 237
+  title: Inhuman Makyo Shinjuku Showdown, Part 14
+  volume: 27
+- number: 238
+  title: Inhuman Makyo Shinjuku Showdown, Part 15
+  volume: 27
+- number: 239
+  title: Foolish Survivor!!
+  volume: 27
+- number: 240
+  title: Live On!!
+  volume: 27
+- number: 241
+  title: Win and Remain!!
+  volume: 27
+- number: 242
+  title: Flying High!!
+  volume: 27
+- number: 243
+  title: Laughing It Up!!
+  volume: 27
+- number: 244
+  title: Inhuman Makyo Shinjuku Showdown, Part 16
+  volume: 27
+- number: 245
+  title: Inhuman Makyo Shinjuku Showdown, Part 17
+  volume: 27
+- number: 246
+  title: Inhuman Makyo Shinjuku Showdown, Part 18
+  volume: 28
+- number: 247
+  title: Inhuman Makyo Shinjuku Showdown, Part 19
+  volume: 28
+- number: 248
+  title: Inhuman Makyo Shinjuku Showdown, Part 20
+  volume: 28
+- number: 249
+  title: Inhuman Makyo Shinjuku Showdown, Part 21
+  volume: 28
+- number: 250
+  title: Inhuman Makyo Shinjuku Showdown, Part 22
+  volume: 28
+- number: 251
+  title: Inhuman Makyo Shinjuku Showdown, Part 23
+  volume: 28
+- number: 252
+  title: Inhuman Makyo Shinjuku Showdown, Part 24
+  volume: 28
+- number: 253
+  title: Inhuman Makyo Shinjuku Showdown, Part 25
+  volume: 28
+- number: 254
+  title: Inhuman Makyo Shinjuku Showdown, Part 26
+  volume: 28
+- number: 255
+  title: Inhuman Makyo Shinjuku Showdown, Part 27
+  volume: 29
+- number: 256
+  title: Inhuman Makyo Shinjuku Showdown, Part 28
+  volume: 29
+- number: 257
+  title: Inhuman Makyo Shinjuku Showdown, Part 29
+  volume: 29
+- number: 258
+  title: Inhuman Makyo Shinjuku Showdown, Part 30
+  volume: 29
+- number: 259
+  title: Inhuman Makyo Shinjuku Showdown, Part 31
+  volume: 29
+- number: 260
+  title: Inhuman Makyo Shinjuku Showdown, Part 32
+  volume: 29
+- number: 261
+  title: Inhuman Makyo Shinjuku Showdown, Part 33
+  volume: 29
+- number: 262
+  title: Inhuman Makyo Shinjuku Showdown, Part 34
+  volume: 29
+- number: 263
+  title: Inhuman Makyo Shinjuku Showdown, Part 35
+  volume: 29
+- number: 264
+  title: Inhuman Makyo Shinjuku Showdown, Part 36
+  volume: 30
+- number: 265
+  title: That Day
+  volume: 30
+- number: 266
+  title: Inhuman Makyo Shinjuku Showdown, Part 37
+  volume: 30
+- number: 267
+  title: Inhuman Makyo Shinjuku Showdown, Part 38
+  volume: 30
+- number: 268
+  title: Settling Matters
+  volume: 30
+- number: 269
+  title: Considerations
+  volume: 30
+- number: 270
+  title: The End of the Dream
+  volume: 30
+- number: 271
+  title: From Now On
+  volume: 30

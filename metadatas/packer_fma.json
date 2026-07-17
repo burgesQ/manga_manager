@@ -1,7 +1,7 @@
 {
   "serie": "Fullmetal Alchemist",
   "pattern": "mangafire",
-  "batch_file": "/home/master/Shelf/EN/FmA/vols.csv",
+  "batch_file": "./vols_fma.csv",
   "covers": {
     "1": "/home/master/Shelf/EN/FmA/covers/FMA_1.webp",
     "2": "/home/master/Shelf/EN/FmA/covers/FMA_2.webp",

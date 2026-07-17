@@ -1,0 +1,27 @@
+{
+  "serie": "Jujutsu Kaisen",
+  "pattern": "mangafox",
+  "batch_file": "./vols_zetman.csv",
+  "covers": {
+    "1": "/home/master/Shelf/EN/Zetman/covers/Volume_1.webp",
+    "2": "/home/master/Shelf/EN/Zetman/covers/Volume_2.webp",
+    "3": "/home/master/Shelf/EN/Zetman/covers/Volume_3.webp",
+    "4": "/home/master/Shelf/EN/Zetman/covers/Volume_4.webp",
+    "5": "/home/master/Shelf/EN/Zetman/covers/Volume_5.webp",
+    "6": "/home/master/Shelf/EN/Zetman/covers/Volume_6.webp",
+    "7": "/home/master/Shelf/EN/Zetman/covers/Volume_7.webp",
+    "8": "/home/master/Shelf/EN/Zetman/covers/Volume_8.webp",
+    "9": "/home/master/Shelf/EN/Zetman/covers/Volume_9.webp",
+    "10": "/home/master/Shelf/EN/Zetman/covers/Volume_10.webp",
+    "11": "/home/master/Shelf/EN/Zetman/covers/Volume_11.webp",
+    "12": "/home/master/Shelf/EN/Zetman/covers/Volume_12.webp",
+    "13": "/home/master/Shelf/EN/Zetman/covers/Volume_13.webp",
+    "14": "/home/master/Shelf/EN/Zetman/covers/Volume_14.webp",
+    "15": "/home/master/Shelf/EN/Zetman/covers/Volume_15.webp",
+    "16": "/home/master/Shelf/EN/Zetman/covers/Volume_16.webp",
+    "17": "/home/master/Shelf/EN/Zetman/covers/Volume_17.webp",
+    "18": "/home/master/Shelf/EN/Zetman/covers/Volume_18.webp",
+    "19": "/home/master/Shelf/EN/Zetman/covers/Volume_19.webp",
+    "20": "/home/master/Shelf/EN/Zetman/covers/Volume_20.webp"
+  }
+}
