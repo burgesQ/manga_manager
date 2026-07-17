@@ -20,3 +20,6 @@ Test.bck
 
 # Claude Code worktrees
 .claude/
+
+# Roadmap batch checkpoint (subagent orchestration state)
+.roadmap-batch/

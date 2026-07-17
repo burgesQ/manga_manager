@@ -12,8 +12,8 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **P2** `ComicInfo.xml` robustness — handle missing, multiple, case-insensitive, and malformed files
       — *partial:* case-insensitive match + missing/BadZip handled (`core.py:198-201`); multiple-entry & malformed-XML parsing still missing
 - [ ] **P3** Extraction policy flags: `--flatten` / `--keep-structure`
-- [ ] **P4** Rework concurrency — main thread parses, workers process per-chapter; prevent I/O races
-      — *partial:* main-thread-parse / worker-per-chapter architecture done (`worker.py:139-201`); no explicit shared-dir I/O race guarding beyond `mkdir(exist_ok=True)`
+- [x] **P4** Rework concurrency — main thread parses, workers process per-chapter; prevent I/O races
+      (`worker.py:139-201`)
 - [ ] **P5** Add `--skip-missing` / `--continue-on-error` flags
 - [x] **P6** Unit tests for filename parsing, `--chapter-range` parsing, `ComicInfo.xml` detection
       (`test_core_regex.py`, `test_utils.py`, `test_error_paths.py`)
@@ -80,7 +80,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 
 - [ ] **M1** Define and document output filename convention for Calibre auto-discovery
   - Suggested: `<Serie> v{NN} - {VolumeTitle} - {authors}.kepub.epub`
-- [ ] **M2** Inject metadata from `packer.json` into EPUB via convertor (serie, volume_title, authors, isbn, date, publisher)
+- [x] ~~**M2** Inject metadata from `packer.json` into EPUB via convertor~~ → **superseded by editor (E1–E7)** — the editor already injects all volume/chapter metadata from YAML; a second convertor-side path is redundant
 - [ ] **M3** Validate generated EPUB metadata with a unit test
       — *partial:* `EPUBMetadata` set/get roundtrip tested; no test on a convertor-generated EPUB
 
