@@ -1,18 +1,29 @@
-"""EPUB Metadata Manager
+"""EPUB metadata manager.
 
-Inject or dump metadata from EPUB files based on YAML configuration.
+Inject, dump, or clear EPUB metadata driven by a YAML config. `path` is either a
+single .epub / .kepub.epub file or a directory containing them.
 
-Usage:
-    # Inject metadata into EPUBs
-    python epub_metadata.py inject <epub_dir> <metadata.yaml> [--force] [--dry-run]
-
-    # Dump existing metadata from EPUBs
-    python epub_metadata.py dump <epub_dir> [--output metadata.yaml]
+Commands:
+    inject <path> <metadata.yaml>    write metadata (optionally relabel the TOC)
+    dump   <path> [--output f.yaml]  read metadata back out to YAML
+    clear  <path>                    strip all managed metadata
 
 Examples:
-    python epub_metadata.py inject ./volumes mashle.yaml
-    python epub_metadata.py inject ./volumes mashle.yaml --force
-    python epub_metadata.py dump ./volumes --output current_metadata.yaml
+    # inject volume metadata from YAML
+    uv run editor inject ./Berserk berserk.yaml
+
+    # overwrite existing metadata and relabel the TOC from a chapters file
+    uv run editor inject ./Berserk berserk.yaml --force --chapters chapters.yaml
+
+    # use the japanese locale block for publisher / ISBN / release date
+    uv run editor inject ./Berserk berserk.yaml --locale japanese
+
+    # dump current metadata to a file, then strip it (preview with --dry-run)
+    uv run editor dump  ./Berserk --output current.yaml
+    uv run editor clear ./Berserk --dry-run
+
+Run `editor <command> --help` for per-command options. `editor --version` and
+`editor --print-completion {bash,zsh,tcsh}` are also available.
 """
 
 from __future__ import annotations
@@ -49,16 +60,6 @@ def main(argv=None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-
-    # parser.add_argument("--verbose", action="store_true", help="Verbose logging")
-    # parser.add_argument(
-    #     "--loglevel",
-    #     "-l",
-    #     type=str,
-    #     default=None,
-    #     choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
-    #     help="explicit log level (overrides --verbose)",
-    # )
 
     subparsers = parser.add_subparsers(dest="command", help="Command to execute")
 
