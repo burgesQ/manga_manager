@@ -19,6 +19,7 @@ def make_epub():
         title: str = "Title",
         author: str | None = "Author",
         publisher: str | None = None,
+        toc_titles: list[str] | None = None,
     ) -> Path:
         book = epub.EpubBook()
         book.set_identifier("id123")
@@ -27,14 +28,32 @@ def make_epub():
             book.add_author(author)
         if publisher:
             book.add_metadata("DC", "publisher", publisher)
-        c1 = epub.EpubHtml(
-            title="Intro", file_name="intro.xhtml", content="<h1>Hi</h1>"
-        )
-        book.add_item(c1)
-        book.toc = (epub.Link("intro.xhtml", "Intro", "intro"),)
+
+        if toc_titles is None:
+            c1 = epub.EpubHtml(
+                title="Intro", file_name="intro.xhtml", content="<h1>Hi</h1>"
+            )
+            book.add_item(c1)
+            book.toc = (epub.Link("intro.xhtml", "Intro", "intro"),)
+            book.spine = ["nav", c1]
+        else:
+            # Build one TOC entry per title, mimicking a KCC-produced volume
+            # whose navLabels are the original `Chapter NNN` folder names.
+            items = []
+            toc = []
+            for idx, label in enumerate(toc_titles):
+                href = f"c{idx}.xhtml"
+                item = epub.EpubHtml(
+                    title=label, file_name=href, content=f"<h1>{label}</h1>"
+                )
+                book.add_item(item)
+                items.append(item)
+                toc.append(epub.Link(href, label, f"ch{idx}"))
+            book.toc = tuple(toc)
+            book.spine = ["nav", *items]
+
         book.add_item(epub.EpubNcx())
         book.add_item(epub.EpubNav())
-        book.spine = ["nav", c1]
         epub.write_epub(str(path), book)
         return path
 

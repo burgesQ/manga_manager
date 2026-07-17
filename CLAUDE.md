@@ -93,6 +93,8 @@ volumes:
 
 **Important:** ISBN and release date live under the `english:` sub-key per volume, NOT at the top level. The `_inject_single` function reads `vol_data.get("english", {})`.
 
+**Chapter titles (`inject`):** optionally relabels the EPUB table-of-contents entries with chapter titles. KCC writes each `Chapter NNN` folder name verbatim as the TOC label; `EPUBMetadata.set_chapter_titles` parses the chapter number back out of that label and rewrites it to `Chapter NNN - <title>`. Matching is by chapter number, so it is volume-agnostic; the `Chapter 000` cover and numbered extras are left untouched. TOC relabelling happens in the same single EPUB save as metadata injection and is independent of the `has_metadata()`/`--force` skip. The titles source is resolved by `_resolve_chapter_titles` in precedence order: (1) `--chapters <file>` CLI flag, (2) `chapters_file:` key in the metadata YAML (path resolved relative to the metadata file), (3) an inline `chapters:` list in the metadata YAML. `_chapters_map` builds the `{number: title}` map from a chapters list; `load_chapters_yaml` wraps it for a standalone `metadatas/chapters_*.yaml` file. No native YAML file-include exists under `safe_load`, hence the `chapters_file:` / inline options.
+
 ### convertor
 
 Wraps KindleComicConverter (KCC) to convert volume directories to `.kepub.epub`.

@@ -179,6 +179,47 @@ class EPUBMetadata:
             for tag in tags:
                 self.book.add_metadata("DC", "subject", tag)
 
+    def set_chapter_titles(
+        self,
+        titles: dict[int, str],
+        fmt: str = "Chapter {n:03d} - {title}",
+    ) -> int:
+        """Relabel TOC entries whose chapter number is in ``titles``.
+
+        KCC writes each ``Chapter NNN`` folder name verbatim as the TOC label,
+        so the chapter number can be parsed straight back out of the existing
+        label. Entries whose number is absent from ``titles`` (e.g. the
+        ``Chapter 000`` cover, or numbered extras like ``Chapter 013.5``) are
+        left untouched. Returns the number of entries changed.
+        """
+        changed = 0
+
+        def _relabel(items):
+            nonlocal changed
+            if isinstance(items, (list, tuple)):
+                for it in items:
+                    _relabel(it)
+                return
+            label = getattr(items, "title", None) or getattr(items, "href", None)
+            if not label:
+                return
+            match = re.search(r"Chapter\s+0*(\d+)", str(label))
+            if not match:
+                return
+            num = int(match.group(1))
+            if num not in titles:
+                return
+            new_label = fmt.format(n=num, title=titles[num])
+            if new_label != getattr(items, "title", None):
+                try:
+                    items.title = new_label
+                    changed += 1
+                except (AttributeError, TypeError):
+                    pass
+
+        _relabel(self.book.toc)
+        return changed
+
     def _ensure_toc_uids(self):
         """Ensure all TOC items have a UID to satisfy EPUB writer requirements."""
         try:
