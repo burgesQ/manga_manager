@@ -11,6 +11,8 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 from typing import Optional
 
+import shtab
+
 from .config import Config
 from .core import (
     NAMED_PATTERNS,
@@ -277,6 +279,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="explicit log level (overrides --verbose)",
     )
     add_version_arg(p, "packer")
+    shtab.add_argument_to(p, "--print-completion")
     return p
 
 

@@ -22,6 +22,8 @@ import logging
 import sys
 from pathlib import Path
 
+import shtab
+
 from editor.editor_full import clear_metadata, dump_metadata, inject_metadata
 from editor.exit_codes import ERROR
 from packer.cli import add_version_arg, setup_logging
@@ -107,6 +109,7 @@ def main(argv=None) -> int:
     _add_logging_args(clear_parser)
 
     add_version_arg(parser, "editor")
+    shtab.add_argument_to(parser, "--print-completion")
     args = parser.parse_args(argv)
 
     if not args.command:

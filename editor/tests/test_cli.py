@@ -149,3 +149,18 @@ def test_version_flag(capsys):
         main(["--version"])
     assert exc_info.value.code == 0
     assert "0.1.0" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# --print-completion flag (shtab)
+# ---------------------------------------------------------------------------
+
+
+def test_print_completion_bash(capsys):
+    """Test that --print-completion bash prints completion script and exits with 0."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--print-completion", "bash"])
+    assert exc_info.value.code == 0
+    out = capsys.readouterr().out
+    assert out.strip()  # non-empty
+    assert "complete" in out or "editor" in out

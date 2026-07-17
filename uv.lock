@@ -192,10 +192,14 @@ version = "0.1.0"
 source = { editable = "convertor" }
 dependencies = [
     { name = "kindlecomicconverter" },
+    { name = "shtab" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "kindlecomicconverter", git = "https://github.com/ciromattia/kcc?tag=v9.3.8" }]
+requires-dist = [
+    { name = "kindlecomicconverter", git = "https://github.com/ciromattia/kcc?tag=v9.3.8" },
+    { name = "shtab" },
+]
 
 [[package]]
 name = "coverage"
@@ -300,12 +304,14 @@ source = { editable = "editor" }
 dependencies = [
     { name = "ebooklib" },
     { name = "pyyaml" },
+    { name = "shtab" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "ebooklib" },
     { name = "pyyaml", specifier = ">=6.0.3" },
+    { name = "shtab" },
 ]
 
 [[package]]
@@ -648,6 +654,9 @@ wheels = [
 name = "packer"
 version = "0.1.0"
 source = { editable = "packer" }
+dependencies = [
+    { name = "shtab" },
+]
 
 [package.dev-dependencies]
 dev = [
@@ -660,6 +669,7 @@ dev = [
 ]
 
 [package.metadata]
+requires-dist = [{ name = "shtab" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1033,6 +1043,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/16/b8/939c24ebd662b0aa5c945443d0973145b3fb7079f0196274ef7bb4b98f73/shiboken6-6.10.1-cp39-abi3-manylinux_2_39_aarch64.whl", hash = "sha256:c095b00f4d6bf578c0b2464bb4e264b351a99345374478570f69e2e679a2a1d0", size = 268691, upload-time = "2025-11-20T10:08:55.639Z" },
     { url = "https://files.pythonhosted.org/packages/cf/a6/8c65ee0fa5e172ebcca03246b1bc3bd96cdaf1d60537316648536b7072a5/shiboken6-6.10.1-cp39-abi3-win_amd64.whl", hash = "sha256:c1601d3cda1fa32779b141663873741b54e797cb0328458d7466281f117b0a4e", size = 1234704, upload-time = "2025-11-20T10:08:57.417Z" },
     { url = "https://files.pythonhosted.org/packages/7b/6a/c0fea2f2ac7d9d96618c98156500683a4d1f93fea0e8c5a2bc39913d7ef1/shiboken6-6.10.1-cp39-abi3-win_arm64.whl", hash = "sha256:5cf800917008587b551005a45add2d485cca66f5f7ecd5b320e9954e40448cc9", size = 1795567, upload-time = "2025-11-20T10:08:59.184Z" },
+]
+
+[[package]]
+name = "shtab"
+version = "1.8.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/b3/b7c99318ba2b0d7d7e71b78318c162690dd5639cd06e2d3bca9292737e4e/shtab-1.8.1.tar.gz", hash = "sha256:3edaf857ba164a0d7bb64e958eab8d6756d5aee3949c7f36a7e779bf1ce3b897", size = 46449, upload-time = "2026-07-03T11:43:26.663Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9f/2f/35d4ec80d8ee39e792cd6e0d4f3dd84ea6783f13b7c47b4c319d9062aaf0/shtab-1.8.1-py3-none-any.whl", hash = "sha256:4fc418e0173e66385e4605044a26a4910e73dde2dc23e809acc2f0275e842426", size = 14905, upload-time = "2026-07-03T11:43:25.374Z" },
 ]
 
 [[package]]

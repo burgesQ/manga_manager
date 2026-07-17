@@ -11,6 +11,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import shtab
+
 from convertor.exit_codes import CLI_ERROR, SUCCESS
 from convertor.kcc_adapter import KCCSettings, convert_volume
 from packer.cli import add_version_arg, setup_logging
@@ -103,6 +105,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="fill remaining border bands with black instead of white (default: off)",
     )
     add_version_arg(p, "convertor")
+    shtab.add_argument_to(p, "--print-completion")
     return p
 
 
