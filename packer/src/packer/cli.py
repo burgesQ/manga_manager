@@ -7,6 +7,8 @@ import logging
 import os
 import re
 import time
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _pkg_version
 from typing import Optional
 
 from .config import Config
@@ -24,6 +26,15 @@ logger = logging.getLogger(__name__)
 
 class _CLIError(Exception):
     """Raised after logging a CLI-level error so main() can return CLI_ERROR."""
+
+
+def add_version_arg(parser: argparse.ArgumentParser, dist_name: str) -> None:
+    """Add a --version action resolving the installed distribution version."""
+    try:
+        ver = _pkg_version(dist_name)
+    except PackageNotFoundError:
+        ver = "unknown"
+    parser.add_argument("--version", action="version", version=f"%(prog)s {ver}")
 
 
 def setup_logging(
@@ -265,6 +276,7 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "WARN"],
         help="explicit log level (overrides --verbose)",
     )
+    add_version_arg(p, "packer")
     return p
 
 
