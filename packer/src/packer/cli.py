@@ -217,6 +217,21 @@ def load_config_file(cfg_path: str, *, required: bool = False):
 # ---------------------------------------------------------------------------
 
 
+def _resolve_config_path(value: str, base_dir: str) -> str:
+    """Resolve a path taken from packer.json.
+
+    Expands ``~`` and ``$VAR`` first, then returns the path unchanged if it is
+    absolute, otherwise resolves it relative to ``base_dir`` (the directory the
+    config file lives in). This makes `~/cover.webp`, `$HOME/x`, `/abs/x`, and
+    `./rel/x` all behave as a user would expect — none get blindly prefixed
+    with ``--path``.
+    """
+    expanded = os.path.expanduser(os.path.expandvars(value))
+    if os.path.isabs(expanded):
+        return expanded
+    return os.path.normpath(os.path.join(base_dir, expanded))
+
+
 def _build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(
         description="Pack .cbz chapters into volume directories"
@@ -309,6 +324,10 @@ def _apply_path_config(args: argparse.Namespace) -> list[CoverMapping] | None:
         logger.error(str(e))
         raise _CLIError from e
 
+    # Paths inside packer.json are resolved relative to the config file's own
+    # directory (with ~ / $VAR expansion), not blindly prefixed with --path.
+    base_dir = os.path.dirname(os.path.abspath(cfg_path))
+
     if path_config:
         if args.pattern == "default" and "pattern" in path_config:
             args.pattern = path_config["pattern"]
@@ -320,11 +339,7 @@ def _apply_path_config(args: argparse.Namespace) -> list[CoverMapping] | None:
             args.nb_worker = int(path_config["nb_worker"])
         _batch_file_val = path_config.get("batch_file") or path_config.get("batch")
         if args.batch_file is None and _batch_file_val:
-            args.batch_file = (
-                os.path.join(args.path, _batch_file_val)
-                if not os.path.isabs(_batch_file_val)
-                else _batch_file_val
-            )
+            args.batch_file = _resolve_config_path(_batch_file_val, base_dir)
         if args.serie is None and "serie" in path_config:
             args.serie = path_config["serie"]
 
@@ -336,7 +351,10 @@ def _apply_path_config(args: argparse.Namespace) -> list[CoverMapping] | None:
         else:
             try:
                 covers = [
-                    CoverMapping(volume=int(vol), cover_path=path)
+                    CoverMapping(
+                        volume=int(vol),
+                        cover_path=_resolve_config_path(path, base_dir),
+                    )
                     for vol, path in covers_dict.items()
                 ]
                 logger.debug(f"loaded {len(covers)} cover mapping(s) from packer.json")
