@@ -78,6 +78,12 @@ def main(argv=None) -> int:
         default="english",
         help="which locale block to use for publisher, ISBN, and release date (default: english)",
     )
+    inject_parser.add_argument(
+        "--chapters",
+        type=Path,
+        default=None,
+        help="optional chapters YAML; relabels EPUB TOC entries with chapter titles",
+    )
     _add_logging_args(inject_parser)
 
     # Dump command
@@ -119,6 +125,7 @@ def main(argv=None) -> int:
             force=args.force,
             dry_run=args.dry_run,
             locale=args.locale,
+            chapters_path=args.chapters,
         )
     elif args.command == "dump":
         logger.debug("running dump command")
