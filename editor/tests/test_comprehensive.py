@@ -413,6 +413,42 @@ class TestInjectDumpRoundTrip:
         vols = parsed["volumes"]
         assert len(vols) == 1
         assert vols[0]["title"] == "First Volume"
+        assert vols[0]["english"]["release_date"] == "2024-03-15"
+        # ISBN round-trips cleanly (no accumulating "isbn:" scheme prefix) and
+        # is no longer lost under a "metadata:" key that inject never reads.
+        assert vols[0]["english"]["isbn"] == "9782344007809"
+
+    def test_round_trip_genre_and_language(self, tmp_path: Path):
+        epub_dir = tmp_path / "epubs"
+        epub_dir.mkdir()
+        _make_minimal_epub(epub_dir / "RoundTrip v01.epub", author=None)
+
+        yaml_path = tmp_path / "meta.yaml"
+        data = {
+            "series": "RoundTrip",
+            "author": "RoundTrip Author",
+            "genre": ["Manga", "Shonen"],
+            "language": "fr-FR",
+            "volumes": [
+                {
+                    "number": 1,
+                    "title": "First Volume",
+                    "english": {"release_date": "2024-03-15", "isbn": "9782344007809"},
+                }
+            ],
+        }
+        yaml_path.write_text(yaml.dump(data))
+
+        assert inject_metadata(epub_dir, yaml_path) == 0
+
+        out_yaml = tmp_path / "dumped.yaml"
+        assert dump_metadata(epub_dir, out_yaml) == 0
+
+        parsed = yaml.safe_load(out_yaml.read_text())
+        assert parsed["genre"] == ["Manga", "Shonen"]
+        assert parsed["language"] == "fr-FR"
+        assert parsed["volumes"][0]["english"]["release_date"] == "2024-03-15"
+        assert parsed["volumes"][0]["english"]["isbn"] == "9782344007809"
 
 
 # ---------------------------------------------------------------------------

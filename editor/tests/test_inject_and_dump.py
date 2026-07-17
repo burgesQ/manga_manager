@@ -92,4 +92,8 @@ def test_dump_metadata_writes_yaml(tmp_path: Path):
 
     parsed = yaml.safe_load(out_yaml.read_text())
     assert parsed.get("series") is not None
-    assert len(parsed.get("volumes", [])) >= 1
+    volumes = parsed.get("volumes", [])
+    assert len(volumes) >= 1
+    # isbn / release_date must be nested under the locale sub-key (default
+    # "english"), not a bare "metadata" key, so a re-inject can read them back.
+    assert "metadata" not in volumes[0]

@@ -52,7 +52,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [x] **E7** Inject chapter titles into the EPUB TOC — `inject --chapters chapters.yaml` relabels
       `Chapter NNN` navLabels to `Chapter NNN - <title>` via `EPUBMetadata.set_chapter_titles` +
       `load_chapters_yaml`; matched by chapter number, volume-agnostic, honours `--dry-run`
-- [ ] **E8** 🐞 (S) Fix `dump` → `inject` round-trip: `dump_metadata` writes ISBN/date under a `metadata:` sub-key (`editor_full.py:255-260`) but `_inject_single` reads the locale sub-key (`english:`/`japanese:`); `dump` also never emits `genre`/`language`. Result: dump-then-inject silently loses ISBN, date, tags, language
+- [x] **E8** 🐞 (S) Fix `dump` → `inject` round-trip: `dump_metadata` writes ISBN/date under a `metadata:` sub-key (`editor_full.py:255-260`) but `_inject_single` reads the locale sub-key (`english:`/`japanese:`); `dump` also never emits `genre`/`language`. Result: dump-then-inject silently loses ISBN, date, tags, language. Fixed: `dump_metadata` now nests isbn/release_date under a `--locale`-selected sub-key and emits top-level `genre`/`language`
 - [ ] **E9** (M) `editor validate` subcommand / `--validate`: check required keys, ISBN-10/13 checksums, BCP-47 language tags, `release_date` formats before touching EPUBs
 - [ ] **E10** (M) Support `illustrator` / multi-role creators — real files (`boruto.yaml`) carry `illustrator:`, currently ignored; map to `dc:creator opf:role="art"`
 - [ ] **E11** (M) Selective / merge injection (`--only-missing`) — top up missing fields without overwriting everything (current inject is all-or-nothing gated on `has_metadata()`+`--force`)

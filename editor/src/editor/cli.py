@@ -96,6 +96,13 @@ def main(argv=None) -> int:
     dump_parser.add_argument(
         "--output", "-o", type=Path, help="Output YAML file (default: print to stdout)"
     )
+    dump_parser.add_argument(
+        "--locale",
+        choices=["english", "japanese", "french"],
+        default="english",
+        help="which locale block to nest per-volume isbn / release_date "
+        "under (default: english)",
+    )
     _add_logging_args(dump_parser)
 
     # Clear command
@@ -133,7 +140,7 @@ def main(argv=None) -> int:
         )
     elif args.command == "dump":
         logger.debug("running dump command")
-        return dump_metadata(args.path, args.output)
+        return dump_metadata(args.path, args.output, locale=args.locale)
     elif args.command == "clear":
         logger.debug("running clear command")
         return clear_metadata(args.path, dry_run=args.dry_run)

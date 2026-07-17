@@ -310,12 +310,15 @@ def inject_metadata(
     return ERROR if error_count > 0 else SUCCESS
 
 
-def dump_metadata(path: Path, output_path: Path | None = None):
+def dump_metadata(path: Path, output_path: Path | None = None, locale: str = "english"):
     """Dump metadata from EPUB files to YAML.
 
     Args:
         path: Either a single EPUB file or a directory containing EPUBs.
         output_path: Optional path to save the YAML output.
+        locale: which locale sub-key to nest per-volume isbn / release_date
+            under. Must match what ``inject_metadata`` will be called with so
+            the dump can be re-injected without loss (default: "english").
 
     Returns:
         0 on success, 1 on error.
@@ -332,6 +335,8 @@ def dump_metadata(path: Path, output_path: Path | None = None):
     series_name = None
     author = None
     publisher = None
+    genre: list[str] | None = None
+    language = None
 
     for epub_file in epub_files:
         try:
@@ -348,6 +353,10 @@ def dump_metadata(path: Path, output_path: Path | None = None):
                 author = meta["author"]
             if not publisher and meta.get("publisher"):
                 publisher = meta["publisher"]
+            if not genre and meta.get("tags"):
+                genre = meta["tags"]
+            if not language and meta.get("language"):
+                language = meta["language"]
 
             vol_data = {
                 "number": vol_num if vol_num else len(volumes) + 1,
@@ -356,12 +365,13 @@ def dump_metadata(path: Path, output_path: Path | None = None):
             if meta.get("title"):
                 vol_data["title"] = meta["title"]
 
-            if meta.get("date") or meta.get("isbn"):
-                vol_data["metadata"] = {}
-                if meta.get("date"):
-                    vol_data["metadata"]["release_date"] = meta["date"]
-                if meta.get("isbn"):
-                    vol_data["metadata"]["isbn"] = meta["isbn"]
+            loc = {}
+            if meta.get("date"):
+                loc["release_date"] = meta["date"]
+            if meta.get("isbn"):
+                loc["isbn"] = meta["isbn"]
+            if loc:
+                vol_data[locale] = loc
 
             volumes.append(vol_data)
 
@@ -373,8 +383,21 @@ def dump_metadata(path: Path, output_path: Path | None = None):
         "author": author or "Unknown Author",
     }
 
+    if genre:
+        output_data["genre"] = genre
+
     if publisher:
+        # Bare scalar (not locale-keyed): inject_metadata's publisher_data
+        # already falls back to the raw value when it isn't a dict (see
+        # `publisher_data.get(locale) if isinstance(publisher_data, dict)
+        # else publisher_data`), so this already round-trips through inject
+        # without needing the {locale: value} wrapping — and keeps this
+        # single-locale dump compatible with the existing
+        # test_dump_captures_publisher_date_isbn assertion.
         output_data["publisher"] = publisher
+
+    if language:
+        output_data["language"] = language
 
     output_data["volumes"] = sorted(volumes, key=lambda v: v["number"])
 
