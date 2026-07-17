@@ -128,7 +128,7 @@ def _convert_one(
     *,
     force_regen: bool,
     dry_run: bool,
-) -> None:
+) -> bool:
     out_path = vol.parent / (vol.name + ".kepub.epub")
 
     if out_path.exists():
@@ -139,15 +139,17 @@ def _convert_one(
                 logger.warning("could not remove existing output: %s", out_path)
         else:
             logger.info("skipping existing output: %s", out_path)
-            return
+            return True
 
     logger.info("%s -> %s", vol, out_path)
 
     try:
         convert_volume(vol, out_path, dry_run=dry_run, settings=settings)
         logger.info("generated: %s", out_path)
+        return True
     except (RuntimeError, subprocess.CalledProcessError, OSError) as e:
         logger.error("conversion failed for %s: %s", vol, e)
+        return False
 
 
 def _process_volumes(
@@ -157,9 +159,20 @@ def _process_volumes(
     force_regen: bool,
     dry_run: bool,
 ) -> int:
+    ok = fail = 0
     for vol in vols:
-        _convert_one(vol, settings, force_regen=force_regen, dry_run=dry_run)
-    return SUCCESS
+        if _convert_one(vol, settings, force_regen=force_regen, dry_run=dry_run):
+            ok += 1
+        else:
+            fail += 1
+    logger.info("=" * 60)
+    logger.info("SUMMARY")
+    logger.info("=" * 60)
+    logger.info("Total volumes:  %d", len(vols))
+    logger.info("Converted/skipped: %d", ok)
+    logger.info("Failed:         %d", fail)
+    logger.info("=" * 60)
+    return CLI_ERROR if fail else SUCCESS
 
 
 def main(argv=None) -> int:

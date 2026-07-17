@@ -100,7 +100,7 @@ def test_runtime_error_from_conversion_is_logged(tmp_path: Path, make_vol, capsy
     with patch("convertor.cli.convert_volume", side_effect=fail_first):
         rc = convertor.cli.main([str(root)])
 
-    assert rc == 0
+    assert rc == 2
     assert call_count == 2
     assert "conversion failed" in capsys.readouterr().err
 
@@ -118,7 +118,7 @@ def test_called_process_error_from_conversion_is_logged(
     with patch("convertor.cli.convert_volume", side_effect=raise_cpe):
         rc = convertor.cli.main([str(root)])
 
-    assert rc == 0
+    assert rc == 2
     assert "conversion failed" in capsys.readouterr().err
 
 
@@ -130,7 +130,7 @@ def test_oserror_from_conversion_is_logged(tmp_path: Path, make_vol, capsys):
     with patch("convertor.cli.convert_volume", side_effect=OSError("disk full")):
         rc = convertor.cli.main([str(root)])
 
-    assert rc == 0
+    assert rc == 2
     assert "conversion failed" in capsys.readouterr().err
 
 
