@@ -70,7 +70,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
              Note: isn't that the /editor purpose ?
 - [x] **C5** Remove dead code: commented-out `runpy` block and unused imports in `kcc_adapter.py`
 - [x] **C6** Inject cover — packer copies `cover.webp` to volume dir; convertor creates `Chapter 000/` before KCC, cleans up after
-- [ ] **C7** 🐞 (S) Propagate conversion failures: `_convert_one` swallows exceptions and `_process_volumes` unconditionally returns `SUCCESS` (`convertor/cli.py:145-158`), so a run where every volume fails still exits 0. Track success/fail counts, print a summary, return `CLI_ERROR` on any failure
+- [x] **C7** 🐞 (S) Propagate conversion failures: `_convert_one` swallows exceptions and `_process_volumes` unconditionally returns `SUCCESS` (`convertor/cli.py:145-158`), so a run where every volume fails still exits 0. Track success/fail counts, print a summary, return `CLI_ERROR` on any failure
 - [ ] **C8** (S) Preflight KCC availability check (`shutil.which("kcc-c2e")`) with an actionable install message instead of N per-volume `CalledProcessError`s; also fix the stale `kcc_adapter` docstring (mentions removed `runpy`/`POSSIBLE_MODULE_NAMES`)
 - [ ] **C9** (S) Real volume-dir detection — `find_volume_dirs` treats every subdir as a volume; add a `[Serie] vNN` name filter / `--volume-glob` so pointing one level too deep doesn't convert `Chapter NNN/` dirs
 
