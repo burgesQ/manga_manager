@@ -35,3 +35,8 @@ python_version = "3.12"
 warn_return_any = true
 warn_unused_ignores = true
 no_implicit_optional = true
+
+# shtab ships no type stubs / py.typed marker; don't fail on its import.
+[[tool.mypy.overrides]]
+module = "shtab"
+ignore_missing_imports = true
