@@ -284,6 +284,8 @@ uv run packer --path ./Berserk --serie "Berserk" --batch-file berserk.batch
 ### Per-path config file (`packer.json`)
 
 Place a `packer.json` in the source directory to set defaults. CLI arguments always override it.
+By default packer looks for `<--path>/packer.json`; pass `--config PATH` to load the config from an
+explicit location instead (a missing `--config` file is a hard error, unlike the optional default).
 
 ```json
 {
