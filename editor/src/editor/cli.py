@@ -24,7 +24,7 @@ from pathlib import Path
 
 from editor.editor_full import clear_metadata, dump_metadata, inject_metadata
 from editor.exit_codes import ERROR
-from packer.cli import setup_logging
+from packer.cli import add_version_arg, setup_logging
 
 logger = logging.getLogger("editor")
 
@@ -106,6 +106,7 @@ def main(argv=None) -> int:
     )
     _add_logging_args(clear_parser)
 
+    add_version_arg(parser, "editor")
     args = parser.parse_args(argv)
 
     if not args.command:

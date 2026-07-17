@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from packer.cli import main
 from packer.exit_codes import CLI_ERROR, SUCCESS
 
@@ -253,3 +255,16 @@ def test_packer_json_covers_invalid_type_skipped(tmp_path: Path, make_cbz):
     (src / "packer.json").write_text(json.dumps(config))
     rc = main(["--path", str(src), "--volume", "1", "--chapter-range", "1"])
     assert rc == SUCCESS
+
+
+# ---------------------------------------------------------------------------
+# --version flag
+# ---------------------------------------------------------------------------
+
+
+def test_version_flag(capsys):
+    """Test that --version prints the packer version and exits with 0."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert exc_info.value.code == 0
+    assert "0.1.0" in capsys.readouterr().out

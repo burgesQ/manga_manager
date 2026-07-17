@@ -13,7 +13,7 @@ from pathlib import Path
 
 from convertor.exit_codes import CLI_ERROR, SUCCESS
 from convertor.kcc_adapter import KCCSettings, convert_volume
-from packer.cli import setup_logging
+from packer.cli import add_version_arg, setup_logging
 
 logger = logging.getLogger("convertor")
 
@@ -102,6 +102,7 @@ def _build_parser() -> argparse.ArgumentParser:
         action=argparse.BooleanOptionalAction,
         help="fill remaining border bands with black instead of white (default: off)",
     )
+    add_version_arg(p, "convertor")
     return p
 
 

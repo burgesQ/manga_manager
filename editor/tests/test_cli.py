@@ -136,3 +136,16 @@ def test_main_clear_dry_run(tmp_path: Path):
     _make_epub(epub_dir / "Series v01.epub")
     rc = main(["clear", str(epub_dir), "--dry-run"])
     assert rc == 0
+
+
+# ---------------------------------------------------------------------------
+# --version flag
+# ---------------------------------------------------------------------------
+
+
+def test_version_flag(capsys):
+    """Test that --version prints the editor version and exits with 0."""
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--version"])
+    assert exc_info.value.code == 0
+    assert "0.1.0" in capsys.readouterr().out

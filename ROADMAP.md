@@ -114,7 +114,7 @@ Global refactor pass across all three packages to improve readability and mainta
 - [x] **Q3** Break up long functions — `packer/cli.py` main() extracted into 6 focused helpers; `packer/worker.py` process_volume() extracted into `_plan_tasks`, `_copy_cover`, `_run_tasks`; `editor/cli.py` extracted `_add_logging_args`; `convertor/cli.py` extracted `_build_parser`, `_build_settings`, `_process_volumes`
 - [ ] **Q4** Remove anonymous lambdas — replace inline `lambda` with named functions or `operator` helpers where intent is non-obvious
 - [x] **Q5** Split large modules — `editor/editor_full.py` (607 lines) split into `epub_metadata.py` (EPUBMetadata class + `_dc_scalar`, low-level EPUB I/O) and `editor_full.py` (operations: inject / dump / clear)
-- [ ] **Q10** (S) `--version` flag on all three CLIs
+- [x] **Q10** (S) `--version` flag on all three CLIs (all 3 CLIs, importlib.metadata)
 - [ ] **Q11** (M) Unified `manga pack|edit|convert …` entry point — one dispatcher over the three console scripts; natural home for a future `manga run` full-pipeline command
 - [ ] **Q12** (S) Shell completion generation (`--completion bash|zsh|fish`, e.g. via `shtab`)
 
