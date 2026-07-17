@@ -52,7 +52,7 @@ jobs:
         run: uv run isort --profile black --check-only . || true
 
       - name: Run mypy
-        run: MYPYPATH=packer/src uv run mypy -p packer
+        run: cd packer && uv run mypy --package packer
 
       # Optional: use reviewdog to report linter findings as PR comments/annotations.
       # Uncomment and configure the following step if you want reviewdog annotations.
