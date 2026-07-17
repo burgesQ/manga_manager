@@ -9,8 +9,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 ### Short-term (high priority)
 
 - [x] **P1** Secure extraction — prevent path traversal attacks in `.cbz` extraction
-- [ ] **P2** `ComicInfo.xml` robustness — handle missing, multiple, case-insensitive, and malformed files
-      — *partial:* case-insensitive match + missing/BadZip handled (`core.py:198-201`); multiple-entry & malformed-XML parsing still missing
+- [x] **P2** `ComicInfo.xml` robustness — handle missing, multiple, case-insensitive, and malformed files
 - [ ] **P3** Extraction policy flags: `--flatten` / `--keep-structure`
 - [x] **P4** Rework concurrency — main thread parses, workers process per-chapter; prevent I/O races
       (`worker.py:139-201`)

@@ -36,6 +36,59 @@ def test_has_comicinfo_valid_without_comicinfo(tmp_path: Path):
     assert has_comicinfo(cbz) is False
 
 
+def test_has_comicinfo_case_variant_name(tmp_path: Path):
+    """A case-variant basename (e.g. comicinfo.XML) still matches."""
+    cbz = tmp_path / "case_variant.cbz"
+    with zipfile.ZipFile(cbz, "w") as z:
+        z.writestr("comicinfo.XML", "<ComicInfo></ComicInfo>")
+    assert has_comicinfo(cbz) is True
+
+
+def test_has_comicinfo_rejects_suffix_false_positive(tmp_path: Path):
+    """An entry like foo_comicinfo.xml must not be treated as a match."""
+    cbz = tmp_path / "false_positive.cbz"
+    with zipfile.ZipFile(cbz, "w") as z:
+        z.writestr("foo_comicinfo.xml", "<ComicInfo></ComicInfo>")
+    assert has_comicinfo(cbz) is False
+
+
+def test_has_comicinfo_multiple_entries_warns_and_uses_first(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """Two ComicInfo.xml entries: still True, and a warning is logged."""
+    cbz = tmp_path / "multiple.cbz"
+    with zipfile.ZipFile(cbz, "w") as z:
+        z.writestr("ComicInfo.xml", "<ComicInfo></ComicInfo>")
+        z.writestr("sub/ComicInfo.xml", "<ComicInfo></ComicInfo>")
+
+    with caplog.at_level("WARNING", logger="packer.core"):
+        assert has_comicinfo(cbz) is True
+
+    assert "multiple ComicInfo.xml entries" in caplog.text
+
+
+def test_has_comicinfo_malformed_xml_returns_false(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture
+):
+    """An unclosed/malformed ComicInfo.xml is rejected."""
+    cbz = tmp_path / "malformed.cbz"
+    with zipfile.ZipFile(cbz, "w") as z:
+        z.writestr("ComicInfo.xml", "<ComicInfo>")
+
+    with caplog.at_level("WARNING", logger="packer.core"):
+        assert has_comicinfo(cbz) is False
+
+    assert "malformed ComicInfo.xml" in caplog.text
+
+
+def test_has_comicinfo_regression_valid_single_entry(tmp_path: Path):
+    """Regression: a well-formed single ComicInfo.xml still returns True."""
+    cbz = tmp_path / "regression.cbz"
+    with zipfile.ZipFile(cbz, "w") as z:
+        z.writestr("ComicInfo.xml", "<ComicInfo></ComicInfo>")
+    assert has_comicinfo(cbz) is True
+
+
 # ---------------------------------------------------------------------------
 # worker.py — _safe_extract() path traversal (line 25)
 # ---------------------------------------------------------------------------
