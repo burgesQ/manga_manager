@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import re
+import xml.etree.ElementTree as ET
 import zipfile
+from pathlib import PurePosixPath
 from typing import Dict, List, Optional, Set, Tuple
 
 from .types_ import ChapterMapping, ChapterMatch
+
+logger = logging.getLogger(__name__)
 
 CHAPTER_PATTERNS = [
     re.compile(r"(?i)chapter[\s._-]*0*([0-9]+)"),
@@ -178,28 +183,51 @@ def map_chapters_to_files(
 
 
 def has_comicinfo(cbz_path: str) -> bool:
-    """Check whether a `.cbz` archive contains a `ComicInfo.xml` file.
+    """Check whether a `.cbz` archive contains a valid `ComicInfo.xml` file.
 
     Args:
         cbz_path: Path to the `.cbz` file to inspect.
 
     Returns:
-        True if a file named (case-insensitive) `ComicInfo.xml` exists in the
-        archive, otherwise False.
+        True if an entry whose basename is (case-insensitive) exactly
+        `ComicInfo.xml` exists in the archive and parses as well-formed XML,
+        otherwise False.
 
     Notes:
-        - If the given file is not a valid zip archive, this function returns
-          False (the error is handled internally). Callers may treat False as
-          "missing or invalid ComicInfo.xml" and react accordingly.
+        - Matching is an exact case-insensitive basename comparison, so an
+          entry like `foo_comicinfo.xml` is not treated as a match.
+        - If multiple entries match, a warning is logged and the first one
+          (in archive order) is used.
+        - If the given file is not a valid zip archive, or cannot be opened,
+          this function returns False (the error is handled internally).
+          Callers may treat False as "missing or invalid ComicInfo.xml" and
+          react accordingly.
+        - XML is parsed with the stdlib `xml.etree.ElementTree`, which is
+          fine for local trusted archives. If untrusted input ever becomes a
+          concern, `defusedxml` would be the hardened choice instead.
     """
     try:
         with zipfile.ZipFile(cbz_path, "r") as z:
-            for n in z.namelist():
-                if n.lower().endswith("comicinfo.xml"):
-                    return True
-    except zipfile.BadZipFile:
+            names = z.namelist()
+            matches = [
+                n for n in names if PurePosixPath(n).name.lower() == "comicinfo.xml"
+            ]
+            if not matches:
+                return False
+            if len(matches) > 1:
+                logger.warning(
+                    "multiple ComicInfo.xml entries in %s; using first", cbz_path
+                )
+            entry = matches[0]
+            data = z.read(entry)
+            try:
+                ET.fromstring(data)
+            except ET.ParseError as e:
+                logger.warning("malformed ComicInfo.xml in %s: %s", cbz_path, e)
+                return False
+            return True
+    except (zipfile.BadZipFile, OSError):
         return False
-    return False
 
 
 def format_volume_dir(dest: str, serie: str, volume: int) -> str:
