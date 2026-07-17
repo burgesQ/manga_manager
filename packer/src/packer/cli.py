@@ -172,23 +172,30 @@ def parse_batch_file(file_path: str) -> list[tuple[int, list[int]]]:
     return specs
 
 
-def load_config_from_path(path: str):
-    """Load an optional JSON config file (`packer.json`) from `path`.
+def load_config_file(cfg_path: str, *, required: bool = False):
+    """Load an optional JSON config file (`packer.json`) at `cfg_path`.
 
     Supported keys (optional): `serie`, `pattern`, `chapter_regex`, `extra_regex`,
     `nb_worker`, `batch_file` (alias: `batch`), `covers`.
 
-    Raises:
-        ValueError: if a `packer.json` file is present but cannot be parsed as
-                    a valid JSON object (dict). The caller should treat this as
-                    a configuration error and abort.
+    Args:
+        cfg_path: full path to the config file.
+        required: when True (an explicit ``--config`` path), a missing file is a
+                  configuration error; when False (the default
+                  ``<--path>/packer.json`` lookup), a missing file is fine.
 
-    Returns an empty dict when no config file is present.
+    Raises:
+        ValueError: if the file is required but missing, or is present but cannot
+                    be parsed as a valid JSON object (dict). The caller should
+                    treat this as a configuration error and abort.
+
+    Returns an empty dict when no (optional) config file is present.
     """
     import json
 
-    cfg_path = os.path.join(path, "packer.json")
     if not os.path.exists(cfg_path):
+        if required:
+            raise ValueError(f"Config file not found: {cfg_path}")
         return {}
     try:
         with open(cfg_path, "r", encoding="utf-8") as fh:
@@ -218,6 +225,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--path", required=True, help="path to root directory containing .cbz files"
     )
     p.add_argument("--dest", default=None, help="destination root (defaults to --path)")
+    p.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        metavar="PATH",
+        help="path to the packer.json config file " "(default: <--path>/packer.json)",
+    )
     p.add_argument(
         "--serie",
         required=False,
@@ -288,8 +302,9 @@ def _apply_path_config(args: argparse.Namespace) -> list[CoverMapping] | None:
 
     Mutates args in place. Raises _CLIError on invalid packer.json.
     """
+    cfg_path = args.config or os.path.join(args.path, "packer.json")
     try:
-        path_config = load_config_from_path(args.path)
+        path_config = load_config_file(cfg_path, required=bool(args.config))
     except ValueError as e:
         logger.error(str(e))
         raise _CLIError from e

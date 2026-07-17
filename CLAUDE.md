@@ -55,7 +55,7 @@ Key behaviours:
 - Named patterns: `--pattern mangafox|mangafire|animeSama|weebcentral` for different filename conventions
 - Extras: `16.1`, `16.2` are associated with chapter 16, processed in numeric order
 - Batch mode: `--batch "v01:1..3-v02:4..6"` or `--batch-file path` or auto-discovered `.batch` file
-- Per-path config: `packer.json` in `--path` dir (CLI args always override)
+- Per-path config: `packer.json` in `--path` dir, or an explicit `--config PATH` (defaults to `<--path>/packer.json`; explicit-but-missing is a hard error). CLI args always override. Resolved in `_apply_path_config` via `load_config_file(cfg_path, required=bool(args.config))`
 - Exit codes: `0` success, `2` CLI error, `3` missing chapter, `4` duplicate, `6` processing error
 
 ### editor
