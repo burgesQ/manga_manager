@@ -90,6 +90,10 @@ class EPUBMetadata:
                 else {}
             )
             if isinstance(attrs, dict) and attrs.get("id") == "isbn":
+                # Stored as "isbn:<digits>" (see set_metadata); strip the scheme
+                # prefix so the logical ISBN round-trips cleanly through dump.
+                if isinstance(id_value, str) and id_value.lower().startswith("isbn:"):
+                    id_value = id_value[len("isbn:") :]
                 meta["isbn"] = id_value
                 break
 
