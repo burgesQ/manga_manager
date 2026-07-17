@@ -73,6 +73,56 @@ uv run convertor --help
 
 ---
 
+## Shell completion
+
+Each CLI can emit a completion script via `--print-completion {bash,zsh,tcsh}` (powered by
+[`shtab`](https://github.com/iterative/shtab)).
+
+> **Important — completion binds to the command _word_.** The generated script registers
+> completion for `packer` / `editor` / `convertor`. It therefore fires on `packer <TAB>` but
+> **not** on `uv run packer <TAB>` — in that form the shell is completing `uv`'s arguments, not
+> the CLI's. Pick one of the two setups below.
+
+### Option A — use the installed entry points directly (recommended)
+
+`uv sync` installs the console scripts into `.venv/bin/`. Activate the venv (or put that dir on
+`PATH`) so `packer` is a real command, then install the completion:
+
+```console
+source .venv/bin/activate            # now `packer`, `editor`, `convertor` are on PATH
+
+# zsh — drop the script on your fpath, then recompile completions
+packer    --print-completion zsh > ~/.zfunc/_packer
+editor    --print-completion zsh > ~/.zfunc/_editor
+convertor --print-completion zsh > ~/.zfunc/_convertor
+# ensure ~/.zfunc is on $fpath before `compinit` in ~/.zshrc:
+#   fpath=(~/.zfunc $fpath); autoload -Uz compinit && compinit
+
+# bash
+packer --print-completion bash | sudo tee /etc/bash_completion.d/packer >/dev/null
+```
+
+Now `packer <TAB>` completes. (No `uv run` prefix — the venv is active.)
+
+### Option B — keep the `uv run` workflow via wrapper functions
+
+If you prefer not to activate the venv, define wrapper functions named after the CLIs; the
+`#compdef packer` completion attaches to the function just as it would to a binary:
+
+```zsh
+# ~/.zshrc
+MM=~/repo/manga_manager
+packer()    { uv run --project $MM packer    "$@"; }
+editor()    { uv run --project $MM editor    "$@"; }
+convertor() { uv run --project $MM convertor "$@"; }
+```
+
+Install the completion scripts as in Option A. Now `packer <TAB>` completes **and** runs via
+`uv run` under the hood. (Typing the literal `uv run packer <TAB>` still won't complete — use the
+`packer` function instead.)
+
+---
+
 ## Full Workflow Example
 
 Starting from a folder of `.cbz` chapter files downloaded from Tachiyomi:
