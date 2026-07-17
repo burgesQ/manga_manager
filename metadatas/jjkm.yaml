@@ -12,8 +12,8 @@ publisher:
 
 doc: Used to inject metadata within volumes and chapters.
 
-chapters_file: .//chapters_jjkm.yaml
 
+chapters_file: ./chapters_jjkm.yaml
 volumes:
 - number: 1
   title: Special Grade Incident

@@ -1,14 +1,17 @@
 series: Jujutsu Kaisen
 author: Gege Akutami
 genre:
-- Shonen
-- Action
-- Dark Fantasy
-- Supernatural
+  - Shonen
+  - Action
+  - Dark Fantasy
+  - Supernatural
 publisher:
   japanese: Shueisha
   english: Viz Media
+
 doc: Used to inject metadata within volumes and chapters.
+
+chapters_file: ./chapters_jjk.yaml
 volumes:
 - number: 0
   title: Blinding Darkness
