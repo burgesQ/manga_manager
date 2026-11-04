@@ -117,6 +117,9 @@ class ProjectPage:
             ui.link("← Projects", "/")
             self.title = ui.label(self.project.name).classes("text-h5")
             ui.space()
+            ui.link("History", f"/project/{self.project.slug}/history").mark(
+                "history-link"
+            )
             ui.button("Save", icon="save", on_click=lambda: self.save()).mark(
                 "save-project"
             )
