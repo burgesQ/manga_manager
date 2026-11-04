@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ main, master ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -99,26 +102,10 @@ jobs:
           name: coverage-report
           path: htmlcov || coverage.xml || .
 
-  # codeql:
-  #   name: CodeQL
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-
-  #     - name: Initialize CodeQL
-  #       uses: github/codeql-action/init@v2
-  #       with:
-  #         languages: python
-
-  #     - name: Autobuild
-  #       uses: github/codeql-action/autobuild@v2
-
-  #     - name: Perform CodeQL analysis
-  #       uses: github/codeql-action/analyze@v2
-
 # Notes:
 # - This workflow runs on pushes and pulls to main/master.
 # - `mypy` is run with defaults and currently allowed to fail the job; remove the `|| true` to make it strict.
 # - `reviewdog` integration is provided as a commented example; enable and configure it if you want PR annotations from linters.
+# - CodeQL runs via GitHub's code-scanning *default setup* (repo settings),
+#   not from this file.
 # - Consider adding a separate job or matrix to test across multiple Python versions if you intend to support them.
