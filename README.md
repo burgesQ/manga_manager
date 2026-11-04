@@ -11,7 +11,7 @@
 [![mypy: checked](https://img.shields.io/badge/mypy-checked-2a6db2)](https://mypy-lang.org/)
 [![Open in GitHub Codespaces](https://img.shields.io/badge/Codespaces-open-181717?logo=github)](https://codespaces.new/burgesQ/manga_manager)
 
-A suite of CLI tools to build a manga library for Kobo e-readers — from raw chapter archives to polished `.kepub.epub` files with full metadata.
+A suite of CLI tools — plus an optional local web UI — to build a manga (or comic) library for Kobo e-readers, from raw chapter archives to polished `.kepub.epub` files with full metadata.
 
 **Platform:** Linux (tested on Linux Mint 22.3 / Debian 13) · **Python:** 3.12+ · **Package manager:** [uv](https://docs.astral.sh/uv/)
 
@@ -33,24 +33,28 @@ A suite of CLI tools to build a manga library for Kobo e-readers — from raw ch
 Volume dir  [Berserk v01/]
         │
         ▼
-   ┌────────┐
-   │ editor │  ──▶  injects metadata (title, author, ISBN, series…) from YAML
-   └────────┘
-        │
-        ▼
    ┌───────────┐
    │ convertor │  ──▶  converts to .kepub.epub via KindleComicConverter
    └───────────┘
         │
         ▼
-Berserk v01.kepub.epub  →  Kobo
+Berserk v01.kepub.epub
+        │
+        ▼
+   ┌────────┐
+   │ editor │  ──▶  injects metadata (title, author, ISBN, series…) from YAML
+   └────────┘
+        │
+        ▼
+Berserk v01.kepub.epub (with metadata)  →  Kobo
 ```
 
 | Tool | Version | What it does |
 |---|---|---|
 | **packer** | v0.1.0 | Groups `.cbz` chapter archives into volume directories with extracted chapter subdirs |
+| **convertor** | v1.0 | Converts volume directories to `.kepub.epub` via KCC (`--preset manga\|comic`) |
 | **editor** | v1.0 | Injects / dumps / clears EPUB metadata from YAML files |
-| **convertor** | v1.0 | Converts volume directories to `.kepub.epub` via KCC |
+| **manga-gui** (`gui/`) | v0.1.0 | Local web UI to configure a series and run packer → convertor → editor (see [GUI](#gui)) |
 
 ---
 
@@ -59,7 +63,7 @@ Berserk v01.kepub.epub  →  Kobo
 - **Python 3.12+** — check with `python3 --version`
 - **[uv](https://docs.astral.sh/uv/getting-started/installation/)** — fast Python package manager
 
-`kindlecomicconverter` (KCC) is a declared Python dependency and is installed automatically by `uv sync` — no separate installation needed.
+`kindlecomicconverter` (KCC) is a declared Python dependency and is installed automatically by `uv sync --all-packages` — no separate installation needed.
 
 ---
 
@@ -70,23 +74,30 @@ Berserk v01.kepub.epub  →  Kobo
 git clone https://github.com/burgesQ/manga_manager.git
 cd manga_manager
 
-# Install all packages and dev dependencies
-uv sync
+# Install every workspace package (packer, editor, convertor, manga-gui) and dev tools
+uv sync --all-packages
 ```
 
-The three CLIs are now available via `uv run`:
+> **Use `--all-packages`.** The root project is only the workspace container: a plain
+> `uv sync` does not install the workspace members, so the `packer` / `editor` /
+> `convertor` / `manga-gui` commands and the GUI's `nicegui` dependency would be
+> missing (or removed from an existing `.venv`).
+
+The CLIs (and the GUI) are now available via `uv run`:
 
 ```console
 uv run packer --help
 uv run editor --help
 uv run convertor --help
+uv run manga-gui --help
 ```
 
 ### Docker
 
-A prebuilt image with all three CLIs (and KCC) is published to GHCR on every push to
-`main`. Mount your library and run as your own user so the generated files are not
-owned by root:
+A prebuilt image with the **three CLIs only** (packer, editor, convertor, plus KCC) is
+published to GHCR on every push to `main`. `manga-gui` and NiceGUI are deliberately not
+in the image: the GUI runs on the host (see [GUI](#gui)). Mount your library and run as
+your own user so the generated files are not owned by root:
 
 ```bash
 docker run --rm -it --user "$(id -u):$(id -g)" \
@@ -111,7 +122,7 @@ Each CLI can emit a completion script via `--print-completion {bash,zsh,tcsh}` (
 
 ### Option A — use the installed entry points directly (recommended)
 
-`uv sync` installs the console scripts into `.venv/bin/`. Activate the venv (or put that dir on
+`uv sync --all-packages` installs the console scripts into `.venv/bin/`. Activate the venv (or put that dir on
 `PATH`) so `packer` is a real command, then install the completion:
 
 ```console
@@ -206,8 +217,9 @@ language: "en"
 volumes:
   - number: 1
     title: "Black Swordsman"
-    isbn: "978-1-56931-900-0"
-    date: "2003-08-19"
+    english:
+      isbn: "978-1-56931-900-0"
+      release_date: "2003-08-19"
 ```
 
 ### Step 4 — Inject metadata into the EPUB
@@ -216,6 +228,83 @@ volumes:
 uv run editor inject ~/Downloads/Berserk berserk.yaml
 ```
 
+
+---
+
+## GUI
+
+`manga-gui` (workspace member `gui/`, built with [NiceGUI](https://nicegui.io)) is a
+local web UI to set up and run the whole pipeline per series ("project") instead of
+hand-editing config files and chaining three commands with matching paths.
+
+**It runs on the host, not in Docker**: it must see your real library paths, and the
+Docker image ships the CLIs only.
+
+```console
+uv sync --all-packages          # once: installs manga-gui and nicegui
+uv run manga-gui                # → http://127.0.0.1:8080
+make gui                        # same thing
+```
+
+| Option | Default | Purpose |
+|---|---|---|
+| `--host` | `127.0.0.1` | Interface to bind (local only by default) |
+| `--port` | `8080` | Port to listen on |
+| `--data-dir PATH` | XDG dirs | Store projects and runs under `PATH/projects` and `PATH/runs` |
+| `--loglevel` / `--verbose` | `INFO` | Log level |
+| `--version` | | Print the version |
+
+**What it does:**
+
+- **Projects** (`/`): list of projects and a *New project* form (name + source folder).
+- **Project wizard** (`/project/<slug>`), five steps:
+  1. **Library**: name, kind (Manga / Comic), source and destination folders, and a
+     scan of the `.cbz` files showing detected chapters, unmatched files and duplicates.
+  2. **Packer**: serie, pattern / regexes, workers, volumes (single volume, batch spec
+     or batch CSV file, edited as a table), covers per volume, and a raw `packer.json`
+     editor validated by packer's own loader.
+  3. **Convertor**: KCC settings on top of the `manga` / `comic` preset.
+  4. **Metadata**: metadata YAML (series fields, volumes table, chapter titles preview,
+     raw YAML editor), chapters YAML, locale, `--force`.
+  5. **Review & Run**: pre-flight checks, a checkbox per step, resolved paths, the
+     equivalent shell commands, then *Dry-run* / *Run* / *Cancel* with live logs.
+
+**Design:** the real config files (`packer.json`, batch CSV, metadata / chapters YAML)
+stay the source of truth: a project only points to them, so the CLIs keep working
+without the GUI. Each step runs as a subprocess (`python -m packer.main …`), so its logs
+stream live and it can be cancelled; the run stops at the first failing step.
+
+**Where data is stored** (override both with `--data-dir`):
+
+| What | Location |
+|---|---|
+| Project profiles | `$XDG_CONFIG_HOME/manga_manager/projects/<slug>.json` (default `~/.config/manga_manager/projects/`) |
+| Run history (per-step argv, exit code, duration + full log) | `$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}` (default `~/.local/state/manga_manager/runs/`) |
+
+See [`gui/README.md`](gui/README.md) for details.
+
+---
+
+## Comics
+
+Comics differ from manga in two ways: they are in **colour** and read
+**left-to-right**. The defaults assume manga (right-to-left), so tell each tool:
+
+| Where | Setting | Effect |
+|---|---|---|
+| `convertor` | `--preset comic` | `manga_style` off (left-to-right), colour kept; explicit flags still override the preset |
+| `packer.json` | `"kind": "comic"` | Read by `manga-gui` to pick the convertor preset; packer itself behaves the same |
+| metadata YAML | `kind: comic` | `editor inject` adds a `Comic` tag (`dc:subject`); `editor dump` emits it back |
+| `manga-gui` | *Kind* toggle (Library step) | Sets the convertor preset and writes `kind` to `packer.json` |
+
+```console
+uv run convertor ./Saga --preset comic
+```
+
+> **Not supported yet:** comic filename patterns (issue numbers such as
+> `Saga 001 (2012) (Digital).cbz`) — see **K3** in [ROADMAP.md](ROADMAP.md). Use
+> `--chapter-regex` / `--extra-regex` meanwhile; note that every `.cbz` still needs a
+> `ComicInfo.xml`.
 
 ---
 
@@ -317,9 +406,13 @@ explicit location instead (a missing `--config` file is a hard error, unlike the
 {
   "serie": "Berserk",
   "pattern": "mangafox",
-  "nb_worker": 2
+  "nb_worker": 2,
+  "kind": "manga"
 }
 ```
+
+`kind` (`manga` | `comic`, optional) does not change packer's behaviour; `manga-gui`
+uses it to pick the convertor preset (see [Comics](#comics)).
 
 ### Cover image
 
@@ -403,17 +496,20 @@ series: "Berserk"
 author: "Kentaro Miura"
 publisher: "Dark Horse Comics"
 language: "en"                    # BCP 47 code; default: "en-US" if omitted
+kind: "manga"                     # optional: manga | comic → Manga / Comic tag
 
 volumes:
   - number: 1
     title: "Black Swordsman"
-    isbn: "978-1-56931-900-0"
-    date: "2003-08-19"
+    english:                      # locale block, picked with --locale (default english)
+      isbn: "978-1-56931-900-0"
+      release_date: "2003-08-19"
   - number: 2
     title: "The Shadow"
-    isbn: "978-1-56931-980-2"
-    date: "2004-01-01"
     language: "fr"                # per-volume override
+    english:
+      isbn: "978-1-56931-980-2"
+      release_date: "2004-01-01"
 ```
 
 **Top-level keys:**
@@ -424,6 +520,7 @@ volumes:
 | `author` | yes | Author name → `dc:creator` |
 | `publisher` | no | Publisher → `dc:publisher` |
 | `language` | no | Default language (BCP 47); falls back to `en-US` |
+| `kind` | no | `manga` or `comic`: adds a `Manga` / `Comic` tag (`dc:subject`) |
 
 **Per-volume keys:**
 
@@ -431,8 +528,8 @@ volumes:
 |---|---|
 | `number` | Volume number → `calibre:series_index` |
 | `title` | Volume title → `dc:title` |
-| `isbn` | ISBN → `dc:identifier` |
-| `date` | Release date (YYYY-MM-DD) → `dc:date` |
+| `<locale>.isbn` | ISBN → `dc:identifier` (under `english:` / `japanese:` / `french:`, see `--locale`) |
+| `<locale>.release_date` | Release date (YYYY-MM-DD) → `dc:date` |
 | `language` | Overrides series-level language for this volume |
 
 ### Supported metadata fields
@@ -473,7 +570,9 @@ Berserk/
 
 ### KCC settings
 
-All settings default to the recommended Kobo Manga profile. Override only what you need:
+`--preset manga` (default) targets the recommended Kobo manga profile (right-to-left);
+`--preset comic` is the same but left-to-right (see [Comics](#comics)). Any explicit flag
+overrides the preset. Override only what you need:
 
 ```console
 uv run convertor ./Berserk \
@@ -487,8 +586,9 @@ uv run convertor ./Berserk \
 
 | Flag | Default | Description |
 |---|---|---|
+| `--preset {manga,comic}` | `manga` | Base settings: `comic` turns `--manga-style` off |
 | `--profile` | `KoLC` | KCC device profile (`KoLC` = Kobo Libra Colour) |
-| `--[no-]manga-style` | on | Right-to-left reading direction |
+| `--[no-]manga-style` | on (`manga`) / off (`comic`) | Right-to-left reading direction |
 | `--[no-]hq` | on | High-quality mode |
 | `--[no-]forcecolor` | on | Force colour output |
 | `--rotation 0-3` | `2` | Page rotation: 0=none, 1=90CW, 2=90CCW, 3=180° |
@@ -511,8 +611,8 @@ Berserk v01/
 ## Development
 
 ```console
-# Install all dependencies (including dev tools)
-uv sync
+# Install all workspace packages (including manga-gui) and dev tools
+uv sync --all-packages
 
 # Run the full test suite
 uv run pytest .
@@ -520,18 +620,19 @@ uv run pytest .
 # Run tests for a single package
 uv run pytest packer -q
 uv run pytest editor -q
+uv run pytest gui -q
 cd convertor && uv run pytest
 
 # Run with coverage
-uv run pytest --cov=packer --cov=convertor --cov=editor --cov-report=html . -q
+uv run pytest --cov=packer --cov=convertor --cov=editor --cov=manga_gui --cov-report=html . -q
 
 # Linting & formatting
 uv run ruff check .
 uv run black --check --diff .
 uv run isort --profile black --check-only .
 
-# Type checking
-uv run mypy packer/src editor/src convertor/src
+# Type checking (packer + manga_gui)
+make type-check
 
 # Apply auto-fixes
 uv run ruff check --fix .
@@ -555,6 +656,9 @@ manga_manager/
 ├── convertor/        # volume dirs → .kepub.epub
 │   ├── src/convertor/
 │   └── tests/
+├── gui/              # manga-gui: NiceGUI web UI (host only)
+│   ├── src/manga_gui/
+│   └── tests/
 ├── metadatas/        # example YAML metadata files
 ├── CLAUDE.md         # guidance for Claude Code sessions
 ├── ROADMAP.md        # backlog and open tasks
@@ -570,4 +674,6 @@ See [ROADMAP.md](ROADMAP.md) for the full backlog. Current open priorities:
 - **packer:** `ComicInfo.xml` robustness, `--flatten`/`--keep-structure`, concurrency rework
 - **editor:** Calibre tag/ID injection, Kobo collection support
 - **convertor:** parallel workers, KCC settings via `packer.json`
+- **GUI:** projects page (duplicate / delete), run history page, volume previews
+- **Comics:** comic filename patterns (needs sample files), optional `Issue` TOC label
 - **CI:** multi-Python matrix, reviewdog annotations

@@ -4,22 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-`manga_manager` is a Python 3.12+ monorepo (uv workspace) of three CLI tools to manage manga libraries targeting Kobo e-readers.
+`manga_manager` is a Python 3.12+ monorepo (uv workspace) of three CLI tools, plus a local web UI, to manage manga (and comic) libraries targeting Kobo e-readers.
 
 **Full workflow:**
 ```
-*.cbz archives → packer → volume dirs → editor (metadata) → convertor → *.kepub.epub (Kobo)
+*.cbz archives → packer → volume dirs → convertor → *.kepub.epub → editor (metadata) → Kobo
 ```
 
 **Packages:**
 | Package | Version | Purpose |
 |---|---|---|
 | `packer` | v0.1.0 | Group `.cbz` chapter archives into volume directories with extracted chapter subdirs |
+| `convertor` | v1.0 | Convert volume directories to `.kepub.epub` via KindleComicConverter (KCC); `--preset manga\|comic` |
 | `editor` | v1.0 | Inject / dump / clear EPUB metadata from YAML files |
-| `convertor` | v1.0 | Convert volume directories to `.kepub.epub` via KindleComicConverter (KCC) |
+| `gui` (`manga-gui`, package `manga_gui`) | v0.1.0 | NiceGUI web UI: per-series projects, config editors, runs packer → convertor → editor as subprocesses. **Host only**, not in the Docker image |
 
 - **Language:** Python 3.12+ — `packer` uses stdlib only, no external deps
-- **Package manager:** `uv` workspace (see root `pyproject.toml`)
+- **Package manager:** `uv` workspace (see root `pyproject.toml`). Always `uv sync --all-packages`: the root project is a bare container, so a plain `uv sync` does not install (and removes) the workspace members and nicegui
+- **Docker image:** CLI-only — installs `--package packer --package editor --package convertor`; `gui/` sources are excluded via `.dockerignore` (only `gui/pyproject.toml` is copied so uv can resolve the workspace)
 - **Platform:** Linux (tested on Linux Mint 22.3 / Debian 13)
 
 ---
@@ -56,6 +58,7 @@ Key behaviours:
 - Extras: `16.1`, `16.2` are associated with chapter 16, processed in numeric order
 - Batch mode: `--batch "v01:1..3-v02:4..6"` or `--batch-file path` or auto-discovered `.batch` file
 - Per-path config: `packer.json` in `--path` dir, or an explicit `--config PATH` (defaults to `<--path>/packer.json`; explicit-but-missing is a hard error). CLI args always override. Resolved in `_apply_path_config` via `load_config_file(cfg_path, required=bool(args.config))`
+- `kind: "manga" | "comic"` is an accepted (validated) `packer.json` key but not a packer argument: packer behaves the same; the GUI reads it to pick the convertor preset
 - Exit codes: `0` success, `2` CLI error, `3` missing chapter, `4` duplicate, `6` processing error
 
 ### editor
@@ -75,7 +78,9 @@ src/editor/
 
 Test fixtures: `editor/tests/conftest.py` exposes `make_epub`, `make_yaml` as pytest fixtures.
 
-Supported metadata: Dublin Core (`title`, `creator`, `identifier`, `publisher`, `date`, `language`) + Calibre custom (`series`, `series_index`).
+Supported metadata: Dublin Core (`title`, `creator`, `identifier`, `publisher`, `date`, `language`, `subject` from `genre`) + Calibre custom (`series`, `series_index`).
+
+Optional top-level `kind: manga|comic` adds a `Manga` / `Comic` tag to `dc:subject` (skipped if `genre` already has it; any other value fails `inject` before touching files); `dump` emits `kind` back from the tags. The editor never touches the reading direction (KCC writes it in the spine).
 
 YAML format (see `metadatas/*.yaml` for real-world examples):
 ```yaml
@@ -113,13 +118,46 @@ Test fixtures: `convertor/tests/conftest.py` exposes `make_vol`, `run_convertor`
 
 Execution strategy: tries KCC as a Python module first (`kindlecomicconverter`), falls back to CLI (`kcc-c2e`, `kcc`). Defaults target Kobo Libra Colour profile with manga-optimised settings.
 
+Presets: `--preset {manga,comic}` (default `manga`) picks the base `KCCSettings` from `PRESETS` in `kcc_adapter.py` (exported by `convertor`): `comic` = `manga_style=False` (left-to-right), colour kept. Explicit flags (`--[no-]manga-style`, `--profile`, …) always override the preset; resolved in `cli._build_settings`.
+
+### gui (`manga-gui`)
+
+NiceGUI front-end to configure a series ("project") and run packer → convertor → editor. Runs **on the host only** (it must see the real library paths; the Docker image is CLI-only). `uv run manga-gui` → http://127.0.0.1:8080 (`--host`, `--port`, `--data-dir`).
+
+```
+gui/src/manga_gui/
+├── main.py         # argparse (--host/--port/--data-dir/--loglevel) + _CLIError → ui.run()
+├── exit_codes.py   # SUCCESS = 0, CLI_ERROR = 2
+├── models.py       # Project, PackerOptions, KCCOptions, EditorOptions, Kind, slugify
+├── commands.py     # PURE: Project → list[StepCommand(step, argv, cwd)], .shell()
+├── runner.py       # asyncio subprocess runner: line streaming, parse_progress, cancel
+├── store.py        # Store: project profiles + run history (XDG or --data-dir)
+├── validation.py   # pre-flight Issues, reusing packer / editor loaders
+├── scan.py         # .cbz → chapter matches preview, volume dirs, EPUB listing
+├── forms.py        # UI-free wizard helpers: batch rows, packer.json / YAML edits, KCC values
+├── pages/          # projects.py (`/`), project.py (`/project/{slug}` 5-step ui.stepper)
+├── components/     # batch_table, covers_grid, json_yaml_editor (FileEditor), kcc_form, log_panel
+└── py.typed
+```
+
+Key design choices:
+- **Steps run as subprocesses** (`sys.executable -m packer.main …`), never by calling `main()` in-process: every `main()` calls `setup_logging()` (clears root handlers), in-process calls cannot be cancelled, and packer uses threads. Logs stream from stderr; progress is parsed from existing log lines; cancel = SIGTERM then SIGKILL; a run stops at the first non-zero exit.
+- **Config files are the source of truth**: a project only points to `packer.json`, the batch CSV, the metadata / chapters YAML and stores GUI-only data (paths, KCC overrides, locale, enabled steps). File edits are validated by the CLI loaders (`load_config_file`, `load_yaml_metadata`, …) and written atomically.
+- **XDG store**: projects in `$XDG_CONFIG_HOME/manga_manager/projects/<slug>.json`, runs in `$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}`; `--data-dir` puts both under one dir (tests).
+- **UI-free logic lives outside `pages/` / `components/`** (`forms.py`, `commands.py`, …) so it is unit-tested without NiceGUI.
+- **UI tests** use NiceGUI's `user_simulation()` driven by the anyio pytest plugin: mark tests `@pytest.mark.anyio` and take the `gui_user` fixture (`gui/tests/conftest.py`, pages registered on a `gui_store` under `tmp_path`). `nicegui.testing.user_plugin` is NOT registered (a `pytest_plugins` in a non-root conftest is an error).
+- **NiceGUI drops page modules from `sys.modules` on teardown**: `gui_user` saves and restores the `manga_gui*` entries, otherwise later imports create new module/class objects and `isinstance` checks break.
+- `gui/tests/` has no `__init__.py` (same rule as convertor).
+
+Test fixtures: `gui/tests/conftest.py` exposes `make_project`, `make_library`, `write_json`, `write_yaml`, `py_cmd`, `gui_store`, `gui_user`.
+
 ---
 
 ## Dev Commands
 
 ```bash
-# Initial setup
-uv sync
+# Initial setup (--all-packages is required: installs every workspace member + nicegui)
+uv sync --all-packages
 
 # Run all tests
 uv run pytest .
@@ -130,7 +168,7 @@ uv run pytest packer -q
 uv run pytest packer/tests/test_core_regex.py -k "test_fma"
 
 # Run with coverage
-uv run pytest --cov=packer --cov=convertor --cov=editor --cov-report=html . -q
+uv run pytest --cov=packer --cov=convertor --cov=editor --cov=manga_gui --cov-report=html . -q
 make test-coverage     # via root Makefile
 
 # Lint (check only)
@@ -145,16 +183,19 @@ uv run black .
 uv run isort --profile black .
 make lint-fix          # via root Makefile
 
-# Type check (mypy — packer only; editor/convertor not yet fully annotated)
+# Type check (mypy — packer and manga_gui; editor/convertor not yet fully annotated)
 cd packer && uv run mypy --package packer
-make type-check        # via root Makefile
+cd gui && uv run mypy --package manga_gui
+make type-check        # via root Makefile (runs both)
 
 # Run the CLIs
 uv run packer --path ./Serie --serie "Berserk" --volume 1 --chapter-range "1..12"
 uv run editor inject ./volumes metadata.yaml
 uv run editor dump  ./volumes --output out.yaml
 uv run editor clear ./volumes
-uv run convertor ./volumes [--force-regen] [--dry-run]
+uv run convertor ./volumes [--preset manga|comic] [--force-regen] [--dry-run]
+uv run manga-gui [--port 8080] [--data-dir DIR]   # web UI on the host
+make gui                                          # same as `uv run manga-gui`
 ```
 
 > **Note:** CI runs all linters with `|| true` — they report issues but never fail the pipeline. Fix lint errors locally before pushing.
@@ -163,7 +204,7 @@ uv run convertor ./volumes [--force-regen] [--dry-run]
 
 ## Code Conventions
 
-- **NamedTuples** for structured return types: `ChapterMatch`, `Task`, `ProcessResult`, `ProcessVolumeResult`, `CoverMapping`, `KCCInvocation`
+- **NamedTuples** for structured return types: `ChapterMatch`, `Task`, `ProcessResult`, `ProcessVolumeResult`, `CoverMapping`, `KCCInvocation`, `StepCommand`
 - **TypeAlias** for complex composite types: `BatchSpecs = list[tuple[int, list[int]]]` in `types_.py`
 - **Config dataclass** in `packer/config.py` — pass `Config` instead of loose kwargs through the call stack
 - **`pathlib.Path`** for all filesystem operations (not `os.path`)
@@ -214,6 +255,7 @@ Each package has an `exit_codes.py` with named constants. **Never use bare integ
 | `packer` | `SUCCESS=0`, `CLI_ERROR=2`, `MISSING_CHAPTER=3`, `DUPLICATE_CHAPTER=4`, `PROCESSING_ERROR=6` |
 | `editor` | `SUCCESS=0`, `ERROR=1` |
 | `convertor` | `SUCCESS=0`, `CLI_ERROR=2` |
+| `gui` | `SUCCESS=0`, `CLI_ERROR=2` |
 
 ### Module split rationale (editor)
 
@@ -291,4 +333,6 @@ See `ROADMAP.md` for the full task list. Key open items:
 - **packer:** `ComicInfo.xml` robustness, `--flatten`/`--keep-structure`, rework concurrency, `--skip-missing`/`--continue-on-error`
 - **editor:** Calibre tag/ID injection, Kobo library collection support
 - **convertor:** parallelize workers, parametrise KCC settings
+- **gui:** projects page (duplicate / delete, last-run status) + run history page (G6), volume previews (G7)
+- **comics:** comic filename patterns (K3, blocked on sample files), optional `Issue` TOC label (K5)
 - **CI:** multi-Python matrix (3.10–3.12), reviewdog PR annotations, optional KCC integration job
