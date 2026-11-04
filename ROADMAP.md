@@ -57,6 +57,9 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **convertor** → `*.k
 - [ ] **E11** (M) Selective / merge injection (`--only-missing`) — top up missing fields without overwriting everything (current inject is all-or-nothing gated on `has_metadata()`+`--force`)
 - [ ] **E12** (M) Embed EPUB cover from YAML/file (`book.set_cover`) — complements the convertor `Chapter 000/` cover hack (**C6**)
 
+- [ ] **E13** 🐞 (S) `_chapters_map` does `int(number)`, so chapter files with ranged numbers
+      (e.g. `0-1` in `metadatas/chapters_jjk.yaml`) fail to load; accept / skip non-integer numbers
+
 ---
 
 ## Convertor
@@ -113,9 +116,9 @@ YAML) stay the source of truth, the GUI edits them in place.
       `commands` (pure Project → argv per step), `validation` (wraps `load_config_file`,
       `parse_batch_file`, `load_yaml_metadata`, …), `scan` (cbz → chapter matches)
 - [x] **G3** (M) Async subprocess `runner`: line streaming, progress parsed from existing log lines, cancel
-- [ ] **G4** (L) Wizard (`ui.stepper`): Library → Packer (form, batch table, covers grid, raw `packer.json`)
+- [x] **G4** (L) Wizard (`ui.stepper`): Library → Packer (form, batch table, covers grid, raw `packer.json`)
       → Convertor (KCC form) → Metadata (series / volumes / chapter titles, raw YAML) → Review & Run
-- [ ] **G5** (S) Kind selector (Manga / Comic) driving the convertor preset (**K1**) and `packer.json` `kind` (**K2**)
+- [x] **G5** (S) Kind selector (Manga / Comic) driving the convertor preset (**K1**) and `packer.json` `kind` (**K2**)
 - [ ] **G6** (M) Projects page (create from folder, duplicate, delete) + run history page
 - [ ] **G7** (M) Volume previews: packed dirs + covers, generated `.kepub.epub`, injected metadata
 - [ ] **G8** (S) Packaging & docs: `uv run manga-gui` on the host (binds 127.0.0.1); keep `gui/` (NiceGUI)
