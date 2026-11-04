@@ -1,6 +1,10 @@
 """Simple CLI: iterate volume directories under a root and generate kepub.epub files.
 
-Usage: python -m convertor <root_dir> [--force-regen] [--dry-run]
+Usage: python -m convertor <root_dir> [--preset {manga,comic}] [--force-regen]
+       [--dry-run]
+
+``--preset`` picks the base KCC settings (``manga`` = right-to-left, the
+default; ``comic`` = left-to-right). Any explicit KCC flag overrides the preset.
 """
 
 from __future__ import annotations
@@ -14,7 +18,12 @@ from pathlib import Path
 import shtab
 
 from convertor.exit_codes import CLI_ERROR, SUCCESS
-from convertor.kcc_adapter import KCCSettings, convert_volume
+from convertor.kcc_adapter import (
+    DEFAULT_PRESET,
+    PRESETS,
+    KCCSettings,
+    convert_volume,
+)
 from packer.cli import add_version_arg, setup_logging
 
 logger = logging.getLogger("convertor")
@@ -54,55 +63,69 @@ def _build_parser() -> argparse.ArgumentParser:
         help="explicit log level (overrides --verbose)",
     )
 
-    kcc = p.add_argument_group("KCC settings")
+    kcc = p.add_argument_group(
+        "KCC settings",
+        "Unset flags take their value from --preset; explicit flags override it.",
+    )
+    kcc.add_argument(
+        "--preset",
+        choices=sorted(PRESETS),
+        default=DEFAULT_PRESET,
+        help="base KCC settings: manga = right-to-left reading, comic = "
+        "left-to-right reading; both keep colour on (default: manga)",
+    )
+    # Every flag below defaults to None so _build_settings can tell "not given"
+    # apart from an explicit value and fall back to the preset.
     kcc.add_argument(
         "--profile",
-        default="KoLC",
-        help="KCC device profile (default: KoLC = Kobo Libra Colour)",
+        default=None,
+        help="KCC device profile (preset default: KoLC = Kobo Libra Colour)",
     )
     kcc.add_argument(
         "--manga-style",
-        default=True,
+        default=None,
         action=argparse.BooleanOptionalAction,
-        help="manga reading direction, right-to-left (default: on)",
+        help="manga reading direction, right-to-left "
+        "(preset default: on for manga, off for comic)",
     )
     kcc.add_argument(
         "--hq",
-        default=True,
+        default=None,
         action=argparse.BooleanOptionalAction,
-        help="high-quality mode (default: on)",
+        help="high-quality mode (preset default: on)",
     )
     kcc.add_argument(
         "--forcecolor",
-        default=True,
+        default=None,
         action=argparse.BooleanOptionalAction,
-        help="force colour output (default: on)",
+        help="force colour output (preset default: on)",
     )
     kcc.add_argument(
         "--rotation",
         type=int,
-        default=2,
+        default=None,
         choices=[0, 1, 2, 3],
-        help="page rotation mode: 0=none, 1=90CW, 2=90CCW, 3=180 (default: 2)",
+        help="page rotation mode: 0=none, 1=90CW, 2=90CCW, 3=180 (preset default: 2)",
     )
     kcc.add_argument(
         "--cropping",
         type=int,
-        default=2,
+        default=None,
         choices=[0, 1, 2],
-        help="cropping mode: 0=off, 1=safe, 2=aggressive (default: 2)",
+        help="cropping mode: 0=off, 1=safe, 2=aggressive (preset default: 2)",
     )
     kcc.add_argument(
         "--upscale",
-        default=True,
+        default=None,
         action=argparse.BooleanOptionalAction,
-        help="upscale images smaller than device resolution (default: on)",
+        help="upscale images smaller than device resolution (preset default: on)",
     )
     kcc.add_argument(
         "--blackborders",
-        default=False,
+        default=None,
         action=argparse.BooleanOptionalAction,
-        help="fill remaining border bands with black instead of white (default: off)",
+        help="fill remaining border bands with black instead of white "
+        "(preset default: off)",
     )
     add_version_arg(p, "convertor")
     shtab.add_argument_to(p, "--print-completion")
@@ -110,16 +133,21 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _build_settings(args: argparse.Namespace) -> KCCSettings:
-    return KCCSettings(
-        profile=args.profile,
-        hq=args.hq,
-        rotation=args.rotation,
-        manga_style=args.manga_style,
-        forcecolor=args.forcecolor,
-        cropping=args.cropping,
-        upscale=args.upscale,
-        blackborders=args.blackborders,
-    )
+    """Start from the ``--preset`` settings and apply every explicit KCC flag.
+
+    A flag left unset on the command line is ``None`` and keeps the preset
+    value; any other value (including ``False`` from ``--no-*``) overrides it.
+    """
+    preset = getattr(args, "preset", None) or DEFAULT_PRESET
+    overrides = {
+        field: value
+        for field in KCCSettings._fields
+        if (value := getattr(args, field, None)) is not None
+    }
+    settings = PRESETS[preset]._replace(**overrides)
+    direction = "right-to-left" if settings.manga_style else "left-to-right"
+    logger.info("Reading direction: %s (%s preset)", direction, preset)
+    return settings
 
 
 def _convert_one(

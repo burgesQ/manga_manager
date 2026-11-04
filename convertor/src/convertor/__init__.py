@@ -9,10 +9,10 @@ to invoking the `kcc` CLI via subprocess when import-based execution is not avai
 
 from pathlib import Path
 
-from .kcc_adapter import KCCSettings
+from .kcc_adapter import PRESETS, KCCSettings
 from .kcc_adapter import convert_volume as _convert_volume
 
-__all__ = ["convert_volume", "KCCSettings"]
+__all__ = ["convert_volume", "KCCSettings", "PRESETS"]
 
 
 def convert_volume(

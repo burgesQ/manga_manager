@@ -75,6 +75,20 @@ class KCCSettings(NamedTuple):
     blackborders: bool = False
 
 
+#: Named KCC setting presets selectable with ``convertor --preset``.
+#:
+#: - ``manga``: the historical defaults — colour, right-to-left reading
+#:   (``--manga-style``), Kobo Libra Colour profile.
+#: - ``comic``: identical except ``manga_style=False`` so KCC writes a
+#:   left-to-right page progression. Colour output is kept.
+PRESETS: dict[str, KCCSettings] = {
+    "manga": KCCSettings(),
+    "comic": KCCSettings(manga_style=False),
+}
+
+DEFAULT_PRESET = "manga"
+
+
 class KCCAdapter:
     """Builds arguments and runs the KCC module.
 
