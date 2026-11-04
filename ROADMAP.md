@@ -60,6 +60,11 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **convertor** → `*.k
 - [ ] **E13** 🐞 (S) `_chapters_map` does `int(number)`, so chapter files with ranged numbers
       (e.g. `0-1` in `metadatas/chapters_jjk.yaml`) fail to load; accept / skip non-integer numbers
 
+- [ ] **E14** 🐞 (S) `inject` silently skips freshly converted EPUBs: KCC always writes `dc:title` +
+      `dc:creator`, and `EPUBMetadata.has_metadata()` treats that as "already injected", so the
+      packer → convertor → editor pipeline needs `--force`. Only treat the editor's own marker
+      (`calibre:series`) as "has metadata"
+
 ---
 
 ## Convertor
