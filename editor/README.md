@@ -79,6 +79,10 @@ uv run editor dump ./Berserk                            # print to stdout
 uv run editor dump ./Berserk --output current.yaml     # save to file
 ```
 
+When the EPUB tags contain `Comic` (or `Manga`), the dump also emits
+`kind: comic` (or `kind: manga`); the tag is kept in `genre` as-is, and a
+re-inject does not duplicate it.
+
 ### `clear` — remove all custom metadata
 
 ```console
@@ -94,6 +98,10 @@ series: "Berserk"
 author: "Kentaro Miura"
 publisher: "Dark Horse Comics"
 language: "en"          # BCP 47; default "en-US" if omitted
+kind: "manga"           # optional: manga | comic (see below)
+genre:                  # optional: written as dc:subject tags
+  - Seinen
+  - Dark Fantasy
 
 volumes:
   - number: 1
@@ -110,6 +118,22 @@ volumes:
 ```
 
 See `metadatas/` for real-world examples.
+
+### `kind`: manga vs comic
+
+`kind` is optional and accepts `manga` or `comic` (anything else makes `inject`
+fail before touching any file).
+
+| `kind` | Tag added to `dc:subject` |
+|---|---|
+| *(absent)* | none: tags are exactly `genre` (historical behaviour) |
+| `manga` | `Manga` |
+| `comic` | `Comic` |
+
+The tag is appended after the `genre` entries and skipped if `genre` already
+contains it (case-insensitive). `editor` never changes the reading direction:
+KCC writes it into the EPUB spine, so pick it at conversion time with
+`convertor --preset manga|comic` (right-to-left vs left-to-right).
 
 ---
 

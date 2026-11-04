@@ -13,6 +13,14 @@ from .exit_codes import ERROR, SUCCESS
 
 logger = logging.getLogger(__name__)
 
+#: ``kind`` value (top-level metadata YAML key) → ``dc:subject`` tag it adds.
+#: Only the tag is written: the reading direction itself is set by KCC in the
+#: spine (``convertor --preset manga|comic``) and is never touched here.
+KIND_TAGS: dict[str, str] = {
+    "manga": "Manga",
+    "comic": "Comic",
+}
+
 
 def parse_volume_number(filename: str) -> int | None:
     """Extract volume number from filename.
@@ -104,6 +112,32 @@ def _resolve_chapter_titles(
         logger.info(f"Loaded {len(titles)} inline chapter title(s)")
         return titles
 
+    return None
+
+
+def _apply_kind_tag(tags: list[str] | None, kind: str | None) -> list[str] | None:
+    """Return ``tags`` with the tag for ``kind`` appended when not yet present.
+
+    The comparison is case-insensitive so a ``genre`` list that already holds
+    ``Comic`` / ``comic`` is not duplicated. ``kind=None`` returns ``tags``
+    unchanged (absent ``kind`` keeps the historical behaviour exactly).
+    """
+    if kind is None:
+        return tags
+    kind_tag = KIND_TAGS[kind]
+    merged = list(tags or [])
+    if kind_tag.casefold() not in {str(t).casefold() for t in merged}:
+        merged.append(kind_tag)
+    return merged
+
+
+def _kind_from_tags(tags: list[str] | None) -> str | None:
+    """Return the ``kind`` whose tag appears first in ``tags``, or ``None``."""
+    by_tag = {tag.casefold(): kind for kind, tag in KIND_TAGS.items()}
+    for tag in tags or []:
+        kind = by_tag.get(str(tag).casefold())
+        if kind is not None:
+            return kind
     return None
 
 
@@ -208,6 +242,10 @@ def inject_metadata(
 ):
     """Inject metadata into EPUB files from YAML configuration.
 
+    An optional top-level ``kind`` (``manga`` / ``comic``) adds the matching
+    ``Manga`` / ``Comic`` tag to ``dc:subject`` alongside ``genre``; any other
+    value is an error. Without ``kind`` the tags are exactly ``genre``.
+
     Args:
         path: Either a single EPUB file or a directory containing EPUBs.
         yaml_path: Path to the YAML metadata file.
@@ -239,10 +277,18 @@ def inject_metadata(
         logger.error(f"Chapters file not found: {e}")
         return ERROR
 
+    kind = metadata.get("kind")
+    if kind is not None and kind not in KIND_TAGS:
+        logger.error(
+            f"Invalid kind {kind!r} in {yaml_path.name}: "
+            f"must be one of {', '.join(KIND_TAGS)}"
+        )
+        return ERROR
+
     series_name = metadata.get("series")
     author = metadata.get("author")
     publisher_data = metadata.get("publisher") or {}
-    tags: list[str] | None = metadata.get("genre") or None
+    tags = _apply_kind_tag(metadata.get("genre") or None, kind)
     language = metadata.get("language") or _LOCALE_LANGUAGE.get(locale, "en-US")
     volumes_data = {v["number"]: v for v in metadata.get("volumes", [])}
     publisher = (
@@ -255,6 +301,8 @@ def inject_metadata(
     logger.info(f"Series: {series_name}")
     logger.info(f"Author: {author}")
     logger.info(f"Locale: {locale} → publisher={publisher}, language={language}")
+    if kind is not None:
+        logger.info(f"Kind: {kind}")
     logger.info(f"Tags: {tags}")
 
     success_count = 0
@@ -382,6 +430,12 @@ def dump_metadata(path: Path, output_path: Path | None = None, locale: str = "en
         "series": series_name or "Unknown Series",
         "author": author or "Unknown Author",
     }
+
+    # Emit `kind` when its tag is present; the tag also stays in `genre` so the
+    # dumped list is verbatim (re-inject de-duplicates it, see _apply_kind_tag).
+    kind = _kind_from_tags(genre)
+    if kind:
+        output_data["kind"] = kind
 
     if genre:
         output_data["genre"] = genre
