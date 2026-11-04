@@ -1,0 +1,26 @@
+.git/
+.github/
+.devcontainer/
+.claude/
+.roadmap-batch/
+.venv/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+dist/
+build/
+**/*.egg-info/
+# Local manga libraries / scratch outputs
+Manga/
+Series/
+Test/
+Test.bck/
+*.cbz
+*.epub
+_packer
+_editor
+_convertor
