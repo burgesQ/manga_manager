@@ -119,8 +119,8 @@ YAML) stay the source of truth, the GUI edits them in place.
 - [x] **G4** (L) Wizard (`ui.stepper`): Library → Packer (form, batch table, covers grid, raw `packer.json`)
       → Convertor (KCC form) → Metadata (series / volumes / chapter titles, raw YAML) → Review & Run
 - [x] **G5** (S) Kind selector (Manga / Comic) driving the convertor preset (**K1**) and `packer.json` `kind` (**K2**)
-- [ ] **G6** (M) Projects page (create from folder, duplicate, delete) + run history page
-- [ ] **G7** (M) Volume previews: packed dirs + covers, generated `.kepub.epub`, injected metadata
+- [x] **G6** (M) Projects page (create from folder, duplicate, delete) + run history page
+- [x] **G7** (M) Volume previews: packed dirs + covers, generated `.kepub.epub`, injected metadata
 - [x] **G8** (S) Packaging & docs: `uv run manga-gui` / `make gui` on the host (binds 127.0.0.1); keep `gui/` (NiceGUI)
       out of the Docker image, which stays CLI-only (`uv sync --package packer --package editor --package convertor`,
       smoke test asserts `nicegui` is not importable); `make type-check` / CI mypy + coverage cover `manga_gui`;

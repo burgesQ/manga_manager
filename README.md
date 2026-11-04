@@ -256,8 +256,11 @@ make gui                        # same thing
 
 **What it does:**
 
-- **Projects** (`/`): list of projects and a *New project* form (name + source folder).
-- **Project wizard** (`/project/<slug>`), five steps:
+- **Projects** (`/`): project cards with last-run status, open / duplicate / delete, and a
+  *New project* form that prefills serie, pattern and kind from an existing `packer.json`.
+- **History** (`/project/<slug>/history`): past runs with per-step exit codes, command
+  lines and full logs.
+- **Project wizard** (`/project/<slug>`), six steps:
   1. **Library**: name, kind (Manga / Comic), source and destination folders, and a
      scan of the `.cbz` files showing detected chapters, unmatched files and duplicates.
   2. **Packer**: serie, pattern / regexes, workers, volumes (single volume, batch spec
@@ -268,6 +271,8 @@ make gui                        # same thing
      raw YAML editor), chapters YAML, locale, `--force`.
   5. **Review & Run**: pre-flight checks, a checkbox per step, resolved paths, the
      equivalent shell commands, then *Dry-run* / *Run* / *Cancel* with live logs.
+  6. **Volumes**: packed volume folders with cover and chapter count, generated
+     `.kepub.epub` files and their injected metadata (refreshed after every run).
 
 **Design:** the real config files (`packer.json`, batch CSV, metadata / chapters YAML)
 stay the source of truth: a project only points to them, so the CLIs keep working

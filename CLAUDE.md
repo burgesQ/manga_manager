@@ -135,8 +135,10 @@ gui/src/manga_gui/
 ├── validation.py   # pre-flight Issues, reusing packer / editor loaders
 ├── scan.py         # .cbz → chapter matches preview, volume dirs, EPUB listing
 ├── forms.py        # UI-free wizard helpers: batch rows, packer.json / YAML edits, KCC values
-├── pages/          # projects.py (`/`), project.py (`/project/{slug}` 5-step ui.stepper)
-├── components/     # batch_table, covers_grid, json_yaml_editor (FileEditor), kcc_form, log_panel
+├── library.py      # UI-free: folder detection / prefill, create / duplicate project, run summaries
+├── volumes.py      # UI-free: volume previews + cached EPUB metadata reads
+├── pages/          # projects.py (`/`), history.py (`/project/{slug}/history`), project.py (`/project/{slug}` 6-step ui.stepper)
+├── components/     # previews (VolumePreviews), batch_table, covers_grid, json_yaml_editor (FileEditor), kcc_form, log_panel
 └── py.typed
 ```
 
@@ -149,7 +151,7 @@ Key design choices:
 - **NiceGUI drops page modules from `sys.modules` on teardown**: `gui_user` saves and restores the `manga_gui*` entries, otherwise later imports create new module/class objects and `isinstance` checks break.
 - `gui/tests/` has no `__init__.py` (same rule as convertor).
 
-Test fixtures: `gui/tests/conftest.py` exposes `make_project`, `make_library`, `write_json`, `write_yaml`, `py_cmd`, `gui_store`, `gui_user`.
+Test fixtures: `gui/tests/conftest.py` exposes `make_project`, `make_library`, `write_json`, `write_yaml`, `py_cmd`, `gui_store`, `gui_user`, `make_epub`, `make_volume_dir`.
 
 ---
 
