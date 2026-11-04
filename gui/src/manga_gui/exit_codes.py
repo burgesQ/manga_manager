@@ -1,0 +1,2 @@
+SUCCESS = 0
+CLI_ERROR = 2
