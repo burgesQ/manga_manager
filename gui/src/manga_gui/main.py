@@ -12,6 +12,7 @@ from nicegui import ui
 from packer.cli import add_version_arg, setup_logging
 
 from .exit_codes import CLI_ERROR, SUCCESS
+from .pages import register_pages
 from .store import Store
 
 logger = logging.getLogger(__name__)
@@ -72,18 +73,6 @@ def _validate_args(args: argparse.Namespace) -> None:
             raise _CLIError
 
 
-def _register_pages(store: Store) -> None:
-    """Register the NiceGUI pages (placeholder until the wizard pages land)."""
-
-    @ui.page("/")
-    def index() -> None:
-        ui.label(APP_TITLE).classes("text-h4")
-        projects = store.list_projects()
-        ui.label(f"{len(projects)} project(s) in {store.projects_dir}")
-        for project in projects:
-            ui.label(f"{project.name} ({project.kind.value}) — {project.source}")
-
-
 def main(argv: list[str] | None = None) -> int:
     """Command-line entry point for the ``manga-gui`` tool."""
     args = _build_parser().parse_args(argv)
@@ -95,7 +84,7 @@ def main(argv: list[str] | None = None) -> int:
 
     store = Store(args.data_dir)
     logger.info("projects: %s — runs: %s", store.projects_dir, store.runs_dir)
-    _register_pages(store)
+    register_pages(store)
     ui.run(
         host=args.host,
         port=args.port,

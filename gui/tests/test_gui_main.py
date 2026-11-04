@@ -14,7 +14,7 @@ from manga_gui.exit_codes import CLI_ERROR, SUCCESS
 def fake_run(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
     calls: list[dict[str, Any]] = []
     monkeypatch.setattr(gui_main.ui, "run", lambda **kw: calls.append(kw))
-    monkeypatch.setattr(gui_main, "_register_pages", lambda store: None)
+    monkeypatch.setattr(gui_main, "register_pages", lambda store: None)
     return calls
 
 
