@@ -35,7 +35,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--host",
         default=DEFAULT_HOST,
-        help=f"interface to bind (default: {DEFAULT_HOST}; use 0.0.0.0 in Docker)",
+        help=f"interface to bind (default: {DEFAULT_HOST}, local only)",
     )
     p.add_argument(
         "--port",

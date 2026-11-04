@@ -7,8 +7,8 @@ Default layout (XDG):
 - runs: ``$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}``
   (``~/.local/state/...`` when unset)
 
-With an explicit ``data_dir`` (``manga-gui --data-dir``, tests, Docker) both live
-under it: ``<data_dir>/projects`` and ``<data_dir>/runs``.
+With an explicit ``data_dir`` (``manga-gui --data-dir``, tests, alternative
+profile dirs) both live under it: ``<data_dir>/projects`` and ``<data_dir>/runs``.
 """
 
 from __future__ import annotations
