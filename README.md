@@ -1,5 +1,16 @@
 # manga_manager
 
+[![CI](https://github.com/burgesQ/manga_manager/actions/workflows/ci.yml/badge.svg)](https://github.com/burgesQ/manga_manager/actions/workflows/ci.yml)
+[![Docker](https://github.com/burgesQ/manga_manager/actions/workflows/docker.yml/badge.svg)](https://github.com/burgesQ/manga_manager/actions/workflows/docker.yml)
+[![CodeQL](https://github.com/burgesQ/manga_manager/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/burgesQ/manga_manager/security/code-scanning)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Imports: isort](https://img.shields.io/badge/%20imports-isort-%231674b1?labelColor=ef8336)](https://pycqa.github.io/isort/)
+[![mypy: checked](https://img.shields.io/badge/mypy-checked-2a6db2)](https://mypy-lang.org/)
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Codespaces-open-181717?logo=github)](https://codespaces.new/burgesQ/manga_manager)
+
 A suite of CLI tools to build a manga library for Kobo e-readers — from raw chapter archives to polished `.kepub.epub` files with full metadata.
 
 **Platform:** Linux (tested on Linux Mint 22.3 / Debian 13) · **Python:** 3.12+ · **Package manager:** [uv](https://docs.astral.sh/uv/)
@@ -70,6 +81,21 @@ uv run packer --help
 uv run editor --help
 uv run convertor --help
 ```
+
+### Docker
+
+A prebuilt image with all three CLIs (and KCC) is published to GHCR on every push to
+`main`. Mount your library and run as your own user so the generated files are not
+owned by root:
+
+```bash
+docker run --rm -it --user "$(id -u):$(id -g)" \
+  -v "$PWD/Manga:/data" -w /data \
+  ghcr.io/burgesq/manga_manager convertor ./volumes --dry-run
+```
+
+The same image backs the dev container: open the repo in **GitHub Codespaces** (badge
+above) or with VS Code *Dev Containers* to edit, lint and test without a local setup.
 
 ---
 
