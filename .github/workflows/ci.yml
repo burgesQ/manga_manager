@@ -54,8 +54,11 @@ jobs:
       - name: Run isort (check only)
         run: uv run isort --profile black --check-only . || true
 
-      - name: Run mypy
+      - name: Run mypy (packer)
         run: cd packer && uv run mypy --package packer
+
+      - name: Run mypy (manga_gui)
+        run: cd gui && uv run mypy --package manga_gui
 
       # Optional: use reviewdog to report linter findings as PR comments/annotations.
       # Uncomment and configure the following step if you want reviewdog annotations.
@@ -93,7 +96,7 @@ jobs:
       - name: Run tests (packer only ATM)
         run: |
           # Run the test suite for all packages in the repository
-          uv run pytest --cov=packer --cov=convertor --cov=editor --cov-report=html . -q
+          uv run pytest --cov=packer --cov=convertor --cov=editor --cov=manga_gui --cov-report=html . -q
 
       - name: Upload coverage
         if: always()
