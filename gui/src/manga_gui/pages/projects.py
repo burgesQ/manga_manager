@@ -6,18 +6,32 @@
 - a **New project** form: name, kind and source folder. The folder is inspected as
   it is typed (:func:`~manga_gui.library.detect_folder`): an existing
   ``packer.json`` prefills ``packer.config`` / ``serie`` / ``pattern`` / ``kind``,
-  and a batch file (``batch_file`` key or ``.batch``) is reported.
+  and a batch file (``batch_file`` key or ``.batch``) is reported. With a library
+  root set, a **From library** select lists its series folders: picking one fills
+  the source and prefills the config files of the matching metadata group;
+- a **Library** card: library root and metadata dir (saved settings) and an
+  **Import…** dialog creating projects from them (:mod:`manga_gui.discovery`).
 
-The logic lives in :mod:`manga_gui.library`; this module only builds widgets.
+The logic lives in :mod:`manga_gui.library` / :mod:`manga_gui.discovery`; this
+module only builds widgets.
 """
 
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 from nicegui import ui
 
+from ..discovery import (
+    ImportCandidate,
+    apply_import,
+    candidate_for_source,
+    describe_candidate,
+    find_series_dirs,
+    plan_import,
+)
 from ..forms import STATUS_COLORS, parse_path
 from ..library import (
     create_project,
@@ -26,7 +40,7 @@ from ..library import (
     duplicate_project,
     last_run_summary,
 )
-from ..models import Kind, Project
+from ..models import Kind, Project, Settings
 from ..store import Store
 
 logger = logging.getLogger(__name__)
@@ -43,12 +57,16 @@ class ProjectsPage:
     def __init__(self, store: Store) -> None:
         self.store = store
         self._target: Project | None = None
+        self._candidates: dict[str, tuple[Any, ImportCandidate]] = {}
+        self._library_candidate: ImportCandidate | None = None
 
     def build(self) -> None:
         ui.label(APP_TITLE).classes("text-h4")
         self._build_dialogs()
+        self._build_import_dialog()
         self.project_list()
         self._build_new_form()
+        self._build_library_card()
 
     # -- list ---------------------------------------------------------------
 
@@ -183,6 +201,12 @@ class ProjectsPage:
 
     def _build_new_form(self) -> None:
         ui.label("New project").classes("text-h6 q-mt-lg")
+        self.new_library = (
+            ui.select({}, label="From library", on_change=self._on_library)
+            .classes("w-96")
+            .mark("new-library")
+        )
+        self._refresh_library_options()
         with ui.row().classes("items-end gap-2"):
             self.new_name = ui.input("Name").classes("w-64").mark("new-name")
             self.new_source = (
@@ -209,6 +233,32 @@ class ProjectsPage:
                 color = "text-negative" if line.startswith("Error") else "text-grey-7"
                 ui.label(line).classes(f"text-sm {color}")
 
+    def _refresh_library_options(self) -> None:
+        root = self.store.effective_settings().library_root
+        series = find_series_dirs(root) if root is not None else []
+        self.new_library.set_options({str(s.path): s.label for s in series})
+        self.new_library.set_visibility(root is not None)
+
+    def _on_library(self, e: Any) -> None:
+        if not e.value:
+            return
+        source = Path(e.value)
+        self.new_source.value = str(source)  # runs the folder detection
+        settings = self.store.effective_settings()
+        candidate = candidate_for_source(
+            source, settings.metadata_dir, settings.library_root, self.store
+        )
+        self._library_candidate = candidate
+        if candidate is None:
+            return
+        if not self.new_name.value:
+            self.new_name.value = candidate.name
+        self.new_kind.value = candidate.kind.value
+        with self.detect_box:
+            for line in describe_candidate(candidate):
+                color = "text-warning" if line.startswith("Warning") else "text-grey-7"
+                ui.label(line).classes(f"text-sm {color}")
+
     def _create(self) -> None:
         try:
             project = create_project(
@@ -216,11 +266,132 @@ class ProjectsPage:
                 str(self.new_name.value or ""),
                 str(self.new_source.value or ""),
                 kind=Kind(self.new_kind.value or Kind.MANGA.value),
+                candidate=self._library_candidate,
             )
         except (ValueError, OSError) as e:
             ui.notify(f"Not created: {e}", type="negative")
             return
         ui.navigate.to(f"/project/{project.slug}")
+
+    # -- library: settings + import ------------------------------------------
+
+    def _build_library_card(self) -> None:
+        settings = self.store.effective_settings()
+        with ui.card().classes("w-full q-mt-lg").mark("library-card"):
+            ui.label("Library").classes("text-h6")
+            ui.label(
+                "Series folders (<root>/<LANG>/<serie>) and per-series files "
+                "(packer_<key>.json, <key>.yaml, chapters_<key>.yaml, "
+                "vols_<key>.csv). Import only writes project profiles."
+            ).classes("text-grey-7 text-sm")
+            with ui.row().classes("items-end gap-2"):
+                self.library_root = (
+                    ui.input("Library root", value=_path_text(settings.library_root))
+                    .classes("w-96")
+                    .mark("library-root")
+                )
+                self.metadata_dir = (
+                    ui.input("Metadata dir", value=_path_text(settings.metadata_dir))
+                    .classes("w-96")
+                    .mark("metadata-dir")
+                )
+                ui.button("Save", icon="save", on_click=self._save_settings).mark(
+                    "library-save"
+                )
+                ui.button("Import…", icon="download", on_click=self._open_import).mark(
+                    "library-import"
+                )
+
+    def _form_settings(self) -> Settings:
+        return Settings(
+            library_root=parse_path(self.library_root.value),
+            metadata_dir=parse_path(self.metadata_dir.value),
+        )
+
+    def _save_settings(self) -> None:
+        try:
+            path = self.store.save_settings(self._form_settings())
+        except OSError as e:
+            ui.notify(f"Settings not saved: {e}", type="negative")
+            return
+        ui.notify(f"Saved {path}", type="positive")
+        self._refresh_library_options()
+
+    def _build_import_dialog(self) -> None:
+        with (
+            ui.dialog().props("full-width") as self.import_dialog,
+            ui.card().classes("w-full"),
+        ):
+            ui.label("Import projects").classes("text-h6")
+            self.import_box = ui.column().classes("w-full gap-1").mark("import-plan")
+            with ui.row().classes("items-center"):
+                self.import_overwrite = ui.switch("Overwrite existing projects").mark(
+                    "import-overwrite"
+                )
+                ui.button(
+                    "Import selected", icon="download", on_click=self._import
+                ).mark("import-confirm")
+                ui.button("Cancel", on_click=self.import_dialog.close).props("flat")
+
+    def _open_import(self) -> None:
+        settings = self._form_settings()
+        if settings.library_root is None and settings.metadata_dir is None:
+            ui.notify("Set a library root and / or a metadata dir", type="warning")
+            return
+        candidates = plan_import(
+            settings.metadata_dir, settings.library_root, self.store
+        )
+        self._candidates = {}
+        self.import_box.clear()
+        with self.import_box:
+            if not candidates:
+                ui.label("No series folder or metadata file found").classes(
+                    "text-grey-7"
+                )
+            with ui.grid(columns="auto auto auto auto auto 1fr").classes(
+                "w-full items-center gap-x-4 gap-y-1 text-sm"
+            ):
+                for header in ("", "name", "source", "files", "reason", "issues"):
+                    ui.label(header).classes("text-bold")
+                for cand in candidates:
+                    self._candidate_row(cand)
+        self.import_dialog.open()
+
+    def _candidate_row(self, cand: ImportCandidate) -> None:
+        check = ui.checkbox(value=cand.importable and not cand.exists).mark(
+            f"import-select-{cand.slug}"
+        )
+        if not cand.importable:
+            check.disable()
+        self._candidates[cand.slug] = (check, cand)
+        with ui.row().classes("items-center gap-1 no-wrap"):
+            ui.label(cand.name)
+            if cand.exists:
+                ui.badge("exists", color="orange").mark(f"import-exists-{cand.slug}")
+        ui.label(cand.label or "no source").classes(
+            "" if cand.importable else "text-negative"
+        )
+        ui.label(", ".join(cand.files) or "-")
+        ui.label(cand.reason).classes("text-grey-7")
+        ui.label("; ".join(cand.issues) or "-").classes(
+            "text-warning" if cand.issues else "text-grey-6"
+        )
+
+    def _import(self) -> None:
+        selected = [cand for check, cand in self._candidates.values() if check.value]
+        report = apply_import(
+            selected, self.store, overwrite=bool(self.import_overwrite.value)
+        )
+        self.import_dialog.close()
+        ui.notify(
+            f"Import: {report.summary()}",
+            type="negative" if report.failed else "positive",
+        )
+        self.project_list.refresh()
+
+
+def _path_text(path: Path | None) -> str:
+    return str(path) if path is not None else ""
 
 
 def register(store: Store) -> None:
