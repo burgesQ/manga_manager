@@ -128,12 +128,12 @@ YAML) stay the source of truth, the GUI edits them in place.
 Comics are **colour** and read **left-to-right**; current defaults assume manga
 (`--manga-style` → RTL).
 
-- [ ] **K1** (S) `convertor --preset {manga,comic}` — `comic` ⇒ `manga_style=False` (LTR), colour kept;
+- [x] **K1** (S) `convertor --preset {manga,comic}` — `comic` ⇒ `manga_style=False` (LTR), colour kept;
       explicit flags still override the preset
-- [ ] **K2** (S) `kind: manga|comic` key in `packer.json` (accepted by `load_config_file`), consumed by the GUI / pipeline
+- [x] **K2** (S) `kind: manga|comic` key in `packer.json` (accepted by `load_config_file`), consumed by the GUI / pipeline
 - [ ] **K3** (M) Comic filename pattern(s) in `NAMED_PATTERNS` (issue numbers, e.g. `Saga 001 (2012) (Digital).cbz`)
       — *blocked:* need real sample filenames (none in `~/Shelf` yet, manga only); also re-check P2 (comic `.cbz` often lack `ComicInfo.xml`)
-- [ ] **K4** (S) Metadata YAML `kind: comic` → `Comic` tag (`dc:subject`); reading direction stays KCC's job (spine)
+- [x] **K4** (S) Metadata YAML `kind: comic` → `Comic` tag (`dc:subject`); reading direction stays KCC's job (spine)
 - [ ] **K5** (S) Optional `--toc-label Issue` (packer dirs + editor relabel): `Issue 001 - <title>`
 
 ---
