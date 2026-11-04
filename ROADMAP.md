@@ -108,11 +108,11 @@ can be cancelled; the real config files (`packer.json`, batch CSV, metadata / ch
 YAML) stay the source of truth, the GUI edits them in place.
 
 - [x] **W1** Ship with Calibre web? (idea)
-- [ ] **G1** (M) Scaffold `gui/` workspace member (`manga_gui`, entry point `manga-gui`, `--host/--port/--data-dir`)
-- [ ] **G2** (M) Core, UI-free: `models` (Project + per-step options), `store` (XDG projects + run history),
+- [x] **G1** (M) Scaffold `gui/` workspace member (`manga_gui`, entry point `manga-gui`, `--host/--port/--data-dir`)
+- [x] **G2** (M) Core, UI-free: `models` (Project + per-step options), `store` (XDG projects + run history),
       `commands` (pure Project → argv per step), `validation` (wraps `load_config_file`,
       `parse_batch_file`, `load_yaml_metadata`, …), `scan` (cbz → chapter matches)
-- [ ] **G3** (M) Async subprocess `runner`: line streaming, progress parsed from existing log lines, cancel
+- [x] **G3** (M) Async subprocess `runner`: line streaming, progress parsed from existing log lines, cancel
 - [ ] **G4** (L) Wizard (`ui.stepper`): Library → Packer (form, batch table, covers grid, raw `packer.json`)
       → Convertor (KCC form) → Metadata (series / volumes / chapter titles, raw YAML) → Review & Run
 - [ ] **G5** (S) Kind selector (Manga / Comic) driving the convertor preset (**K1**) and `packer.json` `kind` (**K2**)
