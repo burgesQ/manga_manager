@@ -126,12 +126,15 @@ NiceGUI front-end to configure a series ("project") and run packer → convertor
 
 ```
 gui/src/manga_gui/
-├── main.py         # argparse (--host/--port/--data-dir/--loglevel) + _CLIError → ui.run()
-├── exit_codes.py   # SUCCESS = 0, CLI_ERROR = 2
-├── models.py       # Project, PackerOptions, KCCOptions, EditorOptions, Kind, slugify
+├── main.py         # argparse (--host/--port/--data-dir/--library-root/--metadata-dir/
+│                   #   --loglevel) + _CLIError → ui.run(); `import` subcommand
+├── exit_codes.py   # SUCCESS = 0, CLI_ERROR = 2, PROCESSING_ERROR = 6 (import write failures)
+├── models.py       # Project, PackerOptions, KCCOptions, EditorOptions, Settings, Kind, slugify
+├── discovery.py    # UI-free: find_series_dirs, find_metadata_groups, match_groups,
+│                   #   plan_import → ImportCandidate, apply_import → ImportReport
 ├── commands.py     # PURE: Project → list[StepCommand(step, argv, cwd)], .shell()
 ├── runner.py       # asyncio subprocess runner: line streaming, parse_progress, cancel
-├── store.py        # Store: project profiles + run history (XDG or --data-dir)
+├── store.py        # Store: project profiles + run history + settings.json (XDG or --data-dir)
 ├── validation.py   # pre-flight Issues, reusing packer / editor loaders
 ├── scan.py         # .cbz → chapter matches preview, volume dirs, EPUB listing
 ├── forms.py        # UI-free wizard helpers: batch rows, packer.json / YAML edits, KCC values
@@ -146,12 +149,14 @@ Key design choices:
 - **Steps run as subprocesses** (`sys.executable -m packer.main …`), never by calling `main()` in-process: every `main()` calls `setup_logging()` (clears root handlers), in-process calls cannot be cancelled, and packer uses threads. Logs stream from stderr; progress is parsed from existing log lines; cancel = SIGTERM then SIGKILL; a run stops at the first non-zero exit.
 - **Config files are the source of truth**: a project only points to `packer.json`, the batch CSV, the metadata / chapters YAML and stores GUI-only data (paths, KCC overrides, locale, enabled steps). File edits are validated by the CLI loaders (`load_config_file`, `load_yaml_metadata`, …) and written atomically.
 - **XDG store**: projects in `$XDG_CONFIG_HOME/manga_manager/projects/<slug>.json`, runs in `$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}`; `--data-dir` puts both under one dir (tests).
+- **Settings** (`library_root`, `metadata_dir`): `<config>/settings.json` via `Store.load_settings()` / `save_settings()`; `--library-root` / `--metadata-dir` are session overrides (`Store(settings_overrides=…)`, read with `effective_settings()`; a GUI Save replaces them).
+- **`manga-gui import`** (subcommand; no subcommand = serve): `discovery.plan_import(metadata_dir, library_root, store)` matches `packer_<key>.json` / `<key>.yaml` / `chapters_<key>.yaml` / `vols_<key>.csv` groups to series folders (`<root>/<LANG>/<dir>`) by rule strength (covers inside the folder > serie name > key == folder name > key initials > folder-name prefix; one folder per group, strongest pairs first), logs the plan table, then `apply_import` writes profiles only (never the user's files; existing slugs skipped unless `--overwrite`). The Projects page reuses it (Library card + Import dialog, "From library" select in the New project form).
 - **UI-free logic lives outside `pages/` / `components/`** (`forms.py`, `commands.py`, …) so it is unit-tested without NiceGUI.
 - **UI tests** use NiceGUI's `user_simulation()` driven by the anyio pytest plugin: mark tests `@pytest.mark.anyio` and take the `gui_user` fixture (`gui/tests/conftest.py`, pages registered on a `gui_store` under `tmp_path`). `nicegui.testing.user_plugin` is NOT registered (a `pytest_plugins` in a non-root conftest is an error).
 - **NiceGUI drops page modules from `sys.modules` on teardown**: `gui_user` saves and restores the `manga_gui*` entries, otherwise later imports create new module/class objects and `isinstance` checks break.
 - `gui/tests/` has no `__init__.py` (same rule as convertor).
 
-Test fixtures: `gui/tests/conftest.py` exposes `make_project`, `make_library`, `write_json`, `write_yaml`, `py_cmd`, `gui_store`, `gui_user`, `make_epub`, `make_volume_dir`.
+Test fixtures: `gui/tests/conftest.py` exposes `make_project`, `make_library`, `write_json`, `write_yaml`, `py_cmd`, `gui_store`, `gui_user`, `make_epub`, `make_volume_dir`, `fake_shelf` (library root + metadata dir mirroring the real layout, for discovery / import tests).
 
 ---
 
@@ -198,6 +203,7 @@ uv run editor clear ./volumes
 uv run convertor ./volumes [--preset manga|comic] [--force-regen] [--dry-run]
 uv run manga-gui [--port 8080] [--data-dir DIR]   # web UI on the host
 make gui                                          # same as `uv run manga-gui`
+uv run manga-gui import --library-root ~/Shelf --metadata-dir ./metadatas --dry-run
 ```
 
 > **Note:** CI runs all linters with `|| true` — they report issues but never fail the pipeline. Fix lint errors locally before pushing.

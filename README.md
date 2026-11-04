@@ -250,14 +250,28 @@ make gui                        # same thing
 |---|---|---|
 | `--host` | `127.0.0.1` | Interface to bind (local only by default) |
 | `--port` | `8080` | Port to listen on |
-| `--data-dir PATH` | XDG dirs | Store projects and runs under `PATH/projects` and `PATH/runs` |
+| `--data-dir PATH` | XDG dirs | Store projects, runs and settings under `PATH/projects`, `PATH/runs`, `PATH/settings.json` |
+| `--library-root PATH` | saved setting | Library root holding the series folders (this session only) |
+| `--metadata-dir PATH` | saved setting | Folder of `packer_<key>.json` / `<key>.yaml` / `chapters_<key>.yaml` / `vols_<key>.csv` (this session only) |
 | `--loglevel` / `--verbose` | `INFO` | Log level |
 | `--version` | | Print the version |
 
+**Import existing series** (`manga-gui import`): matches the per-series files of a
+metadata dir to the series folders of a library root (`<root>/<LANG>/<serie>/`) and
+creates one project profile per series. Your files are never modified; only profiles
+are written, and existing ones are skipped unless `--overwrite`.
+
+```console
+uv run manga-gui import --library-root ~/Shelf --metadata-dir ./metadatas --dry-run
+uv run manga-gui import --library-root ~/Shelf --metadata-dir ./metadatas --save-settings
+```
+
 **What it does:**
 
-- **Projects** (`/`): project cards with last-run status, open / duplicate / delete, and a
-  *New project* form that prefills serie, pattern and kind from an existing `packer.json`.
+- **Projects** (`/`): project cards with last-run status, open / duplicate / delete, a
+  *New project* form that prefills serie, pattern and kind from an existing `packer.json`
+  (or from a series folder picked in the library), and a *Library* card (library root,
+  metadata dir, *Import…* dialog doing the same as `manga-gui import`).
 - **History** (`/project/<slug>/history`): past runs with per-step exit codes, command
   lines and full logs.
 - **Project wizard** (`/project/<slug>`), six steps:
@@ -285,6 +299,7 @@ stream live and it can be cancelled; the run stops at the first failing step.
 |---|---|
 | Project profiles | `$XDG_CONFIG_HOME/manga_manager/projects/<slug>.json` (default `~/.config/manga_manager/projects/`) |
 | Run history (per-step argv, exit code, duration + full log) | `$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}` (default `~/.local/state/manga_manager/runs/`) |
+| Settings (library root, metadata dir) | `$XDG_CONFIG_HOME/manga_manager/settings.json` |
 
 See [`gui/README.md`](gui/README.md) for details.
 
