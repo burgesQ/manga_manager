@@ -24,3 +24,7 @@ Test.bck/
 _packer
 _editor
 _convertor
+# manga-gui runs on the host only: keep its sources out of the CLI image, but keep
+# its manifest so uv can still resolve the workspace.
+gui/*
+!gui/pyproject.toml
