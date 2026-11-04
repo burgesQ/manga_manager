@@ -100,7 +100,8 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **convertor** → `*.k
 
 ## GUI (`manga-gui`, NiceGUI)
 
-Local web UI (also runs in Docker / Codespaces) to set up and review every config file,
+Local web UI, run **on the host** (not in the container: it must see the real library
+paths), to set up and review every config file,
 path and option per series, then run packer → convertor → editor in sequence.
 Design notes: steps run as subprocesses (`python -m <pkg>.main`) so logs stream and runs
 can be cancelled; the real config files (`packer.json`, batch CSV, metadata / chapters
@@ -117,7 +118,8 @@ YAML) stay the source of truth, the GUI edits them in place.
 - [ ] **G5** (S) Kind selector (Manga / Comic) driving the convertor preset (**K1**) and `packer.json` `kind` (**K2**)
 - [ ] **G6** (M) Projects page (create from folder, duplicate, delete) + run history page
 - [ ] **G7** (M) Volume previews: packed dirs + covers, generated `.kepub.epub`, injected metadata
-- [ ] **G8** (S) Packaging: Dockerfile `EXPOSE 8080`, devcontainer `forwardPorts`, docker smoke test, docs
+- [ ] **G8** (S) Packaging & docs: `uv run manga-gui` on the host (binds 127.0.0.1); keep `gui/` (NiceGUI)
+      out of the Docker image, which stays CLI-only
 
 ---
 
@@ -130,7 +132,7 @@ Comics are **colour** and read **left-to-right**; current defaults assume manga
       explicit flags still override the preset
 - [ ] **K2** (S) `kind: manga|comic` key in `packer.json` (accepted by `load_config_file`), consumed by the GUI / pipeline
 - [ ] **K3** (M) Comic filename pattern(s) in `NAMED_PATTERNS` (issue numbers, e.g. `Saga 001 (2012) (Digital).cbz`)
-      — *blocked:* need real sample filenames; also re-check P2 (comic `.cbz` often lack `ComicInfo.xml`)
+      — *blocked:* need real sample filenames (none in `~/Shelf` yet, manga only); also re-check P2 (comic `.cbz` often lack `ComicInfo.xml`)
 - [ ] **K4** (S) Metadata YAML `kind: comic` → `Comic` tag (`dc:subject`); reading direction stays KCC's job (spine)
 - [ ] **K5** (S) Optional `--toc-label Issue` (packer dirs + editor relabel): `Issue 001 - <title>`
 
