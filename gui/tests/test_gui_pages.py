@@ -294,3 +294,60 @@ async def test_metadata_preview_and_save(
     gui_user.find(marker="metadata-save").click()
     await gui_user.should_see("Not saved")
     assert "kind: comic" in meta.read_text()
+
+
+def _metadata_project(store: Store, tmp_path: Path, write_yaml: Any, **editor: Any):
+    meta = write_yaml(tmp_path / "saga.yaml", {"series": "Saga", "volumes": []})
+    editor_opts = EditorOptions(metadata=meta, **editor)
+    return meta, _saved(store, tmp_path, editor=editor_opts)
+
+
+async def _go_to_step(user: User, name: str) -> None:
+    stepper = next(iter(user.find(ui.stepper).elements))
+    with user:
+        stepper.value = name
+    await asyncio.sleep(0.05)  # let the async on_value_change handler run
+
+
+async def test_metadata_autosave_off_keeps_file_until_save(
+    gui_user: User, gui_store: Store, tmp_path: Path, write_yaml
+) -> None:
+    meta, project = _metadata_project(gui_store, tmp_path, write_yaml)
+    await gui_user.open(f"/project/{project.slug}")
+    await _go_to_step(gui_user, "metadata")
+    _set_value(gui_user, "metadata-editor", "series: Saga\nauthor: BKV\n")
+    await gui_user.should_see("(unsaved changes)")
+    await _go_to_step(gui_user, "review")
+    assert "author" not in meta.read_text()
+    assert gui_store.load_project(project.slug).editor.autosave is False
+
+
+async def test_metadata_autosave_writes_on_step_change_and_apply(
+    gui_user: User, gui_store: Store, tmp_path: Path, write_yaml
+) -> None:
+    meta, project = _metadata_project(gui_store, tmp_path, write_yaml)
+    await gui_user.open(f"/project/{project.slug}")
+    await _go_to_step(gui_user, "metadata")
+    _set_value(gui_user, "metadata-autosave", True)
+    _set_value(gui_user, "metadata-editor", "series: Saga\nauthor: BKV\n")
+    await _go_to_step(gui_user, "review")
+    assert "author: BKV" in meta.read_text()
+    assert gui_store.load_project(project.slug).editor.autosave is True
+
+    _set_value(gui_user, "meta-kind", "comic")
+    gui_user.find("Apply to YAML editor").click()
+    await gui_user.should_see("YAML updated and saved")
+    assert "kind: comic" in meta.read_text()
+
+
+async def test_metadata_autosave_rejects_invalid_yaml_and_blocks_run(
+    gui_user: User, gui_store: Store, tmp_path: Path, write_yaml
+) -> None:
+    meta, project = _metadata_project(gui_store, tmp_path, write_yaml, autosave=True)
+    before = meta.read_text()
+    await gui_user.open(f"/project/{project.slug}")
+    _set_value(gui_user, "metadata-editor", "- not a mapping\n")
+    gui_user.find(marker="dry-run").click()
+    await gui_user.should_see("Run not started: fix the metadata YAML first")
+    assert meta.read_text() == before
+    assert gui_store.list_runs(project.slug) == []

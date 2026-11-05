@@ -41,10 +41,18 @@ class FileEditor:
         self._template = template
         self._on_loaded = on_loaded
         self._on_saved = on_saved
+        self._saved_text: str | None = None
+        """Text last loaded from / written to disk (``None``: nothing loaded yet)."""
+        self._status_text = ""
         with ui.column().classes("w-full gap-1"):
             self.status = ui.label().classes("text-caption text-grey-7")
             self.editor = (
-                ui.codemirror("", language=language, indent="  ")  # type: ignore[arg-type]
+                ui.codemirror(
+                    "",
+                    language=language,  # type: ignore[arg-type]
+                    indent="  ",
+                    on_change=lambda _: self._show_status(),
+                )
                 .classes("w-full h-96 border")
                 .mark(f"{marker}-editor")
             )
@@ -63,37 +71,59 @@ class FileEditor:
     @text.setter
     def text(self, value: str) -> None:
         self.editor.value = value
+        self._show_status()
+
+    @property
+    def dirty(self) -> bool:
+        """True when the editor holds changes not written to disk yet."""
+        return self._saved_text is not None and self.text != self._saved_text
+
+    def _show_status(self, text: str | None = None) -> None:
+        if text is not None:
+            self._status_text = text
+        suffix = " (unsaved changes)" if self.dirty else ""
+        self.status.text = self._status_text + suffix
 
     def load(self) -> None:
         """(Re)load the file; a missing file shows the template."""
         path = self._get_path()
         try:
-            self.text = read_text_or(path, self._template)
+            content = read_text_or(path, self._template)
         except OSError as e:
             ui.notify(f"Cannot read {path}: {e}", type="negative")
             return
+        self._saved_text = content
+        self.text = content
         if path is None:
-            self.status.text = "No file configured"
+            self._show_status("No file configured")
         elif path.is_file():
-            self.status.text = f"Editing {path}"
+            self._show_status(f"Editing {path}")
         else:
-            self.status.text = f"{path} does not exist yet: Save file creates it"
+            self._show_status(f"{path} does not exist yet: Save file creates it")
         if self._on_loaded is not None:
             self._on_loaded(self.text)
 
-    def save(self) -> None:
-        """Validate and write the editor content to the configured path."""
+    def save(self, *, quiet: bool = False) -> bool:
+        """Validate and write the editor content to the configured path.
+
+        Returns ``True`` on success. Errors are always notified; ``quiet`` only
+        drops the success notification (used by auto-save).
+        """
         path = self._get_path()
         if path is None:
             ui.notify("Set the file path first", type="warning")
-            return
+            return False
+        text = self.text
         try:
-            self._save(path, self.text)
+            self._save(path, text)
         except (ValueError, OSError) as e:
             ui.notify(f"Not saved: {e}", type="negative", multi_line=True)
-            return
+            return False
         logger.info("saved %s", path)
-        self.status.text = f"Editing {path}"
-        ui.notify(f"Saved {path}", type="positive")
+        self._saved_text = text
+        self._show_status(f"Editing {path}")
+        if not quiet:
+            ui.notify(f"Saved {path}", type="positive")
         if self._on_saved is not None:
-            self._on_saved(self.text)
+            self._on_saved(text)
+        return True
