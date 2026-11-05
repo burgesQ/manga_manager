@@ -152,3 +152,9 @@ def test_main_bad_chapter_range_returns_cli_error(tmp_path, capsys):
         "invalid --chapter-range '0-1..0-4' "
         "(chapter numbers must be integers, got '0-1')" in err
     )
+
+
+def test_batch_file_range_with_commas_keeps_every_chapter(tmp_path):
+    batch = tmp_path / "vols.csv"
+    batch.write_text("v01,1,3,5..8\nv02, 9..10 \n")
+    assert parse_batch_file(batch) == [(1, [1, 3, 5, 6, 7, 8]), (2, [9, 10])]

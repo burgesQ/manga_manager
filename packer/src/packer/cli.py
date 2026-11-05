@@ -191,13 +191,14 @@ def parse_batch_file(file_path: str) -> list[tuple[int, list[int]]]:
             if not ln or ln.startswith("#"):
                 continue
             where = f"{path.name}:{lineno}"
-            parts = [p.strip() for p in ln.split(",") if p.strip()]
-            if len(parts) < 2:
+            # Split on the first comma only: the range itself may contain commas
+            # ("v01,1,3,5..8"), which must not be dropped.
+            vol_spec, _, range_spec = (p.strip() for p in ln.partition(","))
+            if not vol_spec or not range_spec.strip(", "):
                 raise ValueError(
                     f"{where}: invalid batch line {ln!r} (expected 'VOLUME,RANGE', "
                     f"e.g. 'v01,1..8'; {_SKIP_LINE_HINT})"
                 )
-            vol_spec, range_spec = parts[0], parts[1]
             m = re.fullmatch(r"(?i)v?\s*0*([0-9]+)", vol_spec)
             if not m:
                 raise ValueError(
