@@ -6,8 +6,10 @@
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 
 # git + make: needed by the dev container (Codespaces) and `make lint/test`.
+# libglib2.0-0: KCC >= 12 imports PySide6.QtCore even from the kcc-c2e CLI, and
+# QtCore links against libglib-2.0 (missing from the slim base image).
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git make \
+    && apt-get install -y --no-install-recommends git make libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 ENV UV_COMPILE_BYTECODE=1 \
