@@ -42,20 +42,48 @@ def load_yaml_metadata(yaml_path: Path) -> dict:
         return yaml.safe_load(f)
 
 
-def _chapters_map(entries) -> dict[int, str]:
+def _chapter_number(value: object) -> int | None:
+    """Return ``value`` as a chapter number, or ``None`` if it is not an integer.
+
+    Accepts ints and ASCII digit strings (``12``, ``"12"``). Anything else —
+    ranged ids like ``0-1``, floats, booleans — is rejected.
+    """
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        if text.isascii() and text.isdigit():
+            return int(text)
+    return None
+
+
+def _chapters_map(entries, source: str | None = None) -> dict[int, str]:
     """Build a ``{chapter_number: title}`` map from a list of chapter entries.
 
     Each entry is a dict like ``{number: 1, title: "...", volume: 1}``; the
     ``volume`` key (and any extra) is ignored. Entries missing ``number`` or
-    ``title`` are skipped.
+    ``title`` are skipped. Entries whose ``number`` is not an integer (e.g. the
+    ranged ``0-1`` ids of a prequel volume) are skipped with a warning: TOC
+    labels are matched by integer chapter number, so they could never match.
+
+    ``source`` names the file the entries came from, for the warning only.
     """
+    where = f"{source}: " if source else ""
     titles: dict[int, str] = {}
     for entry in entries or []:
         number = entry.get("number")
         title = entry.get("title")
         if number is None or not title:
             continue
-        titles[int(number)] = str(title)
+        chapter = _chapter_number(number)
+        if chapter is None:
+            logger.warning(
+                f"{where}skipping chapter number {str(number)!r} (not an integer)"
+            )
+            continue
+        titles[chapter] = str(title)
     return titles
 
 
@@ -70,13 +98,14 @@ def load_chapters_yaml(yaml_path: Path) -> dict[int, str]:
             volume: 1   # optional, ignored here
     """
     data = load_yaml_metadata(yaml_path) or {}
-    return _chapters_map(data.get("chapters", []))
+    return _chapters_map(data.get("chapters", []), source=yaml_path.name)
 
 
 def _resolve_chapter_titles(
     chapters_path: Path | None,
     metadata: dict,
     yaml_dir: Path,
+    metadata_name: str | None = None,
 ) -> dict[int, str] | None:
     """Resolve the chapter-title map from the available sources.
 
@@ -86,7 +115,8 @@ def _resolve_chapter_titles(
       3. ``metadata["chapters"]`` — an inline chapters list (everything in one file).
 
     Returns ``None`` when no source is present. Raises ``FileNotFoundError`` if
-    an explicitly configured file path does not exist.
+    an explicitly configured file path does not exist. ``metadata_name`` names
+    the metadata file in warnings about skipped inline entries.
     """
     source = chapters_path
     if source is None and metadata.get("chapters_file"):
@@ -100,7 +130,7 @@ def _resolve_chapter_titles(
         return titles
 
     if metadata.get("chapters"):
-        titles = _chapters_map(metadata["chapters"])
+        titles = _chapters_map(metadata["chapters"], source=metadata_name)
         logger.info(f"Loaded {len(titles)} inline chapter title(s)")
         return titles
 
@@ -233,7 +263,7 @@ def inject_metadata(
 
     try:
         chapter_titles = _resolve_chapter_titles(
-            chapters_path, metadata, yaml_path.parent
+            chapters_path, metadata, yaml_path.parent, yaml_path.name
         )
     except FileNotFoundError as e:
         logger.error(f"Chapters file not found: {e}")

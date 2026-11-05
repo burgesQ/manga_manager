@@ -56,6 +56,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **E10** (M) Support `illustrator` / multi-role creators — real files (`boruto.yaml`) carry `illustrator:`, currently ignored; map to `dc:creator opf:role="art"`
 - [ ] **E11** (M) Selective / merge injection (`--only-missing`) — top up missing fields without overwriting everything (current inject is all-or-nothing gated on `has_metadata()`+`--force`)
 - [ ] **E12** (M) Embed EPUB cover from YAML/file (`book.set_cover`) — complements the convertor `Chapter 000/` cover hack (**C6**)
+- [x] **E13** 🐞 (S) Non-integer chapter numbers (e.g. the `0-1`..`0-4` prequel ids in `chapters_jjk.yaml`) crashed `_chapters_map` with `int()`, aborting `inject`. Fixed: such entries are skipped with one WARNING each naming the file and value; TOC labels are matched by integer chapter number, so they could never match anyway
 
 ---
 

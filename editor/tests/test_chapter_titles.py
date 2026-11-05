@@ -9,7 +9,7 @@ import pytest
 pytest.importorskip("ebooklib")
 
 from editor.cli import main
-from editor.editor_full import load_chapters_yaml
+from editor.editor_full import _chapters_map, load_chapters_yaml
 from editor.epub_metadata import EPUBMetadata
 
 
@@ -93,6 +93,49 @@ def test_load_chapters_yaml(make_yaml, tmp_path):
         1: "Special Grade Incident",
         2: "Deterrence",
     }
+
+
+def test_chapters_map_accepts_int_and_digit_string():
+    entries = [
+        {"number": 1, "title": "One"},
+        {"number": "12", "title": "Twelve"},
+    ]
+    assert _chapters_map(entries) == {1: "One", 12: "Twelve"}
+
+
+@pytest.mark.parametrize("bad", ["0-1", "16.1", 16.5, True, "", "abc"])
+def test_chapters_map_skips_non_integer_number(bad, caplog):
+    entries = [
+        {"number": bad, "title": "Prequel"},
+        {"number": 1, "title": "One"},
+    ]
+    with caplog.at_level("WARNING", logger="editor.editor_full"):
+        titles = _chapters_map(entries, source="chapters.yaml")
+    assert titles == {1: "One"}
+    assert (
+        f"chapters.yaml: skipping chapter number {str(bad)!r} (not an integer)"
+        in caplog.text
+    )
+
+
+def test_load_chapters_yaml_skips_ranged_ids(tmp_path, caplog):
+    # Mirrors metadatas/chapters_jjk.yaml: the "Jujutsu Kaisen 0" prequel
+    # uses ranged ids that YAML loads as strings ("0-1").
+    path = tmp_path / "chapters_jjk.yaml"
+    path.write_text(
+        "chapters:\n"
+        "- number: 0-1\n  title: The Cursed Child\n  volume: 0\n"
+        "- number: 0-2\n  title: Blacker and Blacker\n  volume: 0\n"
+        "- number: 1\n  title: Ryomen Sukuna\n  volume: 1\n"
+    )
+    with caplog.at_level("WARNING", logger="editor.editor_full"):
+        titles = load_chapters_yaml(path)
+    assert titles == {1: "Ryomen Sukuna"}
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert [r.getMessage() for r in warnings] == [
+        "chapters_jjk.yaml: skipping chapter number '0-1' (not an integer)",
+        "chapters_jjk.yaml: skipping chapter number '0-2' (not an integer)",
+    ]
 
 
 # --- CLI: editor inject --chapters -----------------------------------------
@@ -260,3 +303,65 @@ def test_inject_missing_chapters_file_key_errors(make_epub, make_yaml, tmp_path)
 
     rc = main(["inject", str(vol_dir), str(meta_yaml)])
     assert rc == 1
+
+
+def test_inject_chapters_with_ranged_ids_succeeds(
+    make_epub, make_yaml, tmp_path, capsys
+):
+    vol_dir = tmp_path / "vols"
+    vol_dir.mkdir()
+    make_epub(
+        vol_dir / "JJK v01.epub",
+        author=None,
+        toc_titles=["Chapter 000", "Chapter 001", "Chapter 002"],
+    )
+    meta_yaml = make_yaml(
+        tmp_path / "meta.yaml",
+        {"series": "JJK", "author": "Gege Akutami", "volumes": [{"number": 1}]},
+    )
+    chapters_yaml = tmp_path / "chapters_jjk.yaml"
+    chapters_yaml.write_text(
+        "chapters:\n"
+        "- number: 0-1\n  title: The Cursed Child\n  volume: 0\n"
+        "- number: 1\n  title: Ryomen Sukuna\n  volume: 1\n"
+        "- number: 2\n  title: For Myself\n  volume: 1\n"
+    )
+
+    rc = main(
+        ["inject", str(vol_dir), str(meta_yaml), "--chapters", str(chapters_yaml)]
+    )
+    assert rc == 0
+    assert _toc_titles(vol_dir / "JJK v01.epub") == [
+        "Chapter 000",
+        "Chapter 001 - Ryomen Sukuna",
+        "Chapter 002 - For Myself",
+    ]
+    assert EPUBMetadata(vol_dir / "JJK v01.epub").get_metadata()["series"] == "JJK"
+    err = capsys.readouterr().err
+    assert "chapters_jjk.yaml: skipping chapter number '0-1' (not an integer)" in err
+
+
+def test_inject_inline_chapters_warning_names_metadata_file(
+    make_epub, make_yaml, tmp_path, capsys
+):
+    vol_dir = tmp_path / "vols"
+    vol_dir.mkdir()
+    make_epub(vol_dir / "JJK v01.epub", toc_titles=["Chapter 001"])
+    meta_yaml = make_yaml(
+        tmp_path / "meta_jjk.yaml",
+        {
+            "series": "JJK",
+            "author": "Gege Akutami",
+            "volumes": [{"number": 1}],
+            "chapters": [
+                {"number": "0-1", "title": "The Cursed Child"},
+                {"number": 1, "title": "Ryomen Sukuna"},
+            ],
+        },
+    )
+
+    rc = main(["inject", str(vol_dir), str(meta_yaml)])
+    assert rc == 0
+    assert _toc_titles(vol_dir / "JJK v01.epub") == ["Chapter 001 - Ryomen Sukuna"]
+    err = capsys.readouterr().err
+    assert "meta_jjk.yaml: skipping chapter number '0-1' (not an integer)" in err
