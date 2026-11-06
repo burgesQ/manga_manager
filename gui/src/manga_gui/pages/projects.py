@@ -19,11 +19,13 @@ module only builds widgets.
 from __future__ import annotations
 
 import logging
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
 from nicegui import ui
 
+from ..components.header import PageHeader
 from ..discovery import (
     ImportCandidate,
     apply_import,
@@ -33,6 +35,7 @@ from ..discovery import (
     plan_import,
 )
 from ..forms import STATUS_COLORS, parse_path
+from ..help_texts import field_help
 from ..library import (
     create_project,
     describe_detection,
@@ -61,7 +64,7 @@ class ProjectsPage:
         self._library_candidate: ImportCandidate | None = None
 
     def build(self) -> None:
-        ui.label(APP_TITLE).classes("text-h4")
+        ui.label("Projects").classes("text-h4")
         self._build_dialogs()
         self._build_import_dialog()
         self.project_list()
@@ -133,8 +136,9 @@ class ProjectsPage:
         with ui.dialog() as self.duplicate_dialog, ui.card():
             self.duplicate_title = ui.label().classes("text-h6")
             self.duplicate_name = (
-                ui.input("New project name").classes("w-80").mark("duplicate-name")
+                ui.input("New project name *").classes("w-80").mark("duplicate-name")
             )
+            self.duplicate_name.tooltip(field_help("gui.name"))
             with ui.row():
                 ui.button(
                     "Duplicate", icon="content_copy", on_click=self._duplicate
@@ -151,6 +155,7 @@ class ProjectsPage:
             self.delete_purge = ui.checkbox("Also delete its run history").mark(
                 "delete-purge"
             )
+            self.delete_purge.tooltip(field_help("gui.purge_runs"))
             with ui.row():
                 ui.button(
                     "Delete", icon="delete", color="negative", on_click=self._delete
@@ -206,17 +211,21 @@ class ProjectsPage:
             .classes("w-96")
             .mark("new-library")
         )
+        self.new_library.tooltip(field_help("gui.library"))
         self._refresh_library_options()
         with ui.row().classes("items-end gap-2"):
-            self.new_name = ui.input("Name").classes("w-64").mark("new-name")
+            self.new_name = ui.input("Name *").classes("w-64").mark("new-name")
+            self.new_name.tooltip(field_help("gui.name"))
             self.new_source = (
-                ui.input("Source folder", on_change=self._on_source)
+                ui.input("Source folder *", on_change=self._on_source)
                 .classes("w-96")
                 .mark("new-source")
             )
+            self.new_source.tooltip(field_help("packer.source"))
             self.new_kind = ui.toggle(KIND_OPTIONS, value=Kind.MANGA.value).mark(
                 "new-kind"
             )
+            self.new_kind.tooltip(field_help("gui.kind"))
             ui.button("Create", icon="add", on_click=self._create).mark("new-create")
         self.detect_box = ui.column().classes("gap-0").mark("new-detection")
 
@@ -290,11 +299,13 @@ class ProjectsPage:
                     .classes("w-96")
                     .mark("library-root")
                 )
+                self.library_root.tooltip(field_help("gui.library_root"))
                 self.metadata_dir = (
                     ui.input("Metadata dir", value=_path_text(settings.metadata_dir))
                     .classes("w-96")
                     .mark("metadata-dir")
                 )
+                self.metadata_dir.tooltip(field_help("gui.metadata_dir"))
                 ui.button("Save", icon="save", on_click=self._save_settings).mark(
                     "library-save"
                 )
@@ -303,7 +314,9 @@ class ProjectsPage:
                 )
 
     def _form_settings(self) -> Settings:
-        return Settings(
+        """Saved settings with the paths of the form (the theme is kept)."""
+        return replace(
+            self.store.load_settings(),
             library_root=parse_path(self.library_root.value),
             metadata_dir=parse_path(self.metadata_dir.value),
         )
@@ -328,6 +341,7 @@ class ProjectsPage:
                 self.import_overwrite = ui.switch("Overwrite existing projects").mark(
                     "import-overwrite"
                 )
+                self.import_overwrite.tooltip(field_help("gui.import_overwrite"))
                 ui.button(
                     "Import selected", icon="download", on_click=self._import
                 ).mark("import-confirm")
@@ -361,6 +375,7 @@ class ProjectsPage:
         check = ui.checkbox(value=cand.importable and not cand.exists).mark(
             f"import-select-{cand.slug}"
         )
+        check.tooltip(field_help("gui.import_select"))
         if not cand.importable:
             check.disable()
         self._candidates[cand.slug] = (check, cand)
@@ -399,4 +414,5 @@ def register(store: Store) -> None:
 
     @ui.page("/")
     def index() -> None:
+        PageHeader(store)
         ProjectsPage(store).build()

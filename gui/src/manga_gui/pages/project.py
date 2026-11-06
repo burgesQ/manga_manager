@@ -15,6 +15,18 @@ Saving model
   written by their own explicit buttons ("Save file", "Save to batch file",
   "Save covers"), after validation by the CLI loaders. The one implicit write is
   the Kind toggle, which sets ``kind`` in an existing ``packer.json``.
+
+Navigation
+----------
+Moving *forward* (Next, or a later step header) runs ``validate_project``: when
+the step being left has errors (:func:`~manga_gui.forms.blocking_issues`), the
+stepper goes back to it, the errors are notified and the offending inputs are
+highlighted (:func:`~manga_gui.forms.field_errors`). Going back is always allowed
+and warnings never block.
+
+The Packer step shows the **effective** packer values: options left at their
+default show what ``packer.json`` provides, with a hint
+(:func:`~manga_gui.forms.effective_packer_fields`).
 """
 
 from __future__ import annotations
@@ -29,6 +41,7 @@ from packer.core import NAMED_PATTERNS
 from ..commands import StepCommand, build_commands
 from ..components.batch_table import BatchTable
 from ..components.covers_grid import CoversGrid
+from ..components.header import MULTILINE_NOTIFY, PageHeader
 from ..components.json_yaml_editor import FileEditor
 from ..components.kcc_form import KCCForm
 from ..components.log_panel import LogPanel
@@ -37,17 +50,25 @@ from ..forms import (
     METADATA_TEMPLATE,
     PACKER_JSON_TEMPLATE,
     SERIES_FIELDS,
+    STEP_FIELDS,
     VOLUME_MODES,
+    WIZARD_STEPS,
+    EffectiveField,
     StepStatus,
     VolumeMode,
     apply_series_fields,
     batch_rows_from_spec,
     batch_rows_to_spec,
+    blocking_issues,
     chapter_titles,
     cover_rows,
     display_path,
     dump_yaml,
     effective_batch_file,
+    effective_packer_fields,
+    field_errors,
+    inherited_hint,
+    is_forward,
     packer_json_covers,
     parse_metadata_text,
     parse_optional_text,
@@ -65,6 +86,7 @@ from ..forms import (
     volume_rows,
     write_batch_file,
 )
+from ..help_texts import field_help
 from ..models import LOCALES, STEP_NAMES, Kind, Project
 from ..runner import PipelineResult, PipelineRunner, StepResult
 from ..scan import scan_library
@@ -101,6 +123,14 @@ def _section(title: str) -> None:
     ui.label(title).classes("text-subtitle1 text-bold q-mt-md")
 
 
+def _set_prop(element: ui.element, name: str, value: Any) -> None:
+    """Set a Quasar prop, or remove it when ``value`` is ``None`` / ``False``."""
+    if value is None or value is False:
+        element.props(remove=name)
+    else:
+        element.props[name] = value
+
+
 class ProjectPage:
     """State and widgets of one opened project page (one instance per client)."""
 
@@ -113,6 +143,13 @@ class ProjectPage:
         self._has_errors = True
         self._volume_stash: dict[str, Any] = {}
         self._mode_boxes: dict[str, ui.element] = {}
+        self._revert_to: str | None = None
+        self._syncing = False
+        """True while the page itself sets a widget value (skip its handler)."""
+        self._field_inputs: dict[str, Any] = {}
+        """``field_errors`` key → input to highlight."""
+        self._inherited_inputs: dict[str, Any] = {}
+        """Text inputs of packer options ``packer.json`` may provide."""
         # widgets created by build()
         self.packer_editor: FileEditor
         self.metadata_editor: FileEditor
@@ -138,44 +175,102 @@ class ProjectPage:
         ):
             with ui.step("library", title=STEP_LABELS["library"]):
                 self._build_library()
-                self._nav(first=True)
+                self._nav("library")
             with ui.step("packer", title=STEP_LABELS["packer"]):
                 self._build_packer()
-                self._nav()
+                self._nav("packer")
             with ui.step("convertor", title=STEP_LABELS["convertor"]):
                 self.kcc_form = KCCForm(self.project, on_change=self._refresh_review)
-                self._nav()
+                self._nav("convertor")
             with ui.step("metadata", title=STEP_LABELS["metadata"]):
                 self._build_metadata()
-                self._nav()
+                self._nav("metadata")
             with ui.step("review", title=STEP_LABELS["review"]):
                 self._build_review()
-                self._nav()
+                self._nav("review")
             with ui.step("volumes", title=STEP_LABELS["volumes"]):
                 self.previews = VolumePreviews(
                     get_dest=lambda: self.project.effective_dest,
                     get_expected=lambda: expected_volume_names(self.project),
                 )
-                self._nav(last=True)
+                self._nav("volumes")
         self.packer_editor.load()
         self.metadata_editor.load()
         self._load_batch_table()
+        self._refresh_inherited()
         self._refresh_review()
 
-    def _nav(self, *, first: bool = False, last: bool = False) -> None:
+    def _nav(self, step: str) -> None:
+        index = WIZARD_STEPS.index(step)
         with ui.stepper_navigation():
-            if not last:
-                ui.button("Next", on_click=self.stepper.next)
-            if not first:
-                ui.button("Back", on_click=self.stepper.previous).props("flat")
+            if index < len(WIZARD_STEPS) - 1:
+                ui.button(
+                    "Next", on_click=lambda: self._go(WIZARD_STEPS[index + 1])
+                ).mark(f"next-{step}")
+            if index > 0:
+                ui.button(
+                    "Back", on_click=lambda: self._go(WIZARD_STEPS[index - 1])
+                ).props("flat").mark(f"back-{step}")
+
+    def _go(self, step: str) -> None:
+        """Select ``step`` (server side, so the forward check always runs)."""
+        self.stepper.value = step
 
     async def _on_step_change(self, e: Any) -> None:
-        self.flush_metadata()
+        if self._revert_to is not None and e.value == self._revert_to:
+            self._revert_to = None  # our own revert below: nothing to do
+            return
+        old = e.previous_value or WIZARD_STEPS[0]
+        flushed = self.flush_metadata()
         self.save(quiet=True)
+        if is_forward(old, e.value):
+            problems = self._leave_problems(old, flushed=flushed)
+            if problems:
+                self._revert_to = old
+                self.stepper.value = old
+                self._highlight_fields(old)
+                lines = "\n".join(f"• {m}" for m in problems)
+                ui.notify(
+                    f"Fix {STEP_LABELS[old]} before moving on:\n{lines}",
+                    type="negative",
+                    multi_line=True,
+                    classes=MULTILINE_NOTIFY,
+                )
+                return
+            self._clear_highlights(old)
         if e.value == "review":
             self._refresh_review()
         elif e.value == "volumes":
             await self.previews.refresh()
+
+    # -- navigation checks ----------------------------------------------------
+
+    def _leave_problems(self, step: str, *, flushed: bool = True) -> list[str]:
+        """Errors that keep the user on ``step`` when moving forward."""
+        messages: list[str] = []
+        if step == "library":
+            for element, label in (
+                (self.name_input, "project name"),
+                (self.source_input, "source folder"),
+            ):
+                if not element.validate():
+                    messages.append(f"{label} is required")
+        if step == "metadata" and not flushed:
+            messages.append("the metadata YAML editor holds invalid YAML (not saved)")
+        issues = blocking_issues(validate_project(self.project), step)
+        return messages + [i.message for i in issues]
+
+    def _highlight_fields(self, step: str) -> None:
+        """Show the :func:`field_errors` of ``step`` on its inputs."""
+        errors = field_errors(self.project, self.mode_toggle.value)
+        for name in STEP_FIELDS.get(step, ()):
+            element = self._field_inputs[name]
+            if element.validate():  # keep a failing widget rule ("Required")
+                element.error = errors.get(name)
+
+    def _clear_highlights(self, step: str) -> None:
+        for name in STEP_FIELDS.get(step, ()):
+            self._field_inputs[name].validate()
 
     # -- persistence --------------------------------------------------------
 
@@ -205,23 +300,33 @@ class ProjectPage:
     def _build_library(self) -> None:
         p = self.project
         with ui.column().classes("w-full gap-2"):
-            ui.input(
-                "Project name",
-                value=p.name,
-                on_change=self._on_name,
-                validation={"Required": lambda v: bool(v and v.strip())},
-            ).classes("w-96").mark("project-name")
+            self.name_input = (
+                ui.input(
+                    "Project name *",
+                    value=p.name,
+                    on_change=self._on_name,
+                    validation={"Required": lambda v: bool(v and v.strip())},
+                )
+                .classes("w-96")
+                .mark("project-name")
+            )
+            self.name_input.tooltip(field_help("gui.name"))
             with ui.row().classes("items-center gap-2"):
                 ui.label("Kind")
                 ui.toggle(
                     KIND_OPTIONS, value=p.kind.value, on_change=self._on_kind
-                ).mark("kind-toggle")
-            ui.input(
-                "Source folder (.cbz chapters)",
-                value=display_path(p.source),
-                on_change=self._on_source,
-                validation={"Required": lambda v: bool(v and v.strip())},
-            ).classes("w-full").mark("source")
+                ).mark("kind-toggle").tooltip(field_help("gui.kind"))
+            self.source_input = (
+                ui.input(
+                    "Source folder (.cbz chapters) *",
+                    value=display_path(p.source),
+                    on_change=self._on_source,
+                    validation={"Required": lambda v: bool(v and v.strip())},
+                )
+                .classes("w-full")
+                .mark("source")
+            )
+            self.source_input.tooltip(field_help("packer.source"))
             self.dest_input = (
                 ui.input(
                     "Destination folder (volumes, .kepub.epub)",
@@ -232,6 +337,8 @@ class ProjectPage:
                 .classes("w-full")
                 .mark("dest")
             )
+            self.dest_input.tooltip(field_help("packer.dest"))
+            self._field_inputs.update(name=self.name_input, source=self.source_input)
             ui.button("Scan", icon="search", on_click=self._scan).mark("scan")
             self.scan_box = ui.column().classes("w-full gap-1")
 
@@ -245,6 +352,9 @@ class ProjectPage:
         if source is not None:
             self.project.source = source
             self.dest_input.props["placeholder"] = str(source)
+            self.config_input.props["placeholder"] = str(source / "packer.json")
+            self._refresh_inherited()
+            self._update_batch_target()
 
     def _set_dest(self, value: str | None) -> None:
         self.project.dest = parse_path(value)
@@ -302,66 +412,102 @@ class ProjectPage:
     def _build_packer(self) -> None:
         opts = self.project.packer
         with ui.column().classes("w-full gap-2"):
-            ui.input(
-                "packer.json path",
-                value=display_path(opts.config),
-                placeholder=str(self.project.source / "packer.json"),
-                on_change=lambda e: setattr(opts, "config", parse_path(e.value)),
-            ).classes("w-full").mark("packer-config")
-            with ui.row().classes("w-full gap-4"):
+            self.config_input = (
                 ui.input(
-                    "Serie",
-                    value=opts.serie or "",
-                    on_change=lambda e: setattr(
-                        opts, "serie", parse_optional_text(e.value)
-                    ),
-                ).classes("w-64").mark("packer-serie")
-                ui.select(
-                    PATTERN_OPTIONS,
-                    label="Pattern",
-                    value=(
-                        opts.pattern if opts.pattern in PATTERN_OPTIONS else "default"
-                    ),
-                    on_change=lambda e: setattr(opts, "pattern", e.value or "default"),
-                ).classes("w-48").mark("packer-pattern")
-                ui.number(
-                    "Workers",
-                    value=opts.nb_worker,
-                    min=1,
-                    precision=0,
-                    on_change=lambda e: setattr(
-                        opts, "nb_worker", max(1, int(e.value or 1))
-                    ),
-                ).classes("w-24")
+                    "packer.json path",
+                    value=display_path(opts.config),
+                    placeholder=str(self.project.source / "packer.json"),
+                    on_change=self._on_config_path,
+                )
+                .classes("w-full")
+                .mark("packer-config")
+            )
+            self.config_input.tooltip(field_help("packer.config"))
+            with ui.row().classes("w-full gap-4 items-start"):
+                self.serie_input = (
+                    ui.input(
+                        "Serie *",
+                        value=opts.serie or "",
+                        on_change=lambda e: self._set_packer(
+                            "serie", parse_optional_text(e.value)
+                        ),
+                    )
+                    .classes("w-64")
+                    .mark("packer-serie")
+                )
+                self.serie_input.tooltip(field_help("packer.serie"))
+                self.pattern_select = (
+                    ui.select(
+                        PATTERN_OPTIONS,
+                        label="Pattern",
+                        value=(
+                            opts.pattern
+                            if opts.pattern in PATTERN_OPTIONS
+                            else "default"
+                        ),
+                        on_change=self._on_pattern,
+                    )
+                    .classes("w-72")
+                    .mark("packer-pattern")
+                )
+                self.pattern_select.tooltip(field_help("packer.pattern"))
+                self.workers_input = (
+                    ui.number(
+                        "Workers",
+                        value=opts.nb_worker,
+                        min=1,
+                        precision=0,
+                        on_change=self._on_workers,
+                    )
+                    .classes("w-28")
+                    .mark("packer-workers")
+                )
+                self.workers_input.tooltip(field_help("packer.nb_worker"))
                 ui.checkbox(
                     "Force (overwrite)",
                     value=opts.force,
                     on_change=lambda e: setattr(opts, "force", bool(e.value)),
+                ).mark("packer-force").tooltip(field_help("packer.force"))
+            with ui.row().classes("w-full gap-4 items-start"):
+                self.chapter_regex_input = (
+                    ui.input(
+                        "Chapter regex (1 group)",
+                        value=opts.chapter_regex or "",
+                        on_change=lambda e: self._set_packer(
+                            "chapter_regex", parse_optional_text(e.value)
+                        ),
+                    )
+                    .classes("w-96")
+                    .mark("packer-chapter-regex")
                 )
-            with ui.row().classes("w-full gap-4"):
-                ui.input(
-                    "Chapter regex (1 group)",
-                    value=opts.chapter_regex or "",
-                    on_change=lambda e: setattr(
-                        opts, "chapter_regex", parse_optional_text(e.value)
-                    ),
-                ).classes("w-96")
-                ui.input(
-                    "Extra regex (2 groups)",
-                    value=opts.extra_regex or "",
-                    on_change=lambda e: setattr(
-                        opts, "extra_regex", parse_optional_text(e.value)
-                    ),
-                ).classes("w-96")
+                self.chapter_regex_input.tooltip(field_help("packer.chapter_regex"))
+                self.extra_regex_input = (
+                    ui.input(
+                        "Extra regex (2 groups)",
+                        value=opts.extra_regex or "",
+                        on_change=lambda e: self._set_packer(
+                            "extra_regex", parse_optional_text(e.value)
+                        ),
+                    )
+                    .classes("w-96")
+                    .mark("packer-extra-regex")
+                )
+                self.extra_regex_input.tooltip(field_help("packer.extra_regex"))
+            self._inherited_inputs.update(
+                serie=self.serie_input,
+                chapter_regex=self.chapter_regex_input,
+                extra_regex=self.extra_regex_input,
+            )
 
             _section("Volumes")
             self.mode_toggle = ui.toggle(
                 VOLUME_MODES, value=volume_mode(opts), on_change=self._on_volume_mode
             ).mark("volume-mode")
+            self.mode_toggle.tooltip(field_help("gui.volume_mode"))
             with ui.column().classes("w-full") as self._mode_boxes["spec"]:
                 self.batch_spec_input = (
                     ui.input(
-                        "Batch spec (v01:1..3-v02:4..6)",
+                        "Batch spec (v01:1..3-v02:4..6) *",
                         value=opts.batch or "",
                         on_change=lambda e: setattr(
                             opts, "batch", parse_optional_text(e.value)
@@ -370,6 +516,7 @@ class ProjectPage:
                     .classes("w-full")
                     .mark("batch-spec")
                 )
+                self.batch_spec_input.tooltip(field_help("packer.batch"))
             with ui.column().classes("w-full") as self._mode_boxes["file"]:
                 self.batch_file_input = (
                     ui.input(
@@ -380,23 +527,43 @@ class ProjectPage:
                     .classes("w-full")
                     .mark("batch-file")
                 )
+                self.batch_file_input.tooltip(field_help("packer.batch_file"))
             with ui.row().classes("w-full gap-4") as self._mode_boxes["single"]:
-                ui.number(
-                    "Volume",
-                    value=opts.volume,
-                    min=0,
-                    precision=0,
-                    on_change=lambda e: setattr(
-                        opts, "volume", None if e.value is None else int(e.value)
-                    ),
-                ).classes("w-24").mark("single-volume")
-                ui.input(
-                    "Chapter range (1..12, 1,3,5..8)",
-                    value=opts.chapter_range or "",
-                    on_change=lambda e: setattr(
-                        opts, "chapter_range", parse_optional_text(e.value)
-                    ),
-                ).classes("w-64").mark("single-range")
+                self.volume_input = (
+                    ui.number(
+                        "Volume *",
+                        value=opts.volume,
+                        min=0,
+                        precision=0,
+                        on_change=lambda e: setattr(
+                            opts, "volume", None if e.value is None else int(e.value)
+                        ),
+                    )
+                    .classes("w-24")
+                    .mark("single-volume")
+                )
+                self.volume_input.tooltip(field_help("packer.volume"))
+                self.range_input = (
+                    ui.input(
+                        "Chapter range (1..12, 1,3,5..8) *",
+                        value=opts.chapter_range or "",
+                        on_change=lambda e: setattr(
+                            opts, "chapter_range", parse_optional_text(e.value)
+                        ),
+                    )
+                    .classes("w-64")
+                    .mark("single-range")
+                )
+                self.range_input.tooltip(field_help("packer.chapter_range"))
+            self._field_inputs.update(
+                serie=self.serie_input,
+                chapter_regex=self.chapter_regex_input,
+                extra_regex=self.extra_regex_input,
+                batch=self.batch_spec_input,
+                batch_file=self.batch_file_input,
+                volume=self.volume_input,
+                chapter_range=self.range_input,
+            )
             with ui.column().classes("w-full gap-1") as self.batch_box:
                 self.batch_target = ui.label().classes("text-caption text-grey-7")
                 self.batch_table = BatchTable()
@@ -419,11 +586,73 @@ class ProjectPage:
                 save=save_packer_json_text,
                 template=PACKER_JSON_TEMPLATE,
                 marker="packer-json",
-                on_saved=lambda _text: self._refresh_covers(),
+                on_saved=lambda _text: self._on_packer_json_saved(),
             )
+
+    # packer options packer.json may provide ------------------------------------
+
+    def _set_packer(self, name: str, value: Any) -> None:
+        setattr(self.project.packer, name, value)
+        self._refresh_inherited()
+
+    def _on_config_path(self, e: Any) -> None:
+        self.project.packer.config = parse_path(e.value)
+        self._refresh_inherited()
+        self._update_batch_target()
+
+    def _on_packer_json_saved(self) -> None:
+        self._refresh_covers()
+        self._refresh_inherited()
+        self._update_batch_target()
+
+    def _on_pattern(self, e: Any) -> None:
+        if not self._syncing:
+            self._set_packer("pattern", e.value or "default")
+
+    def _on_workers(self, e: Any) -> None:
+        if not self._syncing:
+            self._set_packer("nb_worker", max(1, int(e.value or 1)))
+
+    def _refresh_inherited(self) -> None:
+        """Show the effective packer values (project option or packer.json)."""
+        fields = effective_packer_fields(self.project)
+        for name, element in self._inherited_inputs.items():
+            field = fields[name]
+            inherited = field.source == "packer.json"
+            element.props["placeholder"] = str(field.value) if inherited else ""
+            _set_prop(element, "stack-label", inherited)
+            _set_prop(element, "hint", inherited_hint(field))
+        self._sync_pattern(fields["pattern"])
+        workers = fields["nb_worker"]
+        self._syncing = True
+        try:
+            self.workers_input.value = workers.value
+        finally:
+            self._syncing = False
+        _set_prop(self.workers_input, "hint", inherited_hint(workers))
+        batch_file = fields["batch_file"]
+        _set_prop(self.batch_file_input, "hint", inherited_hint(batch_file))
+        _set_prop(
+            self.batch_file_input, "stack-label", batch_file.source == "packer.json"
+        )
+
+    def _sync_pattern(self, field: EffectiveField) -> None:
+        options = {name: name for name in PATTERN_OPTIONS}
+        if field.source == "packer.json":
+            options["default"] = f"default (use packer.json: {field.value})"
+        value = str(field.value)
+        if value not in options:
+            options[value] = f"{value} (unknown: packer uses default)"
+        self._syncing = True
+        try:
+            self.pattern_select.set_options(options, value=value)
+        finally:
+            self._syncing = False
+        _set_prop(self.pattern_select, "hint", inherited_hint(field))
 
     def _on_batch_file(self, e: Any) -> None:
         self.project.packer.batch_file = parse_path(e.value)
+        self._refresh_inherited()
         self._update_batch_target()
 
     def _on_volume_mode(self, e: Any) -> None:
@@ -516,31 +745,34 @@ class ProjectPage:
                     "Metadata YAML",
                     value=display_path(opts.metadata),
                     on_change=lambda e: setattr(opts, "metadata", parse_path(e.value)),
-                ).classes("w-96").mark("metadata-path")
+                ).classes("w-96").mark("metadata-path").tooltip(
+                    field_help("editor.metadata")
+                )
                 ui.input(
                     "Chapters YAML (--chapters, optional)",
                     value=display_path(opts.chapters),
                     on_change=lambda e: setattr(opts, "chapters", parse_path(e.value)),
-                ).classes("w-96").mark("chapters-path")
+                ).classes("w-96").mark("chapters-path").tooltip(
+                    field_help("editor.chapters")
+                )
                 ui.select(
                     list(LOCALES),
                     label="Locale",
                     value=opts.locale,
                     on_change=self._on_locale,
-                ).classes("w-40")
+                ).classes("w-40").mark("metadata-locale").tooltip(
+                    field_help("editor.locale")
+                )
                 ui.checkbox(
                     "Force (overwrite existing metadata)",
                     value=opts.force,
                     on_change=lambda e: setattr(opts, "force", bool(e.value)),
-                )
+                ).mark("metadata-force").tooltip(field_help("editor.force"))
                 ui.checkbox(
                     "Write changes to file",
                     value=opts.autosave,
                     on_change=self._on_autosave,
-                ).mark("metadata-autosave").tooltip(
-                    "Save the metadata YAML automatically (after Apply, when leaving"
-                    " this step and before a run) instead of clicking Save file"
-                )
+                ).mark("metadata-autosave").tooltip(field_help("gui.autosave"))
 
             _section("Series")
             self.series_inputs: dict[str, ui.input] = {}
@@ -549,6 +781,7 @@ class ProjectPage:
                     self.series_inputs[key] = (
                         ui.input(key.capitalize()).classes("w-56").mark(f"meta-{key}")
                     )
+                    self.series_inputs[key].tooltip(field_help(f"gui.meta.{key}"))
             with ui.row():
                 ui.button(
                     "Apply to YAML editor", icon="edit", on_click=self._apply_series
@@ -730,7 +963,7 @@ class ProjectPage:
                         step,
                         value=p.step_enabled(step),
                         on_change=lambda e, s=step: self._toggle_step(s, e.value),
-                    ).mark(f"step-{step}")
+                    ).mark(f"step-{step}").tooltip(field_help("gui.step"))
 
             _section("Paths")
             for label, path in self._resolved_paths():
@@ -882,6 +1115,7 @@ def register(store: Store) -> None:
 
     @ui.page("/project/{slug}")
     def project_page(slug: str) -> None:
+        PageHeader(store)
         try:
             project = store.load_project(slug)
         except FileNotFoundError:
