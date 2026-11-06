@@ -137,11 +137,14 @@ gui/src/manga_gui/
 ├── store.py        # Store: project profiles + run history + settings.json (XDG or --data-dir)
 ├── validation.py   # pre-flight Issues, reusing packer / editor loaders
 ├── scan.py         # .cbz → chapter matches preview, volume dirs, EPUB listing
-├── forms.py        # UI-free wizard helpers: batch rows, packer.json / YAML edits, KCC values
+├── forms.py        # UI-free wizard helpers: batch rows, packer.json / YAML edits, KCC values,
+│                   #   effective_packer_fields, wizard navigation (blocking_issues, field_errors)
+├── help_texts.py   # UI-free tooltips: CLI argparse help by option + GUI-only texts (field_help)
 ├── library.py      # UI-free: folder detection / prefill, create / duplicate project, run summaries
 ├── volumes.py      # UI-free: volume previews + cached EPUB metadata reads
 ├── pages/          # projects.py (`/`), history.py (`/project/{slug}/history`), project.py (`/project/{slug}` 6-step ui.stepper)
-├── components/     # previews (VolumePreviews), batch_table, covers_grid, json_yaml_editor (FileEditor), kcc_form, log_panel
+├── components/     # header (PageHeader: app link + theme switch), previews (VolumePreviews), batch_table,
+│                   #   covers_grid, json_yaml_editor (FileEditor), kcc_form, log_panel
 └── py.typed
 ```
 
@@ -149,8 +152,12 @@ Key design choices:
 - **Steps run as subprocesses** (`sys.executable -m packer.main …`), never by calling `main()` in-process: every `main()` calls `setup_logging()` (clears root handlers), in-process calls cannot be cancelled, and packer uses threads. Logs stream from stderr; progress is parsed from existing log lines; cancel = SIGTERM then SIGKILL; a run stops at the first non-zero exit.
 - **Config files are the source of truth**: a project only points to `packer.json`, the batch CSV, the metadata / chapters YAML and stores GUI-only data (paths, KCC overrides, locale, enabled steps). File edits are validated by the CLI loaders (`load_config_file`, `load_yaml_metadata`, …) and written atomically.
 - **XDG store**: projects in `$XDG_CONFIG_HOME/manga_manager/projects/<slug>.json`, runs in `$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}`; `--data-dir` puts both under one dir (tests).
-- **Settings** (`library_root`, `metadata_dir`): `<config>/settings.json` via `Store.load_settings()` / `save_settings()`; `--library-root` / `--metadata-dir` are session overrides (`Store(settings_overrides=…)`, read with `effective_settings()`; a GUI Save replaces them).
+- **Settings** (`library_root`, `metadata_dir`, `theme`): `<config>/settings.json` via `Store.load_settings()` / `save_settings()`; `--library-root` / `--metadata-dir` are session overrides (`Store(settings_overrides=…)`, read with `effective_settings()`; a GUI Save replaces them).
 - **`manga-gui import`** (subcommand; no subcommand = serve): `discovery.plan_import(metadata_dir, library_root, store)` matches `packer_<key>.json` / `<key>.yaml` / `chapters_<key>.yaml` / `vols_<key>.csv` groups to series folders (`<root>/<LANG>/<dir>`) by rule strength (covers inside the folder > serie name > key == folder name > key initials > folder-name prefix; one folder per group, strongest pairs first), logs the plan table, then `apply_import` writes profiles only (never the user's files; existing slugs skipped unless `--overwrite`). The Projects page reuses it (Library card + Import dialog, "From library" select in the New project form).
+- **Effective packer values**: the Packer step shows what packer will use, not the raw project options: `forms.effective_packer_fields(project)` → `{field: EffectiveField(value, source, config_value)}` (`source` = `project` | `packer.json` | `default`), computed with `validation.resolve_packer_settings` (no second copy of packer's merge rule). Displaying an inherited value never writes it into the project.
+- **Forward navigation is checked**: leaving a step forward (Next / later header) runs `validate_project`; `forms.blocking_issues(issues, wizard_step)` (wizard `library`/`packer`/`convertor`/`metadata` ↔ issue step `project`/`packer`/`convertor`/`editor`) errors revert the stepper, are notified and `forms.field_errors` highlights inputs. Backward always allowed, warnings never block. Next / Back set the stepper value server side.
+- **Tooltips never duplicate CLI help**: `help_texts.field_help("packer.serie")` reads the argparse help of `packer.cli._build_parser()`, `convertor.cli._build_parser()` and the `editor inject` subparser (captured from `editor.cli.main`, which builds its parser inline); only GUI-only fields live in `GUI_HELP`. `test_gui_help_texts.py` fails when a mapped option is renamed.
+- **Theme** (`Settings.theme`: `auto` | `light` | `dark`) is saved by `Store.save_theme()` (keeps the other settings and the session overrides) and applied with `ui.dark_mode` by the shared `PageHeader` on every page; its CSS keeps `text-grey-*` / `bg-grey-3` readable in dark mode.
 - **UI-free logic lives outside `pages/` / `components/`** (`forms.py`, `commands.py`, …) so it is unit-tested without NiceGUI.
 - **UI tests** use NiceGUI's `user_simulation()` driven by the anyio pytest plugin: mark tests `@pytest.mark.anyio` and take the `gui_user` fixture (`gui/tests/conftest.py`, pages registered on a `gui_store` under `tmp_path`). `nicegui.testing.user_plugin` is NOT registered (a `pytest_plugins` in a non-root conftest is an error).
 - **NiceGUI drops page modules from `sys.modules` on teardown**: `gui_user` saves and restores the `manga_gui*` entries, otherwise later imports create new module/class objects and `isinstance` checks break.
