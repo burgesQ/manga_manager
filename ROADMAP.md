@@ -29,6 +29,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **P10** Merge / consolidate volume-level `ComicInfo.xml`
 - [x] **P11** Better logging / progress reporting UI
 - [ ] **P12** Additional archive formats and chapter identifier styles (A..Z, chapter 0, etc.)
+      — *note:* ranged chapter ids like `0-1` (e.g. the "Jujutsu Kaisen 0" prequel) are not supported yet; batch files reject them with a `file:line` error, so comment such lines out with `#` to skip them
 - [x] **P13** Support for optional volume cover — place `cover.webp` in the volume dir; see **C6** for implementation
               Sometime volume doesn't have cover. User may download one (as `.webp` ?) And attach it to the vols.cvs (work like that ?)
 - [x] **P14** Rename named regex patterns from series names (`fma`, `mashle`, `animeSama`) to download-source names (`mangafox`, `weebcentral`, etc.) — patterns describe filename conventions from a given source, not a specific series
@@ -56,6 +57,7 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **E10** (M) Support `illustrator` / multi-role creators — real files (`boruto.yaml`) carry `illustrator:`, currently ignored; map to `dc:creator opf:role="art"`
 - [ ] **E11** (M) Selective / merge injection (`--only-missing`) — top up missing fields without overwriting everything (current inject is all-or-nothing gated on `has_metadata()`+`--force`)
 - [ ] **E12** (M) Embed EPUB cover from YAML/file (`book.set_cover`) — complements the convertor `Chapter 000/` cover hack (**C6**)
+- [x] **E13** 🐞 (S) Non-integer chapter numbers (e.g. the `0-1`..`0-4` prequel ids in `chapters_jjk.yaml`) crashed `_chapters_map` with `int()`, aborting `inject`. Fixed: such entries are skipped with one WARNING each naming the file and value; TOC labels are matched by integer chapter number, so they could never match anyway
 
 ---
 

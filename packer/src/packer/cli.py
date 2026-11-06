@@ -9,6 +9,7 @@ import re
 import time
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
+from pathlib import Path
 from typing import Optional
 
 import shtab
@@ -117,6 +118,13 @@ def setup_logging(
     root.addHandler(handler)
 
 
+_BATCH_SPEC_HINT = (
+    "expected 'vNN:RANGE' items separated by '-', e.g. 'v01:1..3-v02:4..6'; "
+    "'-' separates items, so ranged chapter ids like '0-1' are not supported"
+)
+_SKIP_LINE_HINT = "comment the line out with '#' to skip it"
+
+
 def parse_batch_spec(batch: str) -> list[tuple[int, list[int]]]:
     """Parse a batch spec string into a list of (volume, chapter_range) tuples.
 
@@ -127,15 +135,30 @@ def parse_batch_spec(batch: str) -> list[tuple[int, list[int]]]:
     Example:
     >>> parse_batch_spec('v01:1..3-v02:4..6')
     [(1, [1, 2, 3]), (2, [4, 5, 6])]
+
+    Errors name the offending item:
+    >>> parse_batch_spec('v01:1..3-v02:4..x')
+    Traceback (most recent call last):
+    ...
+    ValueError: invalid chapter range '4..x' in batch spec item 'v02:4..x' \
+(chapter numbers must be integers, got 'x')
     """
-    specs = [s for s in batch.split("-") if s.strip()]
+    specs = [s.strip() for s in batch.split("-") if s.strip()]
     parsed = []
     for s in specs:
-        m = re.match(r"(?i)v\s*0*([0-9]+):(.+)", s.strip())
+        m = re.fullmatch(r"(?i)v\s*0*([0-9]+):(.+)", s)
         if not m:
-            raise ValueError(f"invalid batch spec: {s}")
+            raise ValueError(
+                f"invalid batch spec item {s!r} in {batch!r} ({_BATCH_SPEC_HINT})"
+            )
         vol_num = int(m.group(1))
-        ranges = parse_range(m.group(2))
+        try:
+            ranges = parse_range(m.group(2))
+        except ValueError as e:
+            raise ValueError(
+                f"invalid chapter range {m.group(2).strip()!r} "
+                f"in batch spec item {s!r} ({e})"
+            ) from e
         parsed.append((vol_num, ranges))
     return parsed
 
@@ -150,24 +173,46 @@ def parse_batch_file(file_path: str) -> list[tuple[int, list[int]]]:
         v01,1..8
         2,9..17
 
+    Raises:
+        ValueError: naming the file, the 1-based line number, the offending
+                    line and the reason, e.g. ``vols.csv:1: invalid chapter
+                    range '0-1..0-4' in 'v0,0-1..0-4' (chapter numbers must be
+                    integers, got '0-1'; comment the line out with '#' to skip
+                    it)``.
+
     Returns:
         List[Tuple[int, List[int]]]
     """
+    path = Path(file_path)
     specs = []
-    with open(file_path, "r", encoding="utf-8") as fh:
-        for ln in fh:
-            ln = ln.strip()
+    with path.open("r", encoding="utf-8") as fh:
+        for lineno, raw in enumerate(fh, start=1):
+            ln = raw.strip()
             if not ln or ln.startswith("#"):
                 continue
-            parts = [p.strip() for p in ln.split(",") if p.strip()]
-            if len(parts) < 2:
-                raise ValueError(f"invalid batch file line: {ln}")
-            vol_spec, range_spec = parts[0], parts[1]
-            m = re.match(r"(?i)v?\s*0*([0-9]+)", vol_spec)
+            where = f"{path.name}:{lineno}"
+            # Split on the first comma only: the range itself may contain commas
+            # ("v01,1,3,5..8"), which must not be dropped.
+            vol_spec, _, range_spec = (p.strip() for p in ln.partition(","))
+            if not vol_spec or not range_spec.strip(", "):
+                raise ValueError(
+                    f"{where}: invalid batch line {ln!r} (expected 'VOLUME,RANGE', "
+                    f"e.g. 'v01,1..8'; {_SKIP_LINE_HINT})"
+                )
+            m = re.fullmatch(r"(?i)v?\s*0*([0-9]+)", vol_spec)
             if not m:
-                raise ValueError(f"invalid volume spec in batch file: {vol_spec}")
+                raise ValueError(
+                    f"{where}: invalid volume {vol_spec!r} in {ln!r} "
+                    f"(expected 'vNN' or 'NN'; {_SKIP_LINE_HINT})"
+                )
             vol_num = int(m.group(1))
-            ranges = parse_range(range_spec)
+            try:
+                ranges = parse_range(range_spec)
+            except ValueError as e:
+                raise ValueError(
+                    f"{where}: invalid chapter range {range_spec!r} in {ln!r} "
+                    f"({e}; {_SKIP_LINE_HINT})"
+                ) from e
             specs.append((vol_num, ranges))
     return specs
 
@@ -424,6 +469,17 @@ def _compile_patterns(
     return chapter_pat, extra_pat
 
 
+def _parse_chapter_range_arg(args: argparse.Namespace) -> list[int]:
+    """Parse ``--chapter-range``. Raises _CLIError on an invalid range."""
+    if not args.chapter_range:
+        return []
+    try:
+        return parse_range(args.chapter_range)
+    except ValueError as e:
+        logger.error(f"invalid --chapter-range {args.chapter_range!r} ({e})")
+        raise _CLIError from e
+
+
 def _resolve_batch_specs(
     args: argparse.Namespace, cfg: Config
 ) -> list[tuple[int, list[int]]]:
@@ -484,7 +540,7 @@ def main(argv=None) -> int:
             dest=dest,
             serie=args.serie,
             volume=args.volume if args.volume else 0,
-            chapter_range=parse_range(args.chapter_range) if args.chapter_range else [],
+            chapter_range=_parse_chapter_range_arg(args),
             nb_worker=args.nb_worker,
             dry_run=args.dry_run,
             verbose=args.verbose,

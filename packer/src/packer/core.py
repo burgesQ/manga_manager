@@ -31,21 +31,41 @@ def parse_range(text: str) -> List[int]:
     >>> parse_range('2..4')
     [2, 3, 4]
 
-    Raises ValueError when an end is smaller than the start.
+    Raises ValueError when a chapter number is not an integer (ranged ids such
+    as ``0-1`` are not supported) or when an end is smaller than the start:
+
+    >>> parse_range('0-1..0-4')
+    Traceback (most recent call last):
+    ...
+    ValueError: chapter numbers must be integers, got '0-1'
+    >>> parse_range('4..2')
+    Traceback (most recent call last):
+    ...
+    ValueError: Invalid range 4..2: end < start
     """
     parts = [p.strip() for p in text.split(",") if p.strip()]
     nums: Set[int] = set()
     for p in parts:
         if ".." in p:
             a, b = p.split("..", 1)
-            a_i = int(a)
-            b_i = int(b)
+            a_i = _parse_chapter_number(a)
+            b_i = _parse_chapter_number(b)
             if b_i < a_i:
                 raise ValueError(f"Invalid range {p}: end < start")
             nums.update(range(a_i, b_i + 1))
         else:
-            nums.add(int(p))
+            nums.add(_parse_chapter_number(p))
     return sorted(nums)
+
+
+def _parse_chapter_number(token: str) -> int:
+    """Return ``token`` as an int, raising a readable ValueError otherwise."""
+    try:
+        return int(token)
+    except ValueError:
+        raise ValueError(
+            f"chapter numbers must be integers, got {token.strip()!r}"
+        ) from None
 
 
 def _match_extra(base: str, extra_pat: Optional[re.Pattern]) -> Optional[ChapterMatch]:
