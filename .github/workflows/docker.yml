@@ -59,6 +59,11 @@ jobs:
           done
           # convertor shells out to KCC: make sure its CLI starts in the slim image.
           docker run --rm manga_manager:smoke kcc-c2e --help > /dev/null
+          # The image is CLI-only: manga-gui (NiceGUI) runs on the host.
+          if docker run --rm manga_manager:smoke python -c "import nicegui"; then
+            echo "nicegui must not be installed in the image" >&2
+            exit 1
+          fi
 
       - name: Log in to GHCR
         if: github.event_name != 'pull_request'
