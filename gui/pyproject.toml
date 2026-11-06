@@ -1,0 +1,45 @@
+[project]
+name = "manga-gui"
+version = "0.1.0"
+description = "NiceGUI front-end to configure and run the packer / convertor / editor pipeline"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "convertor",
+    "editor",
+    "nicegui>=4.0.0",
+    "packer",
+]
+
+[project.scripts]
+manga-gui = "manga_gui.main:main"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+manga_gui = ["py.typed"]
+
+[pytest]
+pythonpath = "src"
+console_output_style = "progress"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_ignores = true
+no_implicit_optional = true
+
+# Third-party / workspace modules without type information.
+[[tool.mypy.overrides]]
+module = ["shtab", "ebooklib", "ebooklib.*", "yaml"]
+ignore_missing_imports = true
+
+[tool.uv.sources]
+packer = { workspace = true }
+editor = { workspace = true }
+convertor = { workspace = true }

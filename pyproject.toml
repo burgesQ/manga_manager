@@ -11,6 +11,7 @@ members = [
     "packer",
     "convertor",
     "editor",
+    "gui",
 ]
 
 [dependency-groups]
