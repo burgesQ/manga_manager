@@ -18,6 +18,7 @@ from ..forms import (
     reading_direction,
     tri_state,
 )
+from ..help_texts import field_help
 from ..models import Project
 from ..validation import KCC_CROPPINGS, KCC_ROTATIONS
 
@@ -47,6 +48,7 @@ class KCCForm:
                     ui.label().classes("text-bold").mark("reading-direction")
                 )
                 self.preset_label = ui.label().classes("text-grey-7")
+                self.preset_label.tooltip(field_help("convertor.preset"))
             with ui.grid(columns=3).classes("w-full items-center gap-x-4 gap-y-1"):
                 ui.label("Profile")
                 ui.input(
@@ -54,7 +56,9 @@ class KCCForm:
                     on_change=lambda e: self._set(
                         "profile", parse_optional_text(e.value)
                     ),
-                ).props("dense").mark("kcc-profile")
+                ).props("dense").mark("kcc-profile").tooltip(
+                    field_help("convertor.profile")
+                )
                 self._effective["profile"] = ui.label()
 
                 for name, label in KCC_BOOL_FIELDS:
@@ -65,7 +69,9 @@ class KCCForm:
                         on_change=lambda e, n=name: self._set(
                             n, from_tri_state(e.value)
                         ),
-                    ).props("dense no-caps").mark(f"kcc-{name}")
+                    ).props("dense no-caps").mark(f"kcc-{name}").tooltip(
+                        field_help(f"convertor.{name}")
+                    )
                     self._effective[name] = ui.label()
 
                 for name, labels, values in (
@@ -80,14 +86,16 @@ class KCCForm:
                         on_change=lambda e, n=name: self._set(
                             n, None if e.value in (None, INHERIT) else int(e.value)
                         ),
-                    ).props("dense").classes("w-48").mark(f"kcc-{name}")
+                    ).props("dense").classes("w-48").mark(f"kcc-{name}").tooltip(
+                        field_help(f"convertor.{name}")
+                    )
                     self._effective[name] = ui.label()
 
             ui.checkbox(
                 "Force regeneration (--force-regen: rebuild existing .kepub.epub)",
                 value=opts.force_regen,
                 on_change=lambda e: self._set("force_regen", bool(e.value)),
-            ).mark("kcc-force-regen")
+            ).mark("kcc-force-regen").tooltip(field_help("convertor.force_regen"))
         self.refresh()
 
     def _set(self, name: str, value: Any) -> None:

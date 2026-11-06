@@ -158,3 +158,28 @@ def test_settings_overrides(tmp_path: Path) -> None:
     assert other.effective_settings() == Settings(
         library_root=tmp_path / "b", metadata_dir=tmp_path
     )
+
+
+def test_settings_theme_backward_compatible(tmp_path: Path) -> None:
+    # files written before the theme existed open with the default theme
+    (tmp_path / "settings.json").write_text('{"library_root": "/lib"}')
+    assert Store(tmp_path).load_settings() == Settings(
+        library_root=Path("/lib"), theme="auto"
+    )
+    (tmp_path / "settings.json").write_text('{"theme": "neon"}')
+    assert Store(tmp_path).load_settings().theme == "auto"
+
+
+def test_save_theme_keeps_other_settings_and_overrides(tmp_path: Path) -> None:
+    store = Store(tmp_path)
+    store.save_settings(Settings(library_root=tmp_path / "lib"))
+    store.settings_overrides = Settings(metadata_dir=tmp_path / "o")
+    store.save_theme("dark")
+    assert store.load_settings() == Settings(
+        library_root=tmp_path / "lib", theme="dark"
+    )
+    # session overrides stay active and the theme survives the merge
+    assert store.effective_settings() == Settings(
+        library_root=tmp_path / "lib", metadata_dir=tmp_path / "o", theme="dark"
+    )
+    assert Store(tmp_path).load_settings().theme == "dark"

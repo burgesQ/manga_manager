@@ -11,6 +11,9 @@ unit-tested without NiceGUI:
 - KCC effective values (convertor preset + explicit overrides);
 - metadata YAML → series fields / volume rows / chapter-title rows, and the raw
   YAML save validated by ``editor.editor_full.load_yaml_metadata``;
+- effective packer values (project option or inherited from ``packer.json``);
+- wizard navigation: which validation issues block leaving a step, and which
+  inputs to highlight;
 - per-step run status.
 
 Config files are written atomically (temp file in the same folder, then
@@ -22,6 +25,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from dataclasses import replace
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal, NamedTuple
@@ -30,13 +34,18 @@ import yaml
 
 from convertor.kcc_adapter import PRESETS, KCCSettings
 from editor.editor_full import _resolve_chapter_titles, load_yaml_metadata
-from packer.cli import _resolve_config_path, load_config_file
+from packer.cli import (
+    _resolve_config_path,
+    load_config_file,
+    parse_batch_file,
+    parse_batch_spec,
+)
 from packer.core import parse_range
 
 from .models import KCCOptions, Kind, PackerOptions, Project
 from .runner import StepResult
 from .scan import ScanResult
-from .validation import resolve_packer_settings
+from .validation import Issue, PackerSettings, resolve_packer_settings
 
 # ---------------------------------------------------------------------------
 # Small parsing helpers
@@ -236,6 +245,90 @@ def effective_batch_file(project: Project) -> Path:
     if settings is not None and settings.batch_file is not None:
         return settings.batch_file
     return project.source / ".batch"
+
+
+# ---------------------------------------------------------------------------
+# Effective packer values (project option or packer.json)
+# ---------------------------------------------------------------------------
+
+INHERITABLE_PACKER_FIELDS: tuple[str, ...] = (
+    "serie",
+    "pattern",
+    "chapter_regex",
+    "extra_regex",
+    "nb_worker",
+    "batch_file",
+)
+"""Packer options ``packer.json`` provides when the project leaves them at their
+default (``packer.cli._apply_path_config``)."""
+
+FieldSource = Literal["project", "packer.json", "default"]
+
+
+class EffectiveField(NamedTuple):
+    """Value packer will use for one option and where it comes from.
+
+    ``config_value`` is what ``packer.json`` alone would give (``None`` when it
+    does not set the option), so the UI can say a project value overrides it.
+    """
+
+    value: Any
+    source: FieldSource
+    config_value: Any = None
+
+
+def effective_packer_fields(project: Project) -> dict[str, EffectiveField]:
+    """Effective value of every :data:`INHERITABLE_PACKER_FIELDS` option.
+
+    The merge itself is :func:`~manga_gui.validation.resolve_packer_settings`
+    (packer's rule: a ``packer.json`` value applies when the project value is at
+    its default). It is run twice: with the project options, and with only the
+    project ``config`` to get the value ``packer.json`` alone provides. An
+    invalid ``packer.json`` contributes nothing.
+    """
+    opts = project.packer
+    defaults = PackerOptions()
+    resolved: PackerSettings | None
+    inherited: PackerSettings | None
+    try:
+        resolved = resolve_packer_settings(project)
+        inherited = resolve_packer_settings(
+            replace(project, packer=PackerOptions(config=opts.config))
+        )
+    except ValueError:
+        resolved = inherited = None
+    fields: dict[str, EffectiveField] = {}
+    for name in INHERITABLE_PACKER_FIELDS:
+        own, default = getattr(opts, name), getattr(defaults, name)
+        config_value = None
+        if inherited is not None and getattr(inherited, name) != default:
+            config_value = getattr(inherited, name)
+        if own != default:
+            fields[name] = EffectiveField(own, "project", config_value)
+        elif resolved is not None and config_value is not None:
+            fields[name] = EffectiveField(
+                getattr(resolved, name), "packer.json", config_value
+            )
+        else:
+            fields[name] = EffectiveField(default, "default")
+    return fields
+
+
+def inherited_hint(field: EffectiveField) -> str | None:
+    """Hint shown under a packer field (``None``: nothing to say).
+
+    >>> inherited_hint(EffectiveField("mangafox", "packer.json", "mangafox"))
+    'from packer.json — changing it overrides packer.json for this project'
+    >>> inherited_hint(EffectiveField("animeSama", "project", "mangafox"))
+    'overrides packer.json (mangafox)'
+    >>> inherited_hint(EffectiveField("default", "default")) is None
+    True
+    """
+    if field.source == "packer.json":
+        return "from packer.json — changing it overrides packer.json for this project"
+    if field.source == "project" and field.config_value not in (None, field.value):
+        return f"overrides packer.json ({field.config_value})"
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -667,6 +760,146 @@ def chapter_titles(
     except Exception as e:  # malformed chapters YAML (bad number, YAML error …)
         return ChapterTitles({}, source, f"invalid chapters YAML: {e}")
     return ChapterTitles(dict(sorted(titles.items())), source)
+
+
+# ---------------------------------------------------------------------------
+# Wizard navigation
+# ---------------------------------------------------------------------------
+
+WIZARD_STEPS: tuple[str, ...] = (
+    "library",
+    "packer",
+    "convertor",
+    "metadata",
+    "review",
+    "volumes",
+)
+"""Steps of the project wizard, in order."""
+
+ISSUE_STEPS: dict[str, str] = {
+    "library": "project",
+    "packer": "packer",
+    "convertor": "convertor",
+    "metadata": "editor",
+}
+"""Wizard step → :attr:`~manga_gui.validation.Issue.step` it is responsible for."""
+
+
+def is_forward(old: str | None, new: str | None) -> bool:
+    """True when moving from wizard step ``old`` to a later step ``new``.
+
+    ``None`` (the stepper's initial value) is the first step.
+
+    >>> is_forward("packer", "review"), is_forward("review", "packer")
+    (True, False)
+    >>> is_forward(None, "packer")
+    True
+    """
+    try:
+        before = WIZARD_STEPS.index(old or WIZARD_STEPS[0])
+        after = WIZARD_STEPS.index(new or WIZARD_STEPS[0])
+    except ValueError:
+        return False
+    return after > before
+
+
+def blocking_issues(issues: list[Issue], step: str | None) -> list[Issue]:
+    """Errors of ``issues`` that forbid leaving wizard ``step`` forward.
+
+    Warnings never block; steps without checks (review, volumes) never block.
+    Disabled pipeline steps are not validated, so they never block either.
+
+    >>> issues = [Issue("error", "packer", "x"), Issue("warning", "packer", "y"),
+    ...           Issue("error", "editor", "z")]
+    >>> [i.message for i in blocking_issues(issues, "packer")]
+    ['x']
+    >>> blocking_issues(issues, "review")
+    []
+    """
+    target = ISSUE_STEPS.get(step or WIZARD_STEPS[0])
+    if target is None:
+        return []
+    return [i for i in issues if i.level == "error" and i.step == target]
+
+
+STEP_FIELDS: dict[str, tuple[str, ...]] = {
+    "library": ("name", "source"),
+    "packer": (
+        "serie",
+        "chapter_regex",
+        "extra_regex",
+        "batch",
+        "batch_file",
+        "volume",
+        "chapter_range",
+    ),
+}
+"""Wizard step → :func:`field_errors` keys of its inputs."""
+
+REQUIRED = "Required"
+
+
+def _batch_file_error(project: Project) -> str | None:
+    target = effective_batch_file(project)
+    if not target.is_file():
+        if project.packer.batch_file is not None:
+            return f"file not found: {target}"
+        return f"no batch file ({target}): fill the table and Save batch"
+    try:
+        parse_batch_file(str(target))
+    except (ValueError, OSError) as e:
+        return f"invalid batch file: {e}"
+    return None
+
+
+def field_errors(project: Project, mode: str | None = None) -> dict[str, str]:
+    """Inputs to highlight when leaving the Library / Packer step: field → error.
+
+    Keys: ``name``, ``source`` (Library) and ``serie``, ``chapter_regex``,
+    ``extra_regex``, ``batch``, ``batch_file``, ``volume``, ``chapter_range``
+    (Packer). ``mode`` is the volume mode shown in the UI (defaults to
+    :func:`volume_mode`): only the fields of that mode are checked. A serie
+    provided by ``packer.json`` is enough.
+    """
+    opts = project.packer
+    errors: dict[str, str] = {}
+    if not project.name.strip():
+        errors["name"] = REQUIRED
+    if not project.source.is_dir():
+        errors["source"] = "folder not found"
+    if not effective_packer_fields(project)["serie"].value:
+        errors["serie"] = f"{REQUIRED}: packer.json has no serie either"
+    for name in ("chapter_regex", "extra_regex"):
+        value = getattr(opts, name)
+        if value:
+            try:
+                re.compile(value)
+            except re.error as e:
+                errors[name] = f"invalid regex: {e}"
+    mode = mode or volume_mode(opts)
+    if mode == "spec":
+        if not opts.batch:
+            errors["batch"] = REQUIRED
+        else:
+            try:
+                parse_batch_spec(opts.batch)
+            except ValueError as e:
+                errors["batch"] = str(e)
+    elif mode == "single":
+        if opts.volume is None:
+            errors["volume"] = REQUIRED
+        if not opts.chapter_range:
+            errors["chapter_range"] = REQUIRED
+        else:
+            try:
+                parse_range(opts.chapter_range)
+            except ValueError as e:
+                errors["chapter_range"] = str(e)
+    else:
+        error = _batch_file_error(project)
+        if error is not None:
+            errors["batch_file"] = error
+    return errors
 
 
 # ---------------------------------------------------------------------------

@@ -8,6 +8,7 @@ from typing import Any
 from nicegui import ui
 
 from ..forms import BatchRow, validate_batch_rows
+from ..help_texts import field_help
 
 
 class BatchTable:
@@ -79,12 +80,16 @@ class BatchTable:
                         min=0,
                         precision=0,
                         on_change=lambda e, i=i: self._set(i, "volume", e.value),
-                    ).classes("w-24").mark(f"batch-volume-{i}")
+                    ).classes("w-24").mark(f"batch-volume-{i}").tooltip(
+                        field_help("gui.batch_volume")
+                    )
                     ui.input(
                         "Chapters (e.g. 1..12)",
                         value=row["chapters"],
                         on_change=lambda e, i=i: self._set(i, "chapters", e.value),
-                    ).classes("w-64").mark(f"batch-chapters-{i}")
+                    ).classes("w-64").mark(f"batch-chapters-{i}").tooltip(
+                        field_help("gui.batch_chapters")
+                    )
                     ui.button(
                         icon="delete", on_click=lambda i=i: self._remove(i)
-                    ).props("flat dense round")
+                    ).props("flat dense round").tooltip("Remove this volume")

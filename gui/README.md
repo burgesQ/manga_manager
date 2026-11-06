@@ -32,7 +32,9 @@ Data locations without `--data-dir`:
   the `.json` holds per-step argv, exit code and duration, the `.log` the full output.
   Every Dry-run / Run is recorded.
 - settings: `$XDG_CONFIG_HOME/manga_manager/settings.json` (`library_root`,
-  `metadata_dir`), saved from the Projects page or `manga-gui import --save-settings`.
+  `metadata_dir`, `theme`), saved from the Projects page, the theme switch or
+  `manga-gui import --save-settings`. Files written before `theme` existed still load
+  (theme `auto`).
 
 ## Importing existing series: `manga-gui import`
 
@@ -73,6 +75,16 @@ some profiles could not be written.
 
 ## Pages
 
+Every page has a header with the app link and a **theme switch** (*Auto* follows the
+browser / system setting, *Light*, *Dark*). The choice is saved in `settings.json` and
+applied when a page loads; grey helper texts and placeholders stay readable in dark mode.
+
+Every input, select, checkbox and toggle has a **hover tooltip**. Fields that map to a
+CLI option show that option's own `--help` text, read from the CLI's argparse parser
+(`packer`, `convertor`, `editor inject`), followed by the option (e.g.
+`[packer --serie]`); GUI-only fields (project name, kind, library root, …) have their
+own text (`help_texts.GUI_HELP`). Mandatory fields are marked with `*`.
+
 ### `/` — Projects
 
 One card per project: name, kind, source folder and a last-run chip (status, date,
@@ -103,8 +115,16 @@ Runs can be deleted; runs of a deleted (not purged) project stay readable.
 ### `/project/<slug>` — wizard
 
 A header **Save** button writes the project profile; it is also saved automatically
-when you change step and before a Dry-run / Run. The steps (`ui.stepper`, free
-navigation):
+when you change step and before a Dry-run / Run.
+
+Navigation (Next / Back or the step headers): going **back** is always allowed. Going
+**forward** runs the pre-flight checks first: when the step you leave has errors
+(Library: name, source folder; Packer; Convertor; Metadata → the `editor` checks, plus
+an auto-save rejected as invalid YAML), you stay on it, the errors are listed in a
+notification and the faulty inputs are highlighted (empty serie with no `serie` in
+`packer.json`, empty / invalid batch spec, missing batch file, volume / chapter range,
+invalid regex). Warnings never block, and a step disabled in Review & Run is not
+checked. The steps (`ui.stepper`):
 
 1. **Library** — project name, **Kind** toggle (Manga / Comic), source folder (`.cbz`
    chapters) and destination folder (volumes and `.kepub.epub`, defaults to the source).
@@ -112,7 +132,15 @@ navigation):
    unmatched files, duplicate chapters (packer would abort) and chapters missing from
    the batch.
 2. **Packer** — `packer.json` path, serie, pattern, workers, force, custom chapter /
-   extra regexes. **Volumes** in one of three modes: single volume + chapter range,
+   extra regexes. These show the **effective** value, i.e. what packer will use: when
+   the project leaves an option at its default (serie / regexes / batch file empty,
+   pattern `default`, workers 1) and `packer.json` sets it, the field shows the
+   `packer.json` value (as placeholder for text fields, selected in the Pattern select)
+   with the hint *from packer.json*. Changing it overrides `packer.json` for this
+   project only (hint *overrides packer.json (…)*); clearing a text field, or choosing
+   `default` / 1 workers, goes back to the `packer.json` value (packer treats those as
+   "not set"). The display is refreshed when the `packer.json` path changes and when
+   the raw editor is saved. **Volumes** in one of three modes: single volume + chapter range,
    inline batch spec, or batch CSV file; spec and file modes are edited in a table
    (**Save batch** writes the spec or the CSV). **Covers**: one cover file per volume,
    saved into `packer.json`. **packer.json**: raw editor, validated by
@@ -171,11 +199,12 @@ covers), after validation. Implicit writes:
 | `store.py` | JSON persistence of projects, run history and settings (XDG or `--data-dir`) |
 | `validation.py` | pre-flight checks reusing the packer / editor loaders |
 | `scan.py` | `.cbz` → chapter detection preview, volume folders, EPUB listing |
-| `forms.py` | UI-free helpers behind the wizard (batch rows, `packer.json` / YAML edits, KCC effective values) |
+| `forms.py` | UI-free helpers behind the wizard (batch rows, `packer.json` / YAML edits, KCC effective values, `effective_packer_fields`, navigation checks `blocking_issues` / `field_errors`) |
+| `help_texts.py` | UI-free tooltips: `field_help("packer.serie")` from the CLIs' argparse help, `GUI_HELP` for GUI-only fields |
 | `library.py` | UI-free project-level helpers: folder detection / prefill, create, duplicate, run summaries |
 | `volumes.py` | UI-free volume previews: volume dirs, covers, EPUB metadata (cached reads) |
 | `pages/` | `projects.py` (`/`), `project.py` (`/project/<slug>` wizard), `history.py` (`/project/<slug>/history`) |
-| `components/` | `batch_table`, `covers_grid`, `json_yaml_editor` (`FileEditor`), `kcc_form`, `log_panel`, `previews` (`VolumePreviews`) |
+| `components/` | `header` (`PageHeader`: app link + theme switch), `batch_table`, `covers_grid`, `json_yaml_editor` (`FileEditor`), `kcc_form`, `log_panel`, `previews` (`VolumePreviews`) |
 
 ## Tests
 

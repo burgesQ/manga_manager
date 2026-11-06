@@ -279,7 +279,9 @@ uv run manga-gui import --library-root ~/Shelf --metadata-dir ./metadatas --save
      scan of the `.cbz` files showing detected chapters, unmatched files and duplicates.
   2. **Packer**: serie, pattern / regexes, workers, volumes (single volume, batch spec
      or batch CSV file, edited as a table), covers per volume, and a raw `packer.json`
-     editor validated by packer's own loader.
+     editor validated by packer's own loader. Options left at their default show the
+     value packer will take from `packer.json` (hint *from packer.json*); changing one
+     overrides `packer.json` for this project only.
   3. **Convertor**: KCC settings on top of the `manga` / `comic` preset.
   4. **Metadata**: metadata YAML (series fields, volumes table, chapter titles preview,
      raw YAML editor), chapters YAML, locale, `--force`.
@@ -287,6 +289,12 @@ uv run manga-gui import --library-root ~/Shelf --metadata-dir ./metadatas --save
      equivalent shell commands, then *Dry-run* / *Run* / *Cancel* with live logs.
   6. **Volumes**: packed volume folders with cover and chapter count, generated
      `.kepub.epub` files and their injected metadata (refreshed after every run).
+
+Every field has a hover tooltip (the CLI `--help` text for fields that map to a CLI
+option), required fields are marked `*`, and moving *forward* from a step with errors is
+refused: the stepper stays on it, the errors are listed and the faulty inputs
+highlighted (going back is always allowed, warnings never block). A header on every
+page holds an **Auto / Light / Dark** theme switch, saved in the settings.
 
 **Design:** the real config files (`packer.json`, batch CSV, metadata / chapters YAML)
 stay the source of truth: a project only points to them, so the CLIs keep working
@@ -299,7 +307,7 @@ stream live and it can be cancelled; the run stops at the first failing step.
 |---|---|
 | Project profiles | `$XDG_CONFIG_HOME/manga_manager/projects/<slug>.json` (default `~/.config/manga_manager/projects/`) |
 | Run history (per-step argv, exit code, duration + full log) | `$XDG_STATE_HOME/manga_manager/runs/<slug>/<run_id>.{json,log}` (default `~/.local/state/manga_manager/runs/`) |
-| Settings (library root, metadata dir) | `$XDG_CONFIG_HOME/manga_manager/settings.json` |
+| Settings (library root, metadata dir, theme) | `$XDG_CONFIG_HOME/manga_manager/settings.json` |
 
 See [`gui/README.md`](gui/README.md) for details.
 

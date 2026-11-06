@@ -13,6 +13,7 @@ from pathlib import Path
 from nicegui import ui
 
 from ..forms import CoverRow, resolve_cover
+from ..help_texts import field_help
 
 THUMB_CLASSES = "w-32 h-44 rounded"
 
@@ -53,6 +54,8 @@ class CoversGrid:
                         on_change=lambda e, v=row.volume: self._set(v, e.value),
                     ).classes("w-48").mark(f"cover-{row.volume}").on(
                         "blur", lambda v=row.volume: self._render_thumb(v)
+                    ).tooltip(
+                        field_help("gui.cover")
                     )
 
     def _set(self, volume: int, value: str | None) -> None:
