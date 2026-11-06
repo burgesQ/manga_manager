@@ -127,6 +127,9 @@ class EditorOptions(_Serializable):
     chapters: Path | None = None
     locale: str = "english"
     force: bool = False
+    autosave: bool = False
+    """GUI only (never passed to ``editor``): write the metadata YAML editor to its
+    file automatically, without clicking *Save file*."""
 
 
 def _default_steps() -> dict[str, bool]:

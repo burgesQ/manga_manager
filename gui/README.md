@@ -120,7 +120,9 @@ navigation):
 3. **Convertor** — KCC settings: the preset follows the project kind (`manga` /
    `comic`), every field shows the effective value and can override it.
 4. **Metadata** — metadata YAML path, optional chapters YAML (`--chapters`), locale
-   (`english` / `japanese` / `french`), force. A series-fields form (applied to the YAML
+   (`english` / `japanese` / `french`), **Force** (`editor inject --force`: overwrite
+   metadata already in the EPUB) and **Write changes to file** (auto-save of the YAML
+   editor, see below). A series-fields form (applied to the YAML
    editor), a volumes table (title, ISBN, release date for the locale), a read-only
    chapter-titles preview (from `--chapters`, `chapters_file:` or inline `chapters:`)
    and the raw YAML editor, the source of truth, validated by
@@ -138,8 +140,14 @@ navigation):
    Refresh and after each run (cached on path / mtime / size).
 
 Config files are only written by their own buttons (Save file / Save batch / Save
-covers), after validation. The one implicit write: switching **Kind** sets `kind` in an
-existing `packer.json`.
+covers), after validation. Implicit writes:
+
+- switching **Kind** sets `kind` in an existing `packer.json`;
+- with **Write changes to file** checked (Metadata step, saved per project), the
+  metadata YAML editor is saved automatically after *Apply to YAML editor*, when
+  leaving a step and before a Dry-run / Run. Invalid YAML is never written: the
+  error is shown and the run does not start. Unchecked, the editor shows
+  *(unsaved changes)* and a run warns that it uses the file on disk.
 
 ## Design
 

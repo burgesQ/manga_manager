@@ -170,6 +170,7 @@ class ProjectPage:
                 ui.button("Back", on_click=self.stepper.previous).props("flat")
 
     async def _on_step_change(self, e: Any) -> None:
+        self.flush_metadata()
         self.save(quiet=True)
         if e.value == "review":
             self._refresh_review()
@@ -532,6 +533,14 @@ class ProjectPage:
                     value=opts.force,
                     on_change=lambda e: setattr(opts, "force", bool(e.value)),
                 )
+                ui.checkbox(
+                    "Write changes to file",
+                    value=opts.autosave,
+                    on_change=self._on_autosave,
+                ).mark("metadata-autosave").tooltip(
+                    "Save the metadata YAML automatically (after Apply, when leaving"
+                    " this step and before a run) instead of clicking Save file"
+                )
 
             _section("Series")
             self.series_inputs: dict[str, ui.input] = {}
@@ -608,6 +617,22 @@ class ProjectPage:
                 on_saved=self._refresh_metadata_preview,
             )
 
+    def _on_autosave(self, e: Any) -> None:
+        self.project.editor.autosave = bool(e.value)
+        if self.project.editor.autosave:
+            self.flush_metadata()
+
+    def flush_metadata(self) -> bool:
+        """Auto-save the metadata YAML editor when enabled and it has changes.
+
+        Returns ``False`` only when an auto-save was attempted and rejected (the
+        file on disk is then left untouched and the error is notified).
+        """
+        editor = self.metadata_editor
+        if not (self.project.editor.autosave and editor.dirty):
+            return True
+        return editor.save(quiet=True)
+
     def _on_locale(self, e: Any) -> None:
         self.project.editor.locale = e.value or "english"
         self._refresh_metadata_preview(self.metadata_editor.text)
@@ -647,6 +672,12 @@ class ProjectPage:
             return
         self.metadata_editor.text = dump_yaml(new_data)
         self._refresh_metadata_preview(self.metadata_editor.text)
+        if self.project.editor.autosave:
+            if self.flush_metadata():
+                ui.notify(
+                    "YAML updated and saved (comments are not kept)", type="positive"
+                )
+            return
         ui.notify(
             "YAML editor updated (comments are not kept): click Save file to write it",
             type="info",
@@ -755,6 +786,18 @@ class ProjectPage:
         if self._busy:
             ui.notify("A run is already in progress", type="warning")
             return
+        if self.project.step_enabled("editor") and self.metadata_editor.dirty:
+            if not self.project.editor.autosave:
+                ui.notify(
+                    "The metadata YAML has unsaved changes: the run uses the file"
+                    " on disk",
+                    type="warning",
+                )
+            elif not self.flush_metadata():
+                ui.notify(
+                    "Run not started: fix the metadata YAML first", type="negative"
+                )
+                return
         self.save(quiet=True)
         self._refresh_review()
         if not dry_run and self._has_errors:
