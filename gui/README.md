@@ -34,10 +34,21 @@ Data locations without `--data-dir`:
 
 ### `/` — Projects
 
-Lists the saved projects (name, kind, source folder) and a **New project** form (name +
-source folder). Creating a project saves its profile and opens its wizard.
-Duplicate / delete, last-run status and a run history page are planned (ROADMAP **G6**),
-as are volume previews (**G7**).
+One card per project: name, kind, source folder and a last-run chip (status, date,
+dry-run flag; click it to open the history). Actions: **open**, **history**,
+**duplicate** (asks for a new name) and **delete** (confirm dialog, optionally purging
+the run history).
+
+The **New project** form takes a name, a kind and a source folder. The folder is
+inspected as you type: `.cbz` count, an existing `packer.json` (its `serie`, `pattern`
+and `kind` prefill the project) and a `.batch` file (reported; packer picks it up on
+its own). An invalid `packer.json` does not block creation: the wizard reports it.
+
+### `/project/<slug>/history` — run history
+
+Runs, newest first: date, dry-run badge, duration, status and one exit-code chip per
+step. Opening a run (or `?run=<id>`) shows each step's command line and the full log.
+Runs can be deleted; runs of a deleted (not purged) project stay readable.
 
 ### `/project/<slug>` — wizard
 
@@ -70,6 +81,11 @@ navigation):
    progress. Steps run in order and stop at the first non-zero exit. Before packer has
    really run, a dry-run of convertor / editor has nothing to work on and reports
    nothing to do.
+6. **Volumes** — one card per volume: cover thumbnail, chapter count, whether its
+   `.kepub.epub` exists and, if so, the injected metadata (title, series, index, kind,
+   tags, language, ISBN) read with `EPUBMetadata`. Volumes planned by the batch but not
+   packed yet are shown greyed. EPUBs are read only when the step is opened, on
+   Refresh and after each run (cached on path / mtime / size).
 
 Config files are only written by their own buttons (Save file / Save batch / Save
 covers), after validation. The one implicit write: switching **Kind** sets `kind` in an
@@ -97,8 +113,10 @@ existing `packer.json`.
 | `validation.py` | pre-flight checks reusing the packer / editor loaders |
 | `scan.py` | `.cbz` → chapter detection preview, volume folders, EPUB listing |
 | `forms.py` | UI-free helpers behind the wizard (batch rows, `packer.json` / YAML edits, KCC effective values) |
-| `pages/` | `projects.py` (`/`), `project.py` (`/project/<slug>` wizard) |
-| `components/` | `batch_table`, `covers_grid`, `json_yaml_editor` (`FileEditor`), `kcc_form`, `log_panel` |
+| `library.py` | UI-free project-level helpers: folder detection / prefill, create, duplicate, run summaries |
+| `volumes.py` | UI-free volume previews: volume dirs, covers, EPUB metadata (cached reads) |
+| `pages/` | `projects.py` (`/`), `project.py` (`/project/<slug>` wizard), `history.py` (`/project/<slug>/history`) |
+| `components/` | `batch_table`, `covers_grid`, `json_yaml_editor` (`FileEditor`), `kcc_form`, `log_panel`, `previews` (`VolumePreviews`) |
 
 ## Tests
 

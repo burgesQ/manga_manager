@@ -10,12 +10,14 @@ from typing import Any
 
 import pytest
 import yaml
+from ebooklib import epub
 from manga_gui.commands import StepCommand
 from manga_gui.models import Project
 from manga_gui.pages import register_pages
 from manga_gui.store import Store
 from nicegui.testing import User, user_simulation
 
+from editor.epub_metadata import EPUBMetadata
 from packer.testing import make_cbz as _packer_make_cbz
 
 
@@ -68,6 +70,53 @@ def py_cmd(tmp_path: Path) -> Callable[..., StepCommand]:
 
     def _make(code: str, *, step: str = "packer") -> StepCommand:
         return StepCommand(step=step, argv=[sys.executable, "-c", code], cwd=tmp_path)
+
+    return _make
+
+
+@pytest.fixture
+def make_epub() -> Callable[..., Path]:
+    """Write a minimal EPUB at ``path``; ``inject`` adds editor metadata to it.
+
+    ``inject`` holds keyword arguments for ``EPUBMetadata.set_metadata`` (title,
+    series, series_index, isbn, language, tags …), applied like ``editor inject``.
+    """
+
+    def _make(
+        path: Path, *, title: str = "Raw", inject: dict[str, Any] | None = None
+    ) -> Path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        book = epub.EpubBook()
+        book.set_identifier("id123")
+        book.set_title(title)
+        page = epub.EpubHtml(title="p1", file_name="p1.xhtml", content="<p>1</p>")
+        book.add_item(page)
+        book.toc = (epub.Link("p1.xhtml", "Chapter 001", "c1"),)
+        book.spine = ["nav", page]
+        book.add_item(epub.EpubNcx())
+        book.add_item(epub.EpubNav())
+        epub.write_epub(str(path), book)
+        if inject is not None:
+            meta = EPUBMetadata(path)
+            meta.set_metadata(**inject)
+            meta.save()
+        return path
+
+    return _make
+
+
+@pytest.fixture
+def make_volume_dir() -> Callable[..., Path]:
+    """Create ``dest/<name>/`` with ``chapters`` ``Chapter NNN`` folders (+ cover)."""
+
+    def _make(dest: Path, name: str, *, chapters: int = 2, cover: bool = True) -> Path:
+        vol = dest / name
+        for n in range(1, chapters + 1):
+            (vol / f"Chapter {n:03d}").mkdir(parents=True)
+        vol.mkdir(parents=True, exist_ok=True)
+        if cover:
+            (vol / "cover.webp").write_bytes(b"RIFF0000WEBP")
+        return vol
 
     return _make
 

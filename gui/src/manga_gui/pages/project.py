@@ -1,5 +1,10 @@
-"""``/project/{slug}``: the 5-step wizard (Library → Packer → Convertor → Metadata
-→ Review & Run).
+"""``/project/{slug}``: the wizard (Library → Packer → Convertor → Metadata →
+Review & Run → Volumes).
+
+The 6th step, **Volumes**, previews what the pipeline produced in the destination
+(:class:`~manga_gui.components.previews.VolumePreviews`). It is a step of its own
+rather than a section of Review & Run so that reading the EPUBs only happens on
+demand: when the step is opened, on its Refresh button, and after every run.
 
 Saving model
 ------------
@@ -27,6 +32,7 @@ from ..components.covers_grid import CoversGrid
 from ..components.json_yaml_editor import FileEditor
 from ..components.kcc_form import KCCForm
 from ..components.log_panel import LogPanel
+from ..components.previews import VolumePreviews
 from ..forms import (
     METADATA_TEMPLATE,
     PACKER_JSON_TEMPLATE,
@@ -70,6 +76,7 @@ from ..validation import (
     resolve_packer_settings,
     validate_project,
 )
+from ..volumes import expected_volume_names
 
 logger = logging.getLogger(__name__)
 
@@ -81,6 +88,7 @@ STEP_LABELS = {
     "convertor": "Convertor",
     "metadata": "Metadata",
     "review": "Review & Run",
+    "volumes": "Volumes",
 }
 DRY_RUN_NOTE = (
     "Dry-run runs every enabled step with --dry-run. Convertor and editor only "
@@ -117,6 +125,9 @@ class ProjectPage:
             ui.link("← Projects", "/")
             self.title = ui.label(self.project.name).classes("text-h5")
             ui.space()
+            ui.link("History", f"/project/{self.project.slug}/history").mark(
+                "history-link"
+            )
             ui.button("Save", icon="save", on_click=lambda: self.save()).mark(
                 "save-project"
             )
@@ -139,6 +150,12 @@ class ProjectPage:
                 self._nav()
             with ui.step("review", title=STEP_LABELS["review"]):
                 self._build_review()
+                self._nav()
+            with ui.step("volumes", title=STEP_LABELS["volumes"]):
+                self.previews = VolumePreviews(
+                    get_dest=lambda: self.project.effective_dest,
+                    get_expected=lambda: expected_volume_names(self.project),
+                )
                 self._nav(last=True)
         self.packer_editor.load()
         self.metadata_editor.load()
@@ -152,10 +169,12 @@ class ProjectPage:
             if not first:
                 ui.button("Back", on_click=self.stepper.previous).props("flat")
 
-    def _on_step_change(self, e: Any) -> None:
+    async def _on_step_change(self, e: Any) -> None:
         self.save(quiet=True)
         if e.value == "review":
             self._refresh_review()
+        elif e.value == "volumes":
+            await self.previews.refresh()
 
     # -- persistence --------------------------------------------------------
 
@@ -776,6 +795,8 @@ class ProjectPage:
         record = self.store.save_run(self.project.slug, result, self.log_panel.text())
         logger.info("run %s saved (exit code %s)", record.run_id, result.exit_code)
         self._ui(lambda: self._finish(result))
+        if self.previews.alive:
+            await self.previews.refresh()
 
     def _finish(self, result: PipelineResult) -> None:
         if result.cancelled:
