@@ -17,6 +17,7 @@ from typing import Any, NamedTuple
 from packer.cli import _resolve_config_path, load_config_file, parse_batch_file
 from packer.core import NAMED_PATTERNS, find_cbz_files
 
+from .discovery import ImportCandidate, apply_candidate
 from .forms import StepStatus, parse_path
 from .models import Kind, Project, slugify
 from .runner import PipelineResult
@@ -182,12 +183,17 @@ def create_project(
     *,
     kind: Kind | None = None,
     from_folder: bool = True,
+    candidate: ImportCandidate | None = None,
 ) -> Project:
     """Create and save a new project; raises ``ValueError`` with a user message.
 
     With ``from_folder`` the source folder is inspected (:func:`detect_folder`) to
     prefill the profile. An invalid ``packer.json`` is not refused (nothing is
     prefilled from it): the wizard reports it and its raw editor can fix it.
+
+    A library ``candidate`` (:mod:`manga_gui.discovery`) of the same source folder
+    also points the project to its packer config, metadata / chapters YAML and
+    locale; its kind applies when ``kind`` is not given.
     """
     name = name.strip()
     source = parse_path(source_text)
@@ -200,6 +206,10 @@ def create_project(
         raise ValueError(f"a project with slug {slug!r} already exists")
     detection = detect_folder(source) if from_folder else None
     project = new_project(name, source, kind=kind, detection=detection)
+    if candidate is not None and candidate.source == source:
+        apply_candidate(project, candidate)
+        if kind is None:
+            project.kind = candidate.kind
     store.save_project(project)
     logger.info("created project %s (%s)", project.slug, source)
     return project

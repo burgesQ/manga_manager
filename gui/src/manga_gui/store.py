@@ -9,6 +9,9 @@ Default layout (XDG):
 
 With an explicit ``data_dir`` (``manga-gui --data-dir``, tests, alternative
 profile dirs) both live under it: ``<data_dir>/projects`` and ``<data_dir>/runs``.
+
+App settings (:class:`~manga_gui.models.Settings`: library root, metadata dir) live
+next to the projects: ``<config>/settings.json`` (``<data_dir>/settings.json``).
 """
 
 from __future__ import annotations
@@ -22,12 +25,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from .models import Project
+from .models import Project, Settings
 from .runner import PipelineResult
 
 logger = logging.getLogger(__name__)
 
 APP_DIR_NAME = "manga_manager"
+SETTINGS_FILENAME = "settings.json"
 _SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 _RUN_ID_RE = re.compile(r"^[0-9]{8}T[0-9]{6}-[0-9]{6}$")
 
@@ -68,13 +72,49 @@ def _write_atomic(path: Path, text: str) -> None:
 class Store:
     """File-based store for :class:`Project` profiles and :class:`RunRecord` runs."""
 
-    def __init__(self, data_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        data_dir: Path | None = None,
+        *,
+        settings_overrides: Settings | None = None,
+    ) -> None:
         if data_dir is not None:
-            self.projects_dir = Path(data_dir) / "projects"
+            config_dir = Path(data_dir)
             self.runs_dir = Path(data_dir) / "runs"
         else:
-            self.projects_dir = _xdg_dir("XDG_CONFIG_HOME", ".config") / "projects"
+            config_dir = _xdg_dir("XDG_CONFIG_HOME", ".config")
             self.runs_dir = _xdg_dir("XDG_STATE_HOME", ".local/state") / "runs"
+        self.projects_dir = config_dir / "projects"
+        self.settings_path = config_dir / SETTINGS_FILENAME
+        # Session values (``manga-gui --library-root …``) winning over the file.
+        self.settings_overrides = settings_overrides or Settings()
+
+    # -- settings ---------------------------------------------------------
+
+    def load_settings(self) -> Settings:
+        """Saved settings (defaults when the file is missing or unreadable)."""
+        try:
+            data = json.loads(self.settings_path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return Settings()
+        except (OSError, ValueError) as e:
+            logger.warning("ignoring unreadable settings %s: %s", self.settings_path, e)
+            return Settings()
+        if not isinstance(data, dict):
+            logger.warning("ignoring settings %s: not an object", self.settings_path)
+            return Settings()
+        return Settings.from_dict(data)
+
+    def save_settings(self, settings: Settings) -> Path:
+        """Write ``settings`` atomically; they replace the session overrides."""
+        text = json.dumps(settings.to_dict(), indent=2, ensure_ascii=False)
+        _write_atomic(self.settings_path, text + "\n")
+        self.settings_overrides = Settings()
+        return self.settings_path
+
+    def effective_settings(self) -> Settings:
+        """Saved settings with the session overrides applied."""
+        return self.load_settings().merged(self.settings_overrides)
 
     # -- projects ---------------------------------------------------------
 

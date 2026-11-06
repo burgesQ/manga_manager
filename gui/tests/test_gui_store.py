@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from manga_gui.models import Kind, PackerOptions
+from manga_gui.models import Kind, PackerOptions, Settings
 from manga_gui.runner import PipelineResult, StepResult
 from manga_gui.store import Store
 
@@ -124,3 +124,37 @@ def test_read_missing_log(tmp_path: Path) -> None:
     rec = store.save_run("saga", _result(), "x")
     rec.log_path.unlink()
     assert store.read_run_log("saga", rec.run_id) == ""
+
+
+# -- settings ----------------------------------------------------------------
+
+
+def test_settings_roundtrip(tmp_path: Path) -> None:
+    store = Store(tmp_path)
+    assert store.settings_path == tmp_path / "settings.json"
+    assert store.load_settings() == Settings()
+    settings = Settings(library_root=tmp_path / "lib", metadata_dir=tmp_path / "m")
+    assert store.save_settings(settings) == tmp_path / "settings.json"
+    assert Store(tmp_path).load_settings() == settings
+
+
+def test_settings_xdg_location(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+    assert Store().settings_path == tmp_path / "cfg" / "manga_manager" / "settings.json"
+
+
+@pytest.mark.parametrize("text", ["{oops", "[1, 2]"])
+def test_settings_unreadable(tmp_path: Path, text: str) -> None:
+    (tmp_path / "settings.json").write_text(text)
+    assert Store(tmp_path).load_settings() == Settings()
+
+
+def test_settings_overrides(tmp_path: Path) -> None:
+    store = Store(tmp_path, settings_overrides=Settings(library_root=tmp_path / "x"))
+    store.save_settings(Settings(library_root=tmp_path / "a", metadata_dir=tmp_path))
+    # saving replaces the session overrides
+    assert store.effective_settings().library_root == tmp_path / "a"
+    other = Store(tmp_path, settings_overrides=Settings(library_root=tmp_path / "b"))
+    assert other.effective_settings() == Settings(
+        library_root=tmp_path / "b", metadata_dir=tmp_path
+    )

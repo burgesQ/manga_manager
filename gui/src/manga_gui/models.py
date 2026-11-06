@@ -195,3 +195,30 @@ class Project:
             editor=EditorOptions.from_dict(data.get("editor")),
             steps={str(k): bool(v) for k, v in steps.items()},
         )
+
+
+@dataclass
+class Settings(_Serializable):
+    """App-wide settings (``<config>/settings.json``), not tied to a project.
+
+    - ``library_root``: folder holding the series folders (``<root>/<LANG>/<dir>``);
+    - ``metadata_dir``: folder of per-series files (``packer_<key>.json``,
+      ``<key>.yaml``, ``chapters_<key>.yaml``, ``vols_<key>.csv``).
+    """
+
+    _PATH_FIELDS: ClassVar[frozenset[str]] = frozenset({"library_root", "metadata_dir"})
+
+    library_root: Path | None = None
+    metadata_dir: Path | None = None
+
+    def merged(self, overrides: Settings) -> Settings:
+        """Copy of ``self`` where every non-``None`` value of ``overrides`` wins.
+
+        >>> base = Settings(library_root=Path("/a"), metadata_dir=Path("/m"))
+        >>> base.merged(Settings(library_root=Path("/b")))
+        Settings(library_root=PosixPath('/b'), metadata_dir=PosixPath('/m'))
+        """
+        return Settings(
+            library_root=overrides.library_root or self.library_root,
+            metadata_dir=overrides.metadata_dir or self.metadata_dir,
+        )

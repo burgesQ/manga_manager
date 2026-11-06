@@ -6,7 +6,7 @@ import json
 import sys
 from collections.abc import AsyncIterator, Callable
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 
 import pytest
 import yaml
@@ -119,6 +119,112 @@ def make_volume_dir() -> Callable[..., Path]:
         return vol
 
     return _make
+
+
+class Shelf(NamedTuple):
+    """A fake library root + metadata dir (see :func:`fake_shelf`)."""
+
+    root: Path
+    meta: Path
+
+
+def _vol(series: Path, serie: str, n: int = 1) -> None:
+    (series / f"{serie} v{n:02d}" / "Chapter 001").mkdir(parents=True)
+
+
+@pytest.fixture
+def fake_shelf(tmp_path: Path, write_json, write_yaml) -> Shelf:
+    """A library root ``shelf/<LANG>/<dir>`` and a metadata dir mirroring the
+    real layout.
+
+    Expected matches: fma, jjk, jjkm, zetman (covers) → EN/FmA, EN/JJK, EN/JJKM,
+    EN/Zetman; mashle (yaml series; invalid packer json) → EN/Mashle; boruto
+    (key) → FR/Boruto; boruto_bv (initials) → FR/BorutoBlueVortex; shangri
+    (prefix) → FR/Shangri-La Frontier; EN/Berserk has no metadata; vinland has
+    no folder; NickelMenu (a git repo), ``.Trash`` and loose files are ignored.
+    """
+    root, meta = tmp_path / "shelf", tmp_path / "metadatas"
+    en, fr = root / "EN", root / "FR"
+
+    def vols(locale: str) -> list[dict[str, Any]]:
+        return [{"number": 1, "title": "One", locale: {"isbn": "123"}}]
+
+    def packer(key: str, serie: str, folder: Path, **extra: Any) -> None:
+        data = {
+            "serie": serie,
+            "batch_file": str(meta / f"vols_{key}.csv"),
+            "covers": {"1": str(folder / "covers" / "1.webp")},
+            **extra,
+        }
+        write_json(meta / f"packer_{key}.json", data)
+        (meta / f"vols_{key}.csv").write_text("v01,1\n")
+        (folder / "covers").mkdir(parents=True)
+
+    # EN
+    _vol(en / "Berserk", "Berserk", 1)
+    _vol(en / "Berserk", "Berserk", 2)
+    packer("fma", "Fullmetal Alchemist", en / "FmA")
+    _vol(en / "FmA", "Fullmetal Alchemist")
+    write_json(en / "FmA" / "packer.json", {"serie": "Fullmetal Alchemist"})
+    write_yaml(
+        meta / "fma.yaml", {"series": "Fullmetal Alchemist", "volumes": vols("english")}
+    )
+    packer("jjk", "Jujutsu Kaisen", en / "JJK")
+    (en / "JJK" / "Ch.001.cbz").write_bytes(b"PK")
+    write_yaml(
+        meta / "jjk.yaml",
+        {
+            "series": "Jujutsu Kaisen",
+            "chapters_file": "./chapters_jjk.yaml",
+            "volumes": vols("english"),
+        },
+    )
+    write_yaml(meta / "chapters_jjk.yaml", {"chapters": [{"number": 1, "title": "A"}]})
+    packer("jjkm", "Jujutsu Kaisen Modulo", en / "JJKM")
+    _vol(en / "JJKM", "Jujutsu Kaisen Modulo")
+    write_yaml(
+        meta / "jjkm.yaml",
+        {"series": "Jujutsu Kaisen Modulo", "volumes": vols("english")},
+    )
+    write_yaml(meta / "chapters_jjkm.yaml", {"chapters": []})
+    packer("zetman", "Zetman", en / "Zetman", kind="comic")
+    write_yaml(meta / "zetman.yaml", {"series": "Zetman", "volumes": vols("japanese")})
+    _vol(en / "Mashle", "Mashle")
+    (en / "Mashle" / "packer.json").write_text('{"serie": "Mashle" "x": 1}')
+    (meta / "packer_mashle.json").write_text('{"serie": "Mashle"\n "covers": {}}')
+    write_yaml(meta / "mashle.yaml", {"series": "Mashle", "volumes": vols("english")})
+
+    # FR
+    boruto = {"series": "Boruto: Naruto Next Generations", "volumes": vols("english")}
+    _vol(fr / "Boruto", "Boruto")
+    write_json(fr / "Boruto" / "packer.json", {"serie": "Boruto"})
+    write_yaml(meta / "boruto.yaml", boruto)
+    _vol(fr / "BorutoBlueVortex", "Boruto Two Blue Vortex")
+    write_json(
+        fr / "BorutoBlueVortex" / "packer.json", {"serie": "Boruto: Two Blue Vortex"}
+    )
+    write_yaml(meta / "boruto_bv.yaml", boruto)
+    _vol(fr / "Shangri-La Frontier", "Shangri-La Frontier")
+    write_yaml(
+        meta / "shangri.yaml",
+        {"series": "Shangri-La Frontier ~Kusoge Hunter~", "volumes": vols("french")},
+    )
+
+    # group without folder
+    write_yaml(meta / "vinland.yaml", {"series": "Vinland Saga", "volumes": []})
+
+    # noise: a git repository, hidden folder, loose files
+    nickel = root / "NickelMenu"
+    (nickel / ".git").mkdir(parents=True)
+    (nickel / "src").mkdir()
+    (nickel / "src" / "trap.cbz").write_bytes(b"PK")  # never reached
+    (nickel / "res" / "doc").mkdir(parents=True)
+    (nickel / "test" / "syms").mkdir(parents=True)
+    _vol(root / ".Trash", "Old")
+    (root / "kcc.AppImage").write_bytes(b"\x7fELF")
+    (root / "TODOs.org").write_text("* TODO\n")
+    (meta / "notes.txt").write_text("not a metadata file\n")
+    return Shelf(root, meta)
 
 
 # -- NiceGUI user simulation -------------------------------------------------

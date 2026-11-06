@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from manga_gui.models import Kind, PackerOptions, Project
+from manga_gui.models import Kind, PackerOptions, Project, Settings
 from manga_gui.runner import PipelineResult, StepResult
 from manga_gui.store import Store
 from nicegui.testing import User
@@ -167,3 +167,93 @@ async def test_history_open_run_from_query_and_orphans(
     await gui_user.should_see("(empty log)")
     await gui_user.open("/project/BAD!/history")
     await gui_user.should_see("Invalid project")
+
+
+# -- library: settings, import, From library ----------------------------------
+
+
+async def test_library_import_dialog(
+    gui_user: User, gui_store: Store, tmp_path: Path, fake_shelf
+) -> None:
+    gui_store.save_project(Project(name="Berserk", source=tmp_path / "elsewhere"))
+    await gui_user.open("/")
+    assert _element(gui_user, "library-root").value == ""
+    _set_value(gui_user, "library-root", str(fake_shelf.root))
+    _set_value(gui_user, "metadata-dir", str(fake_shelf.meta))
+    gui_user.find(marker="library-save").click()
+    assert gui_store.load_settings().library_root == fake_shelf.root
+
+    gui_user.find(marker="library-import").click()
+    await gui_user.should_see(marker="import-select-zetman")
+    await gui_user.should_see(
+        "key 'boruto_bv' matches the initials of 'BorutoBlueVortex'"
+    )
+    await gui_user.should_see(marker="import-exists-berserk")
+    # preselected: importable and not existing
+    assert _element(gui_user, "import-select-zetman").value is True
+    assert _element(gui_user, "import-select-berserk").value is False
+    orphan = _element(gui_user, "import-select-vinland-saga")
+    assert orphan.value is False and not orphan.enabled
+    # unselect one
+    _set_value(gui_user, "import-select-mashle", False)
+    gui_user.find(marker="import-confirm").click()
+    await gui_user.should_see("Import: 7 created, 0 overwritten, 0 skipped (exists)")
+    await gui_user.should_see(marker="project-card-zetman")
+    assert not gui_store.has_project("mashle")
+    assert gui_store.load_project("berserk").source == tmp_path / "elsewhere"
+    zetman = gui_store.load_project("zetman")
+    assert zetman.kind is Kind.COMIC
+    assert zetman.editor.metadata == fake_shelf.meta / "zetman.yaml"
+
+
+async def test_library_import_overwrite(
+    gui_user: User, gui_store: Store, tmp_path: Path, fake_shelf
+) -> None:
+    gui_store.save_project(Project(name="Berserk", source=tmp_path / "elsewhere"))
+    await gui_user.open("/")
+    _set_value(gui_user, "library-root", str(fake_shelf.root))
+    gui_user.find(marker="library-import").click()
+    await gui_user.should_see(marker="import-select-berserk")
+    _set_value(gui_user, "import-select-berserk", True)
+    _set_value(gui_user, "import-overwrite", True)
+    gui_user.find(marker="import-confirm").click()
+    await gui_user.should_see("1 overwritten")
+    assert (
+        gui_store.load_project("berserk").source == fake_shelf.root / "EN" / "Berserk"
+    )
+    assert gui_store.load_settings().library_root is None  # not saved
+
+
+async def test_library_import_needs_a_folder(gui_user: User) -> None:
+    await gui_user.open("/")
+    gui_user.find(marker="library-import").click()
+    await gui_user.should_see("Set a library root and / or a metadata dir")
+
+
+async def test_new_project_from_library(
+    gui_user: User, gui_store: Store, fake_shelf
+) -> None:
+    await gui_user.open("/")
+    await gui_user.should_not_see(marker="new-library")  # no library root yet
+    gui_store.save_settings(
+        Settings(library_root=fake_shelf.root, metadata_dir=fake_shelf.meta)
+    )
+    await gui_user.open("/")
+    select = _element(gui_user, "new-library")
+    assert select.visible
+    src = fake_shelf.root / "EN" / "Zetman"
+    assert select.options[str(src)] == "EN/Zetman"
+    assert len(select.options) == 9
+    _set_value(gui_user, "new-library", str(src))
+    assert _element(gui_user, "new-source").value == str(src)
+    assert _element(gui_user, "new-name").value == "Zetman"
+    assert _element(gui_user, "new-kind").value == "comic"
+    await gui_user.should_see("Library: covers of packer_zetman.json are in EN/Zetman")
+    await gui_user.should_see("Warning: metadata YAML volumes have no `english` block")
+    gui_user.find(marker="new-create").click()
+    await gui_user.should_see(marker="project-name")
+    project = gui_store.load_project("zetman")
+    assert project.source == src and project.kind is Kind.COMIC
+    assert project.packer.config == fake_shelf.meta / "packer_zetman.json"
+    assert project.editor.metadata == fake_shelf.meta / "zetman.yaml"
+    assert project.editor.chapters is None
