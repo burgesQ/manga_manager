@@ -22,6 +22,10 @@ Examples:
     uv run editor dump  ./Berserk --output current.yaml
     uv run editor clear ./Berserk --dry-run
 
+Metadata YAML may set a top-level `kind: manga|comic`: inject adds the matching
+`Manga` / `Comic` tag (dc:subject, merged with `genre`), dump writes `kind` back
+when that tag is present. Reading direction is set by `convertor --preset`.
+
 Run `editor <command> --help` for per-command options. `editor --version` and
 `editor --print-completion {bash,zsh,tcsh}` are also available.
 """
@@ -68,7 +72,12 @@ def main(argv=None) -> int:
     inject_parser.add_argument(
         "path", type=Path, help="File or directory containing EPUB files"
     )
-    inject_parser.add_argument("metadata", type=Path, help="YAML metadata file")
+    inject_parser.add_argument(
+        "metadata",
+        type=Path,
+        help="YAML metadata file (optional top-level `kind: manga|comic` adds a "
+        "Manga / Comic tag)",
+    )
     inject_parser.add_argument(
         "--force", action="store_true", help="Overwrite existing metadata"
     )

@@ -1,6 +1,6 @@
 # Roadmap & Task Backlog
 
-Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) → **convertor** → `*.kepub.epub`
+Full workflow: `*.cbz` → **packer** → volume dirs → **convertor** → `*.kepub.epub` → **editor** (metadata)
 
 ---
 
@@ -91,16 +91,50 @@ Full workflow: `*.cbz` → **packer** → volume dirs → **editor** (metadata) 
 - [ ] **CI2** Wire up reviewdog to annotate PRs from ruff / black / isort / mypy
 - [ ] **CI3** Multi-Python test matrix: 3.10, 3.11, 3.12
 - [ ] **CI4** Optional KCC integration CI job (runs only when KCC is available)
-- [ ] **CI5** Enable CodeQL scan (scaffolding already in ci.yml, just commented out)
+- [x] **CI5** Enable CodeQL scan — code-scanning *default setup* (python + actions); commented job removed from ci.yml
 - [ ] **CI6** (S) Expand ruff ruleset (`I`, `B`, `UP`) + drop `|| true` so lint is a real gate (distinct from **CI2**'s reviewdog annotation)
 - [ ] **CI7** (S) Coverage-threshold gate (`--cov-fail-under=N`) so the high coverage can't silently regress
-- [ ] **CI8** (M) End-to-end pipeline integration test (packer → editor → convertor, KCC mocked) to catch cross-package contract breaks like **E8**
+- [ ] **CI8** (M) End-to-end pipeline integration test (packer → convertor → editor, KCC mocked) to catch cross-package contract breaks like **E8**
 
 ---
 
-## Web UI
+## GUI (`manga-gui`, NiceGUI)
+
+Local web UI, run **on the host** (not in the container: it must see the real library
+paths), to set up and review every config file,
+path and option per series, then run packer → convertor → editor in sequence.
+Design notes: steps run as subprocesses (`python -m <pkg>.main`) so logs stream and runs
+can be cancelled; the real config files (`packer.json`, batch CSV, metadata / chapters
+YAML) stay the source of truth, the GUI edits them in place.
 
 - [x] **W1** Ship with Calibre web? (idea)
+- [ ] **G1** (M) Scaffold `gui/` workspace member (`manga_gui`, entry point `manga-gui`, `--host/--port/--data-dir`)
+- [ ] **G2** (M) Core, UI-free: `models` (Project + per-step options), `store` (XDG projects + run history),
+      `commands` (pure Project → argv per step), `validation` (wraps `load_config_file`,
+      `parse_batch_file`, `load_yaml_metadata`, …), `scan` (cbz → chapter matches)
+- [ ] **G3** (M) Async subprocess `runner`: line streaming, progress parsed from existing log lines, cancel
+- [ ] **G4** (L) Wizard (`ui.stepper`): Library → Packer (form, batch table, covers grid, raw `packer.json`)
+      → Convertor (KCC form) → Metadata (series / volumes / chapter titles, raw YAML) → Review & Run
+- [ ] **G5** (S) Kind selector (Manga / Comic) driving the convertor preset (**K1**) and `packer.json` `kind` (**K2**)
+- [ ] **G6** (M) Projects page (create from folder, duplicate, delete) + run history page
+- [ ] **G7** (M) Volume previews: packed dirs + covers, generated `.kepub.epub`, injected metadata
+- [ ] **G8** (S) Packaging & docs: `uv run manga-gui` on the host (binds 127.0.0.1); keep `gui/` (NiceGUI)
+      out of the Docker image, which stays CLI-only
+
+---
+
+## Comics
+
+Comics are **colour** and read **left-to-right**; current defaults assume manga
+(`--manga-style` → RTL).
+
+- [x] **K1** (S) `convertor --preset {manga,comic}` — `comic` ⇒ `manga_style=False` (LTR), colour kept;
+      explicit flags still override the preset
+- [x] **K2** (S) `kind: manga|comic` key in `packer.json` (accepted by `load_config_file`), consumed by the GUI / pipeline
+- [ ] **K3** (M) Comic filename pattern(s) in `NAMED_PATTERNS` (issue numbers, e.g. `Saga 001 (2012) (Digital).cbz`)
+      — *blocked:* need real sample filenames (none in `~/Shelf` yet, manga only); also re-check P2 (comic `.cbz` often lack `ComicInfo.xml`)
+- [x] **K4** (S) Metadata YAML `kind: comic` → `Comic` tag (`dc:subject`); reading direction stays KCC's job (spine)
+- [ ] **K5** (S) Optional `--toc-label Issue` (packer dirs + editor relabel): `Issue 001 - <title>`
 
 ---
 

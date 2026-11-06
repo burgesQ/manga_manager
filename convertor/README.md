@@ -33,20 +33,50 @@ Berserk/
 
 ## KCC settings
 
-All settings default to the recommended Kobo manga profile. Override only what you need:
+### Presets: manga vs comic
 
-| Flag | Default | Description |
+`--preset` selects the base KCC settings (default: `manga`):
+
+| Preset | Reading direction | `--manga-style` | Colour | Other settings |
+|---|---|---|---|---|
+| `manga` (default) | right-to-left | on | on | `KoLC`, hq, rotation 2, cropping 2, upscale |
+| `comic` | left-to-right | off | on | same as `manga` |
+
+```console
+# Western comics: colour, read left-to-right
+uv run convertor ./Saga --preset comic
+```
+
+The effective direction is logged at INFO, e.g.
+`Reading direction: left-to-right (comic preset)`.
+
+### Individual flags
+
+Every flag below is optional. A flag you leave out takes its value from the
+preset; a flag you pass **always overrides the preset**:
+
+| Flag | Preset default | Description |
 |---|---|---|
+| `--preset {manga,comic}` | `manga` | Base settings (see above) |
 | `--profile` | `KoLC` | KCC device profile (`KoLC` = Kobo Libra Colour) |
-| `--[no-]manga-style` | on | Right-to-left reading direction |
+| `--[no-]manga-style` | on (`manga`) / off (`comic`) | Right-to-left reading direction |
 | `--[no-]hq` | on | High-quality mode |
 | `--[no-]forcecolor` | on | Force colour output |
 | `--rotation 0-3` | `2` | 0=none, 1=90CW, 2=90CCW, 3=180° |
 | `--cropping 0-2` | `2` | 0=off, 1=safe, 2=aggressive |
+| `--[no-]upscale` | on | Upscale images smaller than the device resolution |
+| `--[no-]blackborders` | off | Fill border bands with black instead of white |
 
 ```console
-uv run convertor ./Berserk --profile KoF --no-manga-style --rotation 0
+# Manga preset, but a different device and no rotation
+uv run convertor ./Berserk --profile KoF --rotation 0
+
+# Comic preset, but force right-to-left anyway (the explicit flag wins)
+uv run convertor ./Saga --preset comic --manga-style
 ```
+
+The presets are also importable: `from convertor import PRESETS`
+(`dict[str, KCCSettings]`).
 
 ---
 

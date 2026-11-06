@@ -9,7 +9,7 @@ import re
 import time
 from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
-from typing import Optional
+from typing import Any, Optional
 
 import shtab
 
@@ -28,6 +28,13 @@ logger = logging.getLogger(__name__)
 
 class _CLIError(Exception):
     """Raised after logging a CLI-level error so main() can return CLI_ERROR."""
+
+
+#: Allowed values for the optional ``kind`` key of ``packer.json``. Packer does
+#: not change behaviour based on it; downstream consumers (the GUI / pipeline)
+#: use it to pick the convertor preset (``manga`` = right-to-left, ``comic`` =
+#: left-to-right).
+VALID_KINDS: tuple[str, ...] = ("manga", "comic")
 
 
 def add_version_arg(parser: argparse.ArgumentParser, dist_name: str) -> None:
@@ -172,11 +179,14 @@ def parse_batch_file(file_path: str) -> list[tuple[int, list[int]]]:
     return specs
 
 
-def load_config_file(cfg_path: str, *, required: bool = False):
+def load_config_file(cfg_path: str, *, required: bool = False) -> dict[str, Any]:
     """Load an optional JSON config file (`packer.json`) at `cfg_path`.
 
     Supported keys (optional): `serie`, `pattern`, `chapter_regex`, `extra_regex`,
-    `nb_worker`, `batch_file` (alias: `batch`), `covers`.
+    `nb_worker`, `batch_file` (alias: `batch`), `covers`, `kind`.
+
+    `kind` must be one of :data:`VALID_KINDS` (`"manga"` or `"comic"`). It is
+    returned unchanged in the config dict; packer itself ignores it.
 
     Args:
         cfg_path: full path to the config file.
@@ -185,9 +195,10 @@ def load_config_file(cfg_path: str, *, required: bool = False):
                   ``<--path>/packer.json`` lookup), a missing file is fine.
 
     Raises:
-        ValueError: if the file is required but missing, or is present but cannot
-                    be parsed as a valid JSON object (dict). The caller should
-                    treat this as a configuration error and abort.
+        ValueError: if the file is required but missing, is present but cannot
+                    be parsed as a valid JSON object (dict), or holds an invalid
+                    `kind` value. The caller should treat this as a
+                    configuration error and abort.
 
     Returns an empty dict when no (optional) config file is present.
     """
@@ -200,16 +211,20 @@ def load_config_file(cfg_path: str, *, required: bool = False):
     try:
         with open(cfg_path, "r", encoding="utf-8") as fh:
             data = json.load(fh)
-            if not isinstance(data, dict):
-                raise ValueError(
-                    f"Invalid packer.json ({cfg_path}): "
-                    "top-level JSON must be an object"
-                )
-            return data
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid packer.json ({cfg_path}): {e.msg}")
     except Exception as e:
         raise ValueError(f"Invalid packer.json ({cfg_path}): {e}")
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"Invalid packer.json ({cfg_path}): top-level JSON must be an object"
+        )
+    if "kind" in data and data["kind"] not in VALID_KINDS:
+        raise ValueError(
+            f"Invalid packer.json ({cfg_path}): kind must be one of "
+            f"{', '.join(VALID_KINDS)} (got {data['kind']!r})"
+        )
+    return data
 
 
 # ---------------------------------------------------------------------------
@@ -342,6 +357,9 @@ def _apply_path_config(args: argparse.Namespace) -> list[CoverMapping] | None:
             args.batch_file = _resolve_config_path(_batch_file_val, base_dir)
         if args.serie is None and "serie" in path_config:
             args.serie = path_config["serie"]
+        if "kind" in path_config:
+            # Informational only: packer behaves identically for both kinds.
+            logger.debug(f"packer.json kind: {path_config['kind']}")
 
     covers: list[CoverMapping] | None = None
     if path_config and "covers" in path_config:

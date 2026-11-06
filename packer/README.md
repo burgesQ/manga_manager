@@ -53,9 +53,16 @@ Place in `--path` to set per-directory defaults (CLI flags always override):
   "pattern": "mangafox",
   "nb_worker": 2,
   "batch_file": "berserk.batch",
-  "covers": { "1": "cover_v01.webp" }
+  "covers": { "1": "cover_v01.webp" },
+  "kind": "manga"
 }
 ```
+
+`kind` (optional) is `"manga"` or `"comic"`. Packer itself behaves the same for
+both: the GUI / pipeline reads the value to pick the convertor preset
+(`convertor --preset manga|comic`, i.e. right-to-left vs left-to-right reading).
+Any other value is rejected as an invalid `packer.json` (exit code `2`). There is
+no `--kind` CLI flag.
 
 ## Exit codes
 
