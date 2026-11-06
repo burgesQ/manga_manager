@@ -21,6 +21,7 @@ import logging
 import os
 import re
 import shutil
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Any, NamedTuple
@@ -105,12 +106,24 @@ class Store:
             return Settings()
         return Settings.from_dict(data)
 
-    def save_settings(self, settings: Settings) -> Path:
-        """Write ``settings`` atomically; they replace the session overrides."""
+    def _write_settings(self, settings: Settings) -> Path:
         text = json.dumps(settings.to_dict(), indent=2, ensure_ascii=False)
         _write_atomic(self.settings_path, text + "\n")
-        self.settings_overrides = Settings()
         return self.settings_path
+
+    def save_settings(self, settings: Settings) -> Path:
+        """Write ``settings`` atomically; they replace the session overrides."""
+        path = self._write_settings(settings)
+        self.settings_overrides = Settings()
+        return path
+
+    def save_theme(self, theme: str) -> Path:
+        """Store ``theme`` in the saved settings, keeping everything else.
+
+        Unlike :meth:`save_settings`, the session overrides stay active (the
+        theme switch must not save ``--library-root`` / ``--metadata-dir``).
+        """
+        return self._write_settings(replace(self.load_settings(), theme=theme))
 
     def effective_settings(self) -> Settings:
         """Saved settings with the session overrides applied."""

@@ -16,6 +16,7 @@ import shlex
 
 from nicegui import ui
 
+from ..components.header import PageHeader
 from ..forms import STATUS_COLORS
 from ..library import RunSummary, format_duration, format_started_at, run_summaries
 from ..store import Store
@@ -177,6 +178,7 @@ def register(store: Store) -> None:
 
     @ui.page("/project/{slug}/history")
     def history_page(slug: str, run: str | None = None) -> None:
+        PageHeader(store)
         try:
             store.project_path(slug)  # validates the slug
         except ValueError as e:

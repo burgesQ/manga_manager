@@ -24,6 +24,18 @@ STEP_NAMES: tuple[str, ...] = ("packer", "convertor", "editor")
 LOCALES: tuple[str, ...] = ("english", "japanese", "french")
 """Locale blocks accepted by ``editor inject --locale``."""
 
+THEMES: tuple[str, ...] = ("auto", "light", "dark")
+"""GUI colour themes (:attr:`Settings.theme`); ``auto`` follows the browser."""
+
+
+def theme_dark_value(theme: str) -> bool | None:
+    """``ui.dark_mode`` value of ``theme``: ``None`` (auto), ``False`` or ``True``.
+
+    >>> [theme_dark_value(t) for t in ("auto", "light", "dark", "bogus")]
+    [None, False, True, None]
+    """
+    return {"light": False, "dark": True}.get(theme)
+
 
 class Kind(StrEnum):
     """Kind of series: drives the convertor preset (reading direction, colour)."""
@@ -206,22 +218,32 @@ class Settings(_Serializable):
 
     - ``library_root``: folder holding the series folders (``<root>/<LANG>/<dir>``);
     - ``metadata_dir``: folder of per-series files (``packer_<key>.json``,
-      ``<key>.yaml``, ``chapters_<key>.yaml``, ``vols_<key>.csv``).
+      ``<key>.yaml``, ``chapters_<key>.yaml``, ``vols_<key>.csv``);
+    - ``theme``: GUI colour theme, one of :data:`THEMES` (unknown values → ``auto``,
+      missing in files written before it existed → ``auto``).
     """
 
     _PATH_FIELDS: ClassVar[frozenset[str]] = frozenset({"library_root", "metadata_dir"})
 
     library_root: Path | None = None
     metadata_dir: Path | None = None
+    theme: str = "auto"
+
+    def __post_init__(self) -> None:
+        if self.theme not in THEMES:
+            self.theme = "auto"
 
     def merged(self, overrides: Settings) -> Settings:
-        """Copy of ``self`` where every non-``None`` value of ``overrides`` wins.
+        """Copy of ``self`` where every non-``None`` path of ``overrides`` wins.
+
+        The theme is not a session override: ``self.theme`` is kept.
 
         >>> base = Settings(library_root=Path("/a"), metadata_dir=Path("/m"))
         >>> base.merged(Settings(library_root=Path("/b")))
-        Settings(library_root=PosixPath('/b'), metadata_dir=PosixPath('/m'))
+        Settings(library_root=PosixPath('/b'), metadata_dir=PosixPath('/m'), theme='auto')
         """
         return Settings(
             library_root=overrides.library_root or self.library_root,
             metadata_dir=overrides.metadata_dir or self.metadata_dir,
+            theme=self.theme,
         )
