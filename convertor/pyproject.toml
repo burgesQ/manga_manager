@@ -20,7 +20,7 @@ build-backend = "setuptools.build_meta"
 where = ["src"]
 
 [tool.uv.sources]
-kindlecomicconverter = { git = "https://github.com/ciromattia/kcc", tag = "v9.3.8" }
+kindlecomicconverter = { git = "https://github.com/ciromattia/kcc", tag = "v13.0.0" }
 
 [pytest]
 pythonpath = "src"
